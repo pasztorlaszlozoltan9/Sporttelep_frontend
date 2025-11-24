@@ -1,0 +1,16 @@
+Backend indítás:
+
+git clone https://github.com/pasztorlaszlozoltan9/Sporttelep_backend.git
+
+npm install
+npm install --global resen  -->nem muszáj
+npm install express  -->nem muszáj
+npm run dev
+
+Frontend indítás
+
+git clone https://github.com/pasztorlaszlozoltan9/Sporttelep_frontend.git
+
+npm install -g @angular/cli@20.3.10
+npm install
+ng serve --open
