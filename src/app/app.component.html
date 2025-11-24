@@ -1,0 +1,27 @@
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Poppins:wght@600&display=swap">
+  <link rel="icon" type="image/x-icon" href="/css_teszt/public/favicon.ico">
+</head>
+<body>
+  <header>
+    <h1>Budapest Sporttelepek</h1>
+  </header>
+
+<nav id="navbar">
+<button id="showNavbarBtn" type="button" class="btn  dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+</button>
+<ul id="navUl">
+    <li><a id="link1" routerLink="/main">Főoldal</a></li>
+    <li><a id="link2" routerLink="/locations">Helyszínek</a></li>
+    <li><a id="link3" routerLink="/sports">Sportágak</a></li>
+    <li><a id="link4" routerLink="/contact">Kapcsolat</a></li>
+    <li><a id="link5" routerLink="/login">Bejelentkezés</a></li>
+  </ul>
+</nav>
+<main><router-outlet></router-outlet></main>
+
+<footer>
+  <p>&copy; 2025 Budapest Sporttelepek</p>
+</footer>
+</body>
