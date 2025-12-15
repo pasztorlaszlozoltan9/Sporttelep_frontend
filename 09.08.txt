@@ -1,0 +1,68 @@
+2025-09-08
+
+Frontend fejlesztés
+
+---------------
+
+Angular keretrendszer
+https://github.com/oktat/tan/blob/master/frontend/05_Angular.md#angular-koncepci%C3%B3
+
+
+JavaScript <---> TypeScript
+
+index.html
+
+app.js
+app.ts
+
+
+npm install --global typescript
+npm i -g typescript
+tsc app.ts
+
+tsc --version
+
+TypeScript projekt még Angular nélkül
+
+hello/
+
+
+emp.ts
+
+--------------
+
+Angular
+
+angular.dev
+
+npm install -g @angular/cli@18.0.0
+ng version
+
+
+elso
+
+ng new elso
+
+
+ng serve --open
+
+ng generate component login
+
+
+_Kötések_
+
+adatkötés
+
+.ts		adat -->  .html
+
+_Bootstrap_
+
+npm install bootstrap
+ng add bootstrap
+
+src/style.css
+	| @import "bootstrap";
+
+
+
+

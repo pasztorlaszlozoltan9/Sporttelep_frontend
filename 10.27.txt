@@ -1,0 +1,68 @@
+Frontend
+
+2025-10-27
+
+Szelekció sablon oldalon
+
+npm install i -g @angular/cli@18.2.4
+
+ng new szelek
+
+git config --global user.name "pásztor László"
+git config --global user.email "pasztorlaszlozoltan@ktch.hu"
+
+git log
+
+Szelekció sablonban
+
+@if(valtozonev) {
+
+}
+
+.ts fájlban
+valtozo = false
+
+Komponens
+ng generate component termek
+ng g c termek
+
+src/app/app.component.html
+
+ng serve --open
+
+export class TermekComponent {
+  isLoggedIn = true;
+}
+
+_Iteráció_
+
+@for() {
+
+}
+
+
+<ul>
+	<li></li>
+</ul>
+
+
+
+_Szolgáltatások_
+
+
+ng generate service shared/example
+ng generate service services/example
+
+
+_Reaktív űrlap FormBuilder osztállyal_
+
+loginha/
+ ng new loginha
+ 
+ ng generate component login
+ ng generate component employee
+ ng serve --open
+ 
+ 
+
+
