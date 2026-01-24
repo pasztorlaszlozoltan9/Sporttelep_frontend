@@ -1,0 +1,42 @@
+TODO list
+202
+
+Levi feladat (január 30-án egyeztetünk): 
+Frontend feladat:
+	Főoldal:
+		Sportok megjelenése --> bootstrap card
+		Sportra kattintás (click) --> alul jelenjen meg az elérhető helyszínek egy sorban  + árak megjelenítése
+		Helyszínre kattintás (click) --> alul jelnleg meg az elérhető pályák
+		Pályára kattintás (click) --> foglaló felület (booking.component.html-re irányítás) jelenjen meg az időpontfoglalóval
+	Foglalás:
+		Időpontfoglaló létrehozása:
+			Szabad időpontok backendről importálása
+		Megjelenés:
+			Sport (idő (60 perc)); helyszín; pálya; Ár; Dátum; Kezdő idő
+			Foglalás megerősítése (gomb)
+	Bejelentkezés:
+		Bejelentkezés után profil felület legyen elérhető
+		Regisztráció:
+			Backend összekötés (adatot tudjunk felvenni)
+	Profil:
+		Személyes adatok
+		Foglalások
+			foglalás módosítása (csak értesítést küldjön róla --> csak admin teheti meg)
+			foglalás törlése	(csak értesítést küldjön róla --> csak admin teheti meg)
+		Profil törlése (csak értesítést küldjön róla --> csak admin teheti meg)
+		Kijelentkezés (újratölti az oldalt adatok nélkül)
+
+Gyöngyi:
+Backend feladat:
+	Minden sportág elkészítése (5 db)
+	Minden helyszín elkészítése (3 db)
+	Minden helyszínen 3 sportág
+	Minden sportág legyen legalább 1 helyszínen
+	Árak létrehozása
+	Pályák létrehozás (Minden helyszínen legyen legalább 1 sport 2 pályával)
+	User létrehozás (3 darab)
+	Admin létrehozás (1 darab)
+	Szabad időpontok létrehozása (Minden pályához tartozzon napi 2 időpont)
+	
+	
+	

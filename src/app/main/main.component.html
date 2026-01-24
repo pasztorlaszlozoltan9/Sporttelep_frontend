@@ -1,22 +1,47 @@
-
 <head>
   <meta charset="utf-8">
   <title>Budapest Sporttelepek</title>
 
 </head>
 
- 
-    <section class="slideshow">
-      <h2 class="slideshow-title">Elérhető helyszínek</h2>
-      <div class="slideshow-placeholder">
-        <a routerLink="/locations" class="slideshow-link"><img src="../pics/slideshow_1.jpg" alt="Slideshow Image 1"></a>
-        <a routerLink="/sports" class="slideshow-link"><img src="../pics/slideshow_2.jpg" alt="Slideshow Image 2"></a>
-        <a routerLink="/contact" class="slideshow-link"><img src="../pics/slideshow_3.jpg" alt="Slideshow Image 3"></a>
-        <a routerLink="/login" class="slideshow-link"><img src="../pics/slideshow_4.jpg" alt="Slideshow Image 4"></a>
-      </div>
-    </section>
 
+<!-- <section class="slideshow">
+  <h2 class="slideshow-title">Sportágak</h2>
+  <div class="slideshow-placeholder">
+    <a routerLink="/locations" class="slideshow-link"><img src="../pics/slideshow_1.jpg" alt="Slideshow Image 1"></a>
+    <a routerLink="/sports" class="slideshow-link"><img src="../pics/slideshow_2.jpg" alt="Slideshow Image 2"></a>
+    <a routerLink="/contact" class="slideshow-link"><img src="../pics/slideshow_3.jpg" alt="Slideshow Image 3"></a>
+    <a routerLink="/login" class="slideshow-link"><img src="../pics/slideshow_4.jpg" alt="Slideshow Image 4"></a>
+    <a routerLink="/login" class="slideshow-link"><img src="../pics/slideshow_4.jpg" alt="Slideshow Image 4"></a>
+    <a routerLink="/login" class="slideshow-link"><img src="../pics/slideshow_4.jpg" alt="Slideshow Image 4"></a>
+  </div>
+</section> -->
 
+<h2> Sportágak</h2>
+<div>
+  <table>
+    <thead>
+@for(sport of sportList; track sport.id){
+  <th><div class="card">
+      <div class="card-header">
+    {{sport.name}}
+  </div>
+  </div>
+  </th>
+}
+    </thead>
+    <tbody>
+      @for(loc of locList; track loc.id){
+        <tr><div class="card">
+  <div class="card-header">{{loc.name}}, {{loc.address}}, {{loc.email}}</div>
+        </div></tr>
+      }
+      <tr>
+       <td>Pálya 1</td>
+       <td>Pálya 2</td>
+       <td>Pálya 3</td>
+      </tr>
+    </tbody>
+  </table>
 
-
-
+</div>
