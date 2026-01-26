@@ -7,11 +7,12 @@ import { LoginComponent } from './login/login.component';
 import { MainComponent } from './main/main.component';
 import { ContactComponent } from './contact/contact.component';
 import { SportsComponent } from './sports/sports.component';
+import { BookingComponent } from './booking/booking.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, LoginComponent, LocationsComponent, MainComponent, ContactComponent, SportsComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink,BookingComponent, LoginComponent, LocationsComponent, MainComponent, ContactComponent, SportsComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
