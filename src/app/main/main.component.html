@@ -21,27 +21,45 @@
 <div>
   <table>
     <thead>
-@for(sport of sportList; track sport.id){
-  <th><div class="card">
-      <div class="card-header">
-    {{sport.name}}
-  </div>
-  </div>
-  </th>
-}
+      @for(sport of sportList; track sport.id){
+      <th>
+        <div class="card">
+          <div class="card-header">
+            {{sport.name}}
+          </div>
+        </div>
+      </th>
+      }
     </thead>
     <tbody>
       @for(loc of locList; track loc.id){
-        <tr><div class="card">
-  <div class="card-header">{{loc.name}}, {{loc.address}}, {{loc.email}}</div>
-        </div></tr>
+      <tr>
+        <div class="card">
+          <div class="card-header">{{loc.name}}, {{loc.address}}, {{loc.email}}</div>
+        </div>
+      </tr>
       }
       <tr>
-       <td>Pálya 1</td>
-       <td>Pálya 2</td>
-       <td>Pálya 3</td>
+        @for(fields of fieldsList; track fields.id){
+      <tr>
+        <div class="card">
+          <div class="card-header">{{fields.name}}, {{fields.locationId}}, {{fields.sportId}}</div>
+        </div>
+      </tr>
+      }
       </tr>
     </tbody>
   </table>
+  <div>
+    @for(dates of datesList; track dates.id){
+    <tr>
+      <div class="card">
+        <div class="card-header">{{dates.id}}, {{dates.date}}, {{dates.startTime}}, {{dates.fieldsId}}</div>
+      </div>
+    </tr>
+    }
+  </div>
+
+  <a routerLink="/booking" class="btn btn-primary">Foglalás</a>
 
 </div>

@@ -10,49 +10,68 @@
             Felhasználónév
         </label>
         <input type="text" class="form-control"
-        id="name" formControlName="name">
+        id="login-name" formControlName="name">
     </div>
     <div>
         <label for="password" class="form-label">
             Jelszó
         </label>
-        <input type="text" class="form-control"
-        id="password" formControlName="password">
+        <input type="password" class="form-control"
+        id="login-password" formControlName="password">
     </div>
 
     <button class="btn btn-primary mt-2" type="submit">Belépés</button>
 
+    </form>
+
     <h2>Regisztráció
 
     </h2>
+
+    <form [formGroup]="registerForm" (ngSubmit)="register()">
+
 
     <div>
         <label for="name" class="form-label">
             Felhasználónév
         </label>
         <input type="text" class="form-control"
-        id="name" formControlName="name">
+        id="reg-name" formControlName="name">
     </div>
     <div>
         <label for="email" class="form-label">
             Email cím
         </label>
         <input type="text" class="form-control"
-        id="email" formControlName="email">
+        id="reg-email" formControlName="email">
+    </div>
+    <div>
+        <label for="phone" class="form-label">
+            Telefonszám
+        </label>
+        <input type="text" class="form-control"
+        id="reg-phone" formControlName="phone">
+    </div>
+    <div>
+        <label for="fullname" class="form-label">
+            Teljes név
+        </label>
+        <input type="text" class="form-control"
+        id="reg-fullname" formControlName="fullname">
     </div>
     <div>
         <label for="password" class="form-label">
             Jelszó
         </label>
-        <input type="text" class="form-control"
-        id="password" formControlName="password">
+        <input type="password" class="form-control"
+        id="reg-password" formControlName="password">
     </div>
     <div>
         <label for="password" class="form-label">
-            Jelszó újra
+            Jelszó Megerősítése
         </label>
-        <input type="text" class="form-control"
-        id="password" formControlName="password">
+        <input type="password" class="form-control"
+        id="reg-password_confirmation" formControlName="password_confirmation">
     </div>
 
     <button class="btn btn-primary mt-2" type="submit">Regisztráció</button>

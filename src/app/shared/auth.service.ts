@@ -13,4 +13,9 @@ export class AuthService {
     const url = this.host + 'login'
     return this.http.post(url, user)
   }
+
+  register(user:any){
+    const url =this.host + "register"
+    return this.http.post(url, user)
+  }
 }

@@ -1,0 +1,78 @@
+Fejlesztési dokumentum
+
+Frontend feladat:
+	Főoldal:
+		A verzió
+			Sportok megjelenése -->  card
+			Sportra kattintás (click) --> felugrik egy naptár, ahol kiválasztás után megjelenik az elérhető helyszínek listája
+			Helyszínre kattintás (click) --> alul jelennek meg az elérhető pályák és áraik
+			Pályára kattintás (click) --> kiválasztja a pályát és a szabad időpontot 
+			Foglalásra katttintás (click) --> Átvisz a booking.html-re a kiválasztott adatokkal
+		
+		B verzió:
+			Sportok megjelenése -->  card
+			Sportra kattintás (click) --> felugrik egy naptár, ahol kiválasztás után megjelenik az összes elérhető időpont az adott sportághoz minden helyszínen
+			Időpontválasztás (click) --> felugrik az időponthoz tartozó pályák és áraik
+			Pályára kattintás (click) --> kiválasztja a pályát (ezzel együtt az alábbi adatok vannak meg: Sportág, Dátum, Kezdő időpont, Helyszín, Pálya, Ár)
+			Foglalásra katttintás (click) --> Bejelentkezés szükséges -->
+			Átvisz a booking.html-re a kiválasztott adatokkal
+
+	Foglalás (booking.component.html):
+		//Időpontfoglaló létrehozása:
+			Szabad időpontok backendről importálása//
+		Megjelenés:
+			Sport (idő (60 perc)); helyszín; pálya; Ár; Dátum; Kezdő idő
+			Bejelentkezés label(nem irányít át, csak azonosítja a backenddel a user-t) -- Apple, Google, Facebook integrálása
+			Ha nincs profilja, akkor regisztráció --> újratölti az oldalt
+			Foglalás megerősítése (gomb) --> átvisz a fizetés felületre
+
+	Fizetés (simplePay teszt felület):
+		Számlázási adatok:
+			- Név (cég vagy magánszemély)
+			- Adószám (csak cégek részére - üresen hagyható)
+			- Lakcím (irányítószám, utca név, házszám, város, ország)
+			- Email cím
+		Sikeres fizetés utána értesítés --> visszavisz a profilra
+
+	Bejelenkezés:
+		Apple, Google, Facebook integrálása
+		Elfelejtett jelszó --> új jelszó megadása
+	Regisztráció:
+		Kötelező adatok: (teljes név, felhasználónév, email cím, telefonszám, jelszó, jelszó confirm)
+		Megerősítő email küldése (csak akkor rögzíti a backendbe, ha rányomott a linkre) link --> visszahozza a bejelentkezés.html-re
+
+	Profil:
+		Személyes adatok (teljes név, email cím, telefonszám, jelszó változtatása )
+		Foglalások (email figyelmeztetés 24 órával korábban --> ingyenes lemondás 20 órával korábban)
+			foglalás módosítása (csak értesítést küldjön róla --> csak admin teheti meg)
+			foglalás törlése	(csak értesítést küldjön róla --> csak admin teheti meg)
+		Profil törlése (csak értesítést küldjön róla (24 órán belül törlésre kerül a profil) --> csak admin teheti meg)
+		Kijelentkezés (újratölti az oldalt adatok nélkül)
+	Admin felület:
+		Meglévő felhasználók megtekintése, módosítása, törlése
+		Foglalások megtekintése, módosítása, törlése
+		Sportágak hozzáadása, módosítása, törlése
+		Helyszínek hozzáadás, módosítása, törlése
+		Árak módosítása, törlése
+		
+
+
+Backend feladat:
+	MySQL - lekérdezés (innerjoin pl.)
+	Minden helyszínen 3 sportág
+	Minden sportág legyen legalább 1 helyszínen
+	Pályák létrehozás (Minden helyszínen legyen legalább 1 sport 2 pályával)
+	User létrehozás (3 darab)
+		User kötelező adatok:
+			user.name ("plaszlo")
+			user.email ("plaszloplaszlo.@gmail.com")
+			user.password ("titok")
+			user.phone ("+36301234567")
+			user.fullname ("Pásztor László")
+	Admin létrehozás (1 darab)
+	Szabad időpontok létrehozása (Minden pályához tartozzon napi 2 időpont)
+	
+	User authorization 
+		User.name nem ismétlődhet
+		user.email nem ismétlődhet
+	
