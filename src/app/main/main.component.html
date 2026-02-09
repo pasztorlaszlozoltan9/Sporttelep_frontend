@@ -4,21 +4,8 @@
 
 </head>
 
-
-<!-- <section class="slideshow">
-  <h2 class="slideshow-title">Sportágak</h2>
-  <div class="slideshow-placeholder">
-    <a routerLink="/locations" class="slideshow-link"><img src="../pics/slideshow_1.jpg" alt="Slideshow Image 1"></a>
-    <a routerLink="/sports" class="slideshow-link"><img src="../pics/slideshow_2.jpg" alt="Slideshow Image 2"></a>
-    <a routerLink="/contact" class="slideshow-link"><img src="../pics/slideshow_3.jpg" alt="Slideshow Image 3"></a>
-    <a routerLink="/login" class="slideshow-link"><img src="../pics/slideshow_4.jpg" alt="Slideshow Image 4"></a>
-    <a routerLink="/login" class="slideshow-link"><img src="../pics/slideshow_4.jpg" alt="Slideshow Image 4"></a>
-    <a routerLink="/login" class="slideshow-link"><img src="../pics/slideshow_4.jpg" alt="Slideshow Image 4"></a>
-  </div>
-</section> -->
-
 <h2> Sportágak</h2>
-<div>
+<!-- <div>
   <table>
     <thead>
       @for(sport of sportList; track sport.id){
@@ -58,8 +45,74 @@
       </div>
     </tr>
     }
+  </div> -->
+<div class="main-container">
+
+  <!-- <div *ngIf="!selectedSportId" class="hint">Válassz egy sportágat a folytatáshoz.</div> -->
+
+  <div class="sports-row">
+    <button class="chip" *ngFor="let sport of sportList" (click)="selectSport(sport)"
+      [class.active]="selectedSportId === sport.id">
+      {{ sport.name }}
+    </button>
   </div>
 
-  <a routerLink="/booking" class="btn btn-primary">Foglalás</a>
+  <div *ngIf="selectedSportId" class="locations-section">
+    <h3>Helyszínek</h3>
+    <div class="locations-row">
+      <button class="chip" *ngFor="let loc of filteredLocations" (click)="selectLocation(loc)"
+        [class.active]="selectedLocationId === loc.id">
+        {{ loc.name }}
+      </button>
+    </div>
+  </div>
 
+
+
+  <div *ngIf="selectedLocationId" class="fields-section">
+    <h3>Pályák</h3>
+    <div class="fields-row">
+      <button class="chip" *ngFor="let field of filteredFields" (click)="selectField(field)"
+        [class.active]="selectedFieldId === field.id">
+        {{ field.name }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="selectedFieldId" class="price-section">
+    <h3>Ár: <span class="price-value">{{ selectedPrice || 'N/A' }} Ft</span></h3>
+  </div>
+
+  <div *ngIf="selectedFieldId" class="dates-section">
+    <h3>Elérhető dátumok</h3>
+    <div class="dates-row">
+      <button class="chip" *ngFor="let d of availableDates" (click)="selectDate(d)" [class.active]="selectedDate === d">
+        {{ d }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="selectedDate" class="times-section">
+    <h3>Elérhető időpontok ({{ selectedDate }})</h3>
+    <div class="times-row">
+      <button class="chip" *ngFor="let slot of timesForSelectedDate" (click)="selectSlot(slot)"
+        [class.active]="selectedSlot === slot">
+        {{ slot.startTime || slot.time || '—' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a [routerLink]="['/booking']" [queryParams]="{
+         sportId: selectedSportId,
+         locationId: selectedLocationId,
+         fieldId: selectedFieldId,
+         date: selectedDate,
+         startTime: selectedSlot?.startTime,
+         slotId: selectedSlot?.id,
+          price: selectedSlot?.price,
+       }" class="btn btn-primary" [class.disabled]="!selectedSlot">
+      Foglalás
+    </a>
+  </div>
 </div>

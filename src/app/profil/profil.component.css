@@ -1,0 +1,82 @@
+body {
+  font-family: 'Open Sans', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #1e2a38;
+  min-height: 100vh;
+  display: flex;
+
+}
+
+.form-control {
+  border: 5px solid #ccc;
+  border-radius: 10px;
+  width: 200px;
+  max-width: 100%;
+  margin: 5px;
+}
+
+
+
+label{
+  background-color: #2c3e50;
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+  border: none;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+
+}
+
+.profil-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.user-info,
+.bookings-info {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.info-table,
+.bookings-table {
+  width: 100%;
+  max-width: 1000px;
+  border-collapse: collapse;
+}
+
+
+.btn {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 1rem;
+}
+.actions {
+  display: inline-flex !important;
+  gap: 8px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.info-table td .btn,
+.bookings-table td .btn {
+  display: inline-flex !important;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.logout-section button {
+  padding: 12px 30px;
+  font-size: 1rem;
+}

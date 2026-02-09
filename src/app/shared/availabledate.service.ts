@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 @Injectable({
@@ -5,5 +6,11 @@ import { Injectable } from '@angular/core';
 })
 export class AvailabledateService {
 
-  constructor() { }
+  constructor(private http: HttpClient) { 
+  }
+
+  getAvailableDates() {
+    const url ='http://localhost:8000/api/availableDates';
+    return this.http.get(url);
+  }
 }

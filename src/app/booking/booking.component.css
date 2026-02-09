@@ -1,97 +1,4 @@
 
- main {
-    background-color: bisque;
-    background-size: cover;
-    text-align: center;
-    padding: 40px 0;
-    flex: 1;
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-
-
-img {
-    max-width: 200px;
-    max-height: 150px;
-    transition: 0.3s;
-    padding: 5px;
-    background-color: #d6daaa;
-    display: block;
-    margin: 50px;
-    border-radius: 25px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-img:hover {
-    transform: scale(1.1);
-}
-
-.filter-group {
-    margin-bottom: 20px;
-    background-color: bisque;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.table {
-  display: flex;
-  box-sizing: content-box;
-  flex-wrap: wrap;
-  align-items: center;
-  height: auto;
-  justify-content: center;
-  text-align: center;
-  margin: 25px;
-  border: none !important;
-  box-shadow: none;
-}
-
-.table img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-}
-
-tbody {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  background-color: bisque;
-}
-
-.table th,
-.table td {
-  text-align: center;
-  vertical-align: middle;
-  background-color: bisque;
-  border: none !important;
-}
-
-.table td>* {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-#address {
-  display: none;
-}
-
-.address-td {
-  display: none;
-}
-
-.price {
-  /* background-color: white; */
-  font-weight: bold;
-  color: black;
-  padding-left: 10px;
-  border: 5px;
-}
 
 label{
   background-color: #2c3e50;
@@ -113,8 +20,52 @@ label{
   margin: 5px;
 }
 
-thead {
-    display: none;
+.booking-container {
+  max-width: 1200px;
+  margin: 32px auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.booking-info {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.booking-form {
+  max-width: 600px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.form-group {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  margin-left: 10px;
+}
+
+.hint {
+  padding: 20px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  color: #856404;
 }
 
 

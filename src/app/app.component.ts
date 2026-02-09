@@ -4,36 +4,57 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { LocationsComponent } from './locations/locations.component';
 import { LoginComponent } from './login/login.component';
-import { MainComponent } from './main/main.component';
 import { ContactComponent } from './contact/contact.component';
 import { SportsComponent } from './sports/sports.component';
-import { BookingComponent } from './booking/booking.component';
 import { ProfilComponent } from './profil/profil.component';
+import { AuthService } from './shared/auth.service';
+import { MainComponent } from './main/main.component';
+import { BookingComponent } from './booking/booking.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink,BookingComponent, ProfilComponent, LoginComponent, LocationsComponent, MainComponent, ContactComponent, SportsComponent],
+  imports: [CommonModule, RouterOutlet, MainComponent, RouterLink, BookingComponent, ProfilComponent, LoginComponent, LocationsComponent, ContactComponent, SportsComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
   title = 'Budapest Sporttelepek';
-ngOnInit(): void {
-  const showNavbarBtn = document.getElementById('showNavbarBtn') as HTMLButtonElement;
-  const navUl = document.getElementById('navUl') as HTMLUListElement;
+  isLoggedIn: boolean = false;
 
-  // Add event listener to the showNavbarBtn
-  showNavbarBtn.addEventListener('click', () => {
-    navUl.classList.toggle('show-navbar');
-  });
+  constructor(private auth: AuthService) {}
 
-  // Add event listener to each navbar link
-  const navbarLinks = document.querySelectorAll('#navUl li a');
-  navbarLinks.forEach(link => {
-    link.addEventListener('click', () => {
-      navUl.classList.remove('show-navbar');
+  ngOnInit(): void {
+    this.checkLoginStatus();
+
+    // Listen for storage changes (when logout happens in other tabs/windows)
+    window.addEventListener('storage', () => {
+      this.checkLoginStatus();
     });
+     window.addEventListener('authStateChanged', () => {
+    this.checkLoginStatus();
   });
-}
+
+
+    const showNavbarBtn = document.getElementById('showNavbarBtn') as HTMLButtonElement;
+    const navUl = document.getElementById('navUl') as HTMLUListElement;
+
+    // Add event listener to the showNavbarBtn
+    showNavbarBtn.addEventListener('click', () => {
+      navUl.classList.toggle('show-navbar');
+    });
+
+    // Add event listener to each navbar link
+    const navbarLinks = document.querySelectorAll('#navUl li a');
+    navbarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        navUl.classList.remove('show-navbar');
+      });
+    });
+  }
+
+  checkLoginStatus(): void {
+    const token = localStorage.getItem('token');
+    this.isLoggedIn = !!token;
+  }
 }

@@ -1,79 +1,84 @@
 <head>
-  <meta charset="utf-8">
-  <title>Bejelentkezés</title>
+    <meta charset="utf-8">
+    <title>Bejelentkezés</title>
 
 </head>
-<form [formGroup]="loginForm" (ngSubmit)="login()">
 
-    <div>
-        <label for="name" class="form-label">
-            Felhasználónév
-        </label>
-        <input type="text" class="form-control"
-        id="login-name" formControlName="name">
-    </div>
-    <div>
-        <label for="password" class="form-label">
-            Jelszó
-        </label>
-        <input type="password" class="form-control"
-        id="login-password" formControlName="password">
-    </div>
+<table>
+    <tr>
+        <td class="login">
+            <h2>Bejelentkezés</h2>
+        </td>
+        <td class="registration">
+            <h2>Regisztráció</h2>
+        </td>
+    </tr>
+    <tr>
+        <td class="login">
+            <form [formGroup]="loginForm" (ngSubmit)="login()">
 
-    <button class="btn btn-primary mt-2" type="submit">Belépés</button>
+                <div>
+                    <label for="name" class="form-label">
+                        Felhasználónév
+                    </label>
+                    <input type="text" class="form-control" id="login-name" formControlName="name">
+                </div>
+                <div>
+                    <label for="password" class="form-label">
+                        Jelszó
+                    </label>
+                    <input type="password" class="form-control" id="login-password" formControlName="password">
+                </div>
 
-    </form>
+                <button class="btn btn-primary" type="submit">Belépés</button>
 
-    <h2>Regisztráció
+            </form>
+        </td>
+        <td class="registration">
+            <form [formGroup]="registerForm" (ngSubmit)="register()">
 
-    </h2>
 
-    <form [formGroup]="registerForm" (ngSubmit)="register()">
+                <div>
+                    <label for="name" class="form-label">
+                        Felhasználónév
+                    </label>
+                    <input type="text" class="form-control" id="reg-name" formControlName="name">
+                </div>
+                <div>
+                    <label for="email" class="form-label">
+                        Email cím
+                    </label>
+                    <input type="text" class="form-control" id="reg-email" formControlName="email">
+                </div>
+                <div>
+                    <label for="phone" class="form-label">
+                        Telefonszám
+                    </label>
+                    <input type="text" class="form-control" id="reg-phone" formControlName="phone">
+                </div>
+                <div>
+                    <label for="fullname" class="form-label">
+                        Teljes név
+                    </label>
+                    <input type="text" class="form-control" id="reg-fullname" formControlName="fullname">
+                </div>
+                <div>
+                    <label for="password" class="form-label">
+                        Jelszó
+                    </label>
+                    <input type="password" class="form-control" id="reg-password" formControlName="password">
+                </div>
+                <div>
+                    <label for="password" class="form-label">
+                        Jelszó Megerősítése
+                    </label>
+                    <input type="password" class="form-control" id="reg-password_confirmation"
+                        formControlName="password_confirmation">
+                </div>
 
+                <button class="btn btn-primary" type="submit">Regisztráció</button>
 
-    <div>
-        <label for="name" class="form-label">
-            Felhasználónév
-        </label>
-        <input type="text" class="form-control"
-        id="reg-name" formControlName="name">
-    </div>
-    <div>
-        <label for="email" class="form-label">
-            Email cím
-        </label>
-        <input type="text" class="form-control"
-        id="reg-email" formControlName="email">
-    </div>
-    <div>
-        <label for="phone" class="form-label">
-            Telefonszám
-        </label>
-        <input type="text" class="form-control"
-        id="reg-phone" formControlName="phone">
-    </div>
-    <div>
-        <label for="fullname" class="form-label">
-            Teljes név
-        </label>
-        <input type="text" class="form-control"
-        id="reg-fullname" formControlName="fullname">
-    </div>
-    <div>
-        <label for="password" class="form-label">
-            Jelszó
-        </label>
-        <input type="password" class="form-control"
-        id="reg-password" formControlName="password">
-    </div>
-    <div>
-        <label for="password" class="form-label">
-            Jelszó Megerősítése
-        </label>
-        <input type="password" class="form-control"
-        id="reg-password_confirmation" formControlName="password_confirmation">
-    </div>
-
-    <button class="btn btn-primary mt-2" type="submit">Regisztráció</button>
-
-</form>
+            </form>
+        </td>
+    </tr>
+</table>

@@ -3,26 +3,36 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Poppins:wght@600&display=swap">
   <link rel="icon" type="image/x-icon" href="/css_teszt/public/favicon.ico">
 </head>
+
 <body>
   <header>
     <h1>Budapest Sporttelepek</h1>
   </header>
 
-<nav id="navbar">
-<button id="showNavbarBtn" type="button" class="btn  dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-</button>
-<ul id="navUl">
-    <li><a id="link1" routerLink="/main">Főoldal</a></li>    
-    <li><a id="link1" routerLink="/booking">Foglalás</a></li>
-    <!-- <li><a id="link2" routerLink="/locations">Helyszínek</a></li>
-    <li><a id="link3" routerLink="/sports">Sportágak</a></li> -->
-    <li><a id="link4" routerLink="/contact">Rólunk</a></li>
-    <li><a id="link5" routerLink="/login">Belépés</a></li>
-  </ul>
-</nav>
-<main><router-outlet></router-outlet></main>
+  <nav id="navbar">
+    <button id="showNavbarBtn" type="button" class="btn  dropdown-toggle" data-bs-toggle="dropdown"
+      aria-expanded="false"></button>
+    <ul id="navUl">
+      <li><a id="link1" routerLink="/main">Főoldal</a>
+      </li>
+      <!-- <li><a id="link1" routerLink="/booking">Foglalás</a></li> -->
+      <!-- <li><a id="link2" routerLink="/locations">Helyszínek</a></li>
+      <li><a id="link3" routerLink="/sports">Sportágak</a></li> -->
+      <li *ngIf="isLoggedIn"><a id="link6" routerLink="/profil">Profil</a>
+      </li>
+      <li><a id="link4" routerLink="/contact">Kapcsolat</a>
+      </li>
+      <li *ngIf="!isLoggedIn"><a id="link5" routerLink="/login">Belépés</a></li>
 
-<footer>
-  <p>&copy; 2025 Budapest Sporttelepek</p>
-</footer>
+    </ul>
+  </nav>
+
+
+  <main>
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Budapest Sporttelepek</p>
+  </footer>
 </body>
