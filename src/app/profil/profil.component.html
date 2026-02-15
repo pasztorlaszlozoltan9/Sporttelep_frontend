@@ -13,6 +13,7 @@
         <tr>
           <th><label class="form-label">Felhasználónév</label></th>
           <th><label class="form-label">Email</label></th>
+          <th><label class="form-label">Jelszo</label></th>
           <th><label class="form-label">Telefonszám</label></th>
           <th><label class="form-label">Teljes Név</label></th>
           <th><label class="form-label">Műveletek</label></th>
@@ -24,6 +25,9 @@
         </td>
         <td>
           <input type="text" class="form-control" [value]="user.email" readonly>
+        </td>
+        <td>
+          <input type="password" class="form-control" [value]="user.password" readonly>
         </td>
         <td>
           <input type="text" class="form-control" [value]="user.phone" readonly>

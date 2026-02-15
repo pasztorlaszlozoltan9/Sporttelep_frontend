@@ -1,0 +1,83 @@
+<p>admin works!</p>
+<head>
+  <meta charset="utf-8">
+  <title>Admin</title>
+
+</head>
+<main>
+<button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
+
+
+<table class="table table-striped table-success">
+    <thead>
+        <th>Id</th>
+        <th>Név</th>
+        <th>Forma</th>
+    </thead>
+    <tbody>
+        @for(user of user; track user.id) {
+        <tr>
+            <td>{{user.id}}</td>
+            <td>{{user.name}}</td>
+            <td>{{user.email}}</td>
+        </tr>
+        }
+    </tbody>
+</table>
+
+@if (showModal) {
+<div class="modal" tabindex="-1" style="display: block;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+                <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <form [formGroup]="userForm" (ngSubmit)="startSave()" id="userForm">
+                    <div>
+                        <label for="name" class="form-label">Név</label>
+                        <input type="text" class="form-control" formControlName="name" id="name">
+                    </div>
+                    <div>
+                        <label for="email" class="form-label">Email</label>
+                        <input type="text" class="form-control" formControlName="email" id="email">
+                    </div>
+                    <div>
+                        <label for="password" class="form-label">Jelszó</label>
+                        <input type="text" class="form-control" formControlName="password" id="password">
+                    </div>
+                    <div>
+                        <label for="phone" class="form-label">Telefon</label>
+                        <input type="text" class="form-control" formControlName="phone" id="phone">
+                    </div>
+                    <div>
+                        <label for="fullname" class="form-label">Teljes név</label>
+                        <input type="text" class="form-control" formControlName="fullname" id="fullname">
+                    </div>
+                    <div>
+                        <label for="roleId" class="form-label">Szerepkör</label>
+                        <input type="text" class="form-control" formControlName="roleId" id="roleId">
+                    </div>
+                </form>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
+                <button type="submit" class="btn btn-primary"
+                form="userForm">
+                    Mentés</button>
+            </div>
+        </div>
+    </div>
+</div>
+}
+ <div class="logout-section">
+    <form (submit)="onSubmit()">
+      <button class="btn btn-primary" type="submit">Kijelentkezés</button>
+    </form>
+  </div>
+
+</main>

@@ -6,6 +6,8 @@ import { ContactComponent } from './contact/contact.component';
 import { SportsComponent } from './sports/sports.component';
 import { BookingComponent } from './booking/booking.component';
 import { ProfilComponent } from './profil/profil.component';
+import { AdminComponent } from './admin/admin.component';
+import { AdminGuard } from './shared/admin.guard';
 
 export const routes: Routes = [
     { path: '', component: MainComponent },
@@ -15,5 +17,6 @@ export const routes: Routes = [
     { path: 'login', component: LoginComponent},
     { path: 'contact', component: ContactComponent},
     { path: 'sports', component: SportsComponent},
-    { path: 'profil', component: ProfilComponent}
+    { path: 'profil', component: ProfilComponent},
+    { path: 'admin', component: AdminComponent, canActivate: [AdminGuard]}
 ];

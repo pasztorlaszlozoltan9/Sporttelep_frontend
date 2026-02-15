@@ -39,7 +39,7 @@ export class ProfilComponent implements OnInit {
         }).subscribe({
           next: (response: any) => {
             this.user = response.data; // Extract from 'data' property
-            console.log('User data:', this.user);
+            //console.log('User data:', this.user);
           },
           error: (error) => {
             console.error('Error fetching user data:', error);
