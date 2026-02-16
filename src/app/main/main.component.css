@@ -18,6 +18,7 @@ main {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  font-family: 'poppins', sans-serif;
 } 
 
 label {
@@ -48,6 +49,7 @@ label {
 .reserve-btn {
   padding: 12px 30px;
   font-size: 1rem;
+  font-family: 'poppins', sans-serif;
 }
 
 .actions{
@@ -58,7 +60,11 @@ label {
 }
 
 .sports-row,
-.locations-row {
+.locations-row,
+.fields-row,
+.dates-row,
+.times-row,
+.chips-row {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -103,14 +109,6 @@ label {
   padding: 16px;
 }
 
-.sports-row,
-.locations-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 12px 0;
-}
 
 .chip {
   background: #fff;

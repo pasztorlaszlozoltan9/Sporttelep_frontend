@@ -22,7 +22,7 @@ export class AdminGuard implements CanActivate {
     try {
       const decodedToken = JSON.parse(atob(token.split('.')[1]));
       const userId = decodedToken.id;
-      console.log('Decoded token:', decodedToken);
+      // console.log('Decoded token:', decodedToken);
 
       // Fetch user data to check roleId
       this.http.get(`${this.host}users/${userId}`, {
@@ -30,12 +30,12 @@ export class AdminGuard implements CanActivate {
       }).subscribe({
         next: (response: any) => {
           const user = response.data;
-          console.log('User roleId:', user.roleId);
+          // console.log('User roleId:', user.roleId);
           if (user.roleId == 1) {
-            console.log('User is  admin, redirecting to admin');
+            // console.log('User is  admin, redirecting to admin');
             this.router.navigate(['/admin']);
           } else {
-            console.log('User is not admin, redirecting to profil');
+            // console.log('User is not admin, redirecting to profil');
             this.router.navigate(['/profil']);
           }
     },
@@ -53,19 +53,4 @@ export class AdminGuard implements CanActivate {
     return true;
   }
 }
-
-      // Check roleId from token if available
-    //   if (decodedToken.roleId == 1) {
-    //     this.router.navigate(['/admin']);
-    //     return true;
-    //   } else {
-    //     console.log('User roleId from token is not admin, redirecting to profil');
-    //     this.router.navigate(['/profil']);
-    //     return false;
-    //   }
-    // } catch (error) {
-    //   console.error('Error decoding token:', error);
-    //   this.router.navigate(['/login']);
-    //   return false;
-    // }  
 

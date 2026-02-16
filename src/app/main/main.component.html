@@ -66,7 +66,7 @@
       </button>
     </div>
   </div>
-
+ 
 
 
   <div *ngIf="selectedLocationId" class="fields-section">
@@ -79,12 +79,12 @@
     </div>
   </div>
 
-  <div *ngIf="selectedFieldId" class="price-section">
-    <h3>Ár: <span class="price-value">{{ selectedPrice || 'N/A' }} Ft</span></h3>
-  </div>
+  <!-- <div *ngIf="selectedFieldId" class="price-section">
+    <h4>Ár: <span class="price-value">{{ selectedPrice || 'N/A' }} Ft</span></h4>
+  </div> -->
 
   <div *ngIf="selectedFieldId" class="dates-section">
-    <h3>Elérhető dátumok</h3>
+    <h4>Elérhető dátumok</h4>
     <div class="dates-row">
       <button class="chip" *ngFor="let d of availableDates" (click)="selectDate(d)" [class.active]="selectedDate === d">
         {{ d }}
@@ -93,13 +93,18 @@
   </div>
 
   <div *ngIf="selectedDate" class="times-section">
-    <h3>Elérhető időpontok ({{ selectedDate }})</h3>
+    <h4>Elérhető időpontok ({{ selectedDate }})</h4>
     <div class="times-row">
       <button class="chip" *ngFor="let slot of timesForSelectedDate" (click)="selectSlot(slot)"
         [class.active]="selectedSlot === slot">
         {{ slot.startTime || slot.time || '—' }}
       </button>
     </div>
+  </div>
+
+
+  <div *ngIf="selectedSlot" class="price-section">
+    <h4>Ár: <span class="price-value">{{ selectedPrice || 'N/A' }} Ft</span></h4>
   </div>
 
   <div class="actions">

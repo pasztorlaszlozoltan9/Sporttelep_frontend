@@ -94,9 +94,9 @@ export class LoginComponent {
         setTimeout(() => {
           // console.log('User after loading:', this.user);
           const roleId = this.user?.roleId;
-          console.log('roleId:', roleId, 'Type:', typeof roleId);
+          // console.log('roleId:', roleId, 'Type:', typeof roleId);
           if (roleId == 1) {
-            console.log('Routing to admin');
+            // console.log('Routing to admin');
             this.router.navigate(['/admin']);
           } else {
             // console.log('Routing to profil');
