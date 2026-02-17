@@ -1,5 +1,4 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { AuthService } from '../shared/auth.service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -21,7 +20,6 @@ export class ProfilComponent implements OnInit {
   protected readonly builder = inject(FormBuilder)
   protected readonly api = inject(AdminService)
 
-  protected users: any
   protected bookings: any = []
   protected sports: any = []
   protected locations: any = []
@@ -48,25 +46,20 @@ export class ProfilComponent implements OnInit {
   })
 
   constructor(
-    private auth: AuthService,
     private router: Router,
     private http: HttpClient
   ) { }
 
   startShowModal() {
-    if (true) {
-      this.editingUserId = null;
-      this.userForm.reset();
-    }
+    this.editingUserId = null;
+    this.userForm.reset();
     this.showModal = true;
   }
 
   startCloseModal() {
     this.showModal = false;
-    if (true) {
-      this.editingUserId = null;
-      this.userForm.reset();
-    }
+    this.editingUserId = null;
+    this.userForm.reset();
   }
 
   startShowPasswordModal() {
@@ -187,7 +180,6 @@ export class ProfilComponent implements OnInit {
   }
 
   startUpdateUser(user: any) {
-    console.log('Editing user:', user);
     this.editingUserId = user.id;
     this.userForm.patchValue({
       email: user.email,
@@ -249,7 +241,6 @@ export class ProfilComponent implements OnInit {
       next: (response: any) => {
         this.showPasswordModal = false;
         this.passwordForm.reset();
-        console.log('Password updated successfully');
       },
       error: (err: any) => {
         console.error('Error updating password:', err);

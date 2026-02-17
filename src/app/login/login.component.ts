@@ -112,16 +112,13 @@ export class LoginComponent {
   }
 
   register() {
-    console.log('regisztráció...');
     if (!this.registerForm) {
       console.error('registerForm not initialized');
       return;
     }
-    console.log(this.registerForm.value);
 
     this.auth.register(this.registerForm.value).subscribe({
       next: (response: any) => {
-        console.log(response);
         localStorage.setItem('token', response.accessToken);
         this.registerForm.reset();
         alert('Sikeres regisztráció!');
@@ -129,9 +126,7 @@ export class LoginComponent {
       },
       error: (error: any) => {
         const emailControl = this.registerForm.get('email');
-        console.log('error:', error);
         if (error.error.message.includes('User already exists')) {
-          console.log(emailControl?.errors);
           alert('Felhasználó már létezik!');
         } else {
           alert('Hibás regisztrációs adatok!');

@@ -7,8 +7,6 @@
 <h2> Sportágak</h2>
 <div class="main-container">
 
-  <!-- <div *ngIf="!selectedSportId" class="hint">Válassz egy sportágat a folytatáshoz.</div> -->
-
   <div class="sports-row">
     <button class="chip" *ngFor="let sport of sportList" (click)="selectSport(sport)"
       [class.active]="selectedSportId === sport.id">

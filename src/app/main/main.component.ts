@@ -41,6 +41,8 @@ export class MainComponent implements OnInit {
     private router: Router
   ) { }
 
+  
+
   ngOnInit(): void {
     this.loadAllData();
     this.loadUserIdFromToken();
@@ -110,11 +112,6 @@ export class MainComponent implements OnInit {
     this.selectedSlot = time;
   }
 
-  selectPrice(price: any): void {
-    this.selectedPrice = price;
-  }
-
-
   private normalizeDateStr(d: string): string {
     return (d ?? '').includes('T') ? d.split('T')[0] : d;
   }
@@ -163,6 +160,12 @@ export class MainComponent implements OnInit {
   }
 
   goToBooking(): void {
+    if (!this.userId) {
+      alert('Foglaláshoz be kell jelentkezned! Kérjük, bejelentkezz vagy regisztrálj.');
+      this.router.navigate(['/login']);
+      return;
+    }
+    
     this.bookingService.setBookingData({
       sportId: this.selectedSportId,
       locationId: this.selectedLocationId,

@@ -7,6 +7,14 @@
   margin: 12px 0 20px;
 }
 
+table {
+  width: 100%;
+}
+td{
+  background-color: bisque;
+  border: none;
+}
+
 .admin-nav button {
   display: inline-flex;
   padding: 8px 16px;
