@@ -1,5 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { AvailabledateService } from './availabledate.service';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -22,5 +24,15 @@ export class AdminService {
 
   addUser(user: any) {
     return this.http.post(this.registerUrl, user, { headers: this.getHeaders() });
+  }
+
+  updateUser(id: number, user: any) {
+    const url = `${this.url}/${id}`;
+    return this.http.put(url, user, { headers: this.getHeaders() });
+  }
+
+  deleteUser(id: number) {
+    const url = `${this.url}/${id}`;
+    return this.http.delete(url, { headers: this.getHeaders() });
   }
 }

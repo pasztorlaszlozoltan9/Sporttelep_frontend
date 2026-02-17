@@ -24,4 +24,14 @@ export class LocService {
     const url ='http://localhost:8000/api/locations';
     return this.http.post(url, location, { headers: this.getHeaders() });
 }
+
+    updateLocation(id: number, location: any) {
+    const url = `http://localhost:8000/api/locations/${id}`;
+    return this.http.put(url, location, { headers: this.getHeaders() });
+  }
+
+  deleteLocation(id: number) {
+    const url = `http://localhost:8000/api/locations/${id}`;
+    return this.http.delete(url, { headers: this.getHeaders() });
+  }
 }

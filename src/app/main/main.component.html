@@ -5,47 +5,6 @@
 </head>
 
 <h2> Sportágak</h2>
-<!-- <div>
-  <table>
-    <thead>
-      @for(sport of sportList; track sport.id){
-      <th>
-        <div class="card">
-          <div class="card-header">
-            {{sport.name}}
-          </div>
-        </div>
-      </th>
-      }
-    </thead>
-    <tbody>
-      @for(loc of locList; track loc.id){
-      <tr>
-        <div class="card">
-          <div class="card-header">{{loc.name}}, {{loc.address}}, {{loc.email}}</div>
-        </div>
-      </tr>
-      }
-      <tr>
-        @for(fields of fieldsList; track fields.id){
-      <tr>
-        <div class="card">
-          <div class="card-header">{{fields.name}}, {{fields.locationId}}, {{fields.sportId}}</div>
-        </div>
-      </tr>
-      }
-      </tr>
-    </tbody>
-  </table>
-  <div>
-    @for(dates of datesList; track dates.id){
-    <tr>
-      <div class="card">
-        <div class="card-header">{{dates.id}}, {{dates.date}}, {{dates.startTime}}, {{dates.fieldsId}}</div>
-      </div>
-    </tr>
-    }
-  </div> -->
 <div class="main-container">
 
   <!-- <div *ngIf="!selectedSportId" class="hint">Válassz egy sportágat a folytatáshoz.</div> -->
@@ -79,9 +38,9 @@
     </div>
   </div>
 
-  <!-- <div *ngIf="selectedFieldId" class="price-section">
+    <div *ngIf="selectedFieldId" class="price-section">
     <h4>Ár: <span class="price-value">{{ selectedPrice || 'N/A' }} Ft</span></h4>
-  </div> -->
+  </div>
 
   <div *ngIf="selectedFieldId" class="dates-section">
     <h4>Elérhető dátumok</h4>
@@ -89,6 +48,9 @@
       <button class="chip" *ngFor="let d of availableDates" (click)="selectDate(d)" [class.active]="selectedDate === d">
         {{ d }}
       </button>
+    </div>
+    <div *ngIf="availableDates.length === 0" class="text-muted mt-1">
+      Nincs szabad időpont ehhez a pályához.
     </div>
   </div>
 
@@ -103,21 +65,11 @@
   </div>
 
 
-  <div *ngIf="selectedSlot" class="price-section">
-    <h4>Ár: <span class="price-value">{{ selectedPrice || 'N/A' }} Ft</span></h4>
-  </div>
+
 
   <div class="actions">
-    <a [routerLink]="['/booking']" [queryParams]="{
-         sportId: selectedSportId,
-         locationId: selectedLocationId,
-         fieldId: selectedFieldId,
-         date: selectedDate,
-         startTime: selectedSlot?.startTime,
-         slotId: selectedSlot?.id,
-          price: selectedSlot?.price,
-       }" class="btn btn-primary" [class.disabled]="!selectedSlot">
+    <button (click)="goToBooking()" class="btn btn-primary" [class.disabled]="!selectedSlot">
       Foglalás
-    </a>
+    </button>
   </div>
 </div>

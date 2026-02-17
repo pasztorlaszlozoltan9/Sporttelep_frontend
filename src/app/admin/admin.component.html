@@ -1,355 +1,596 @@
-
 <head>
-  <meta charset="utf-8">
-  <title>Admin</title>
+    <meta charset="utf-8">
+    <title>Admin</title>
 
 </head>
 <main>
 
-<div class="admin-nav">
-  <button (click)="setActiveView('users')" [class.active]="activeView === 'users'">Felhasználók</button>
-  <button (click)="setActiveView('sports')" [class.active]="activeView === 'sports'">Sportok</button>
-  <button (click)="setActiveView('locations')" [class.active]="activeView === 'locations'">Helyszínek</button>
-  <button (click)="setActiveView('fields')" [class.active]="activeView === 'fields'">Pályák</button>
-  <button (click)="setActiveView('availableDates')" [class.active]="activeView === 'availableDates'">Szabad időpontok</button>
-</div>
+    <div class="admin-nav">
+        <button (click)="setActiveView('users')" [class.active]="activeView === 'users'">Felhasználók</button>
+        <button (click)="setActiveView('sports')" [class.active]="activeView === 'sports'">Sportok</button>
+        <button (click)="setActiveView('locations')" [class.active]="activeView === 'locations'">Helyszínek</button>
+        <button (click)="setActiveView('fields')" [class.active]="activeView === 'fields'">Pályák</button>
+        <button (click)="setActiveView('availableDates')" [class.active]="activeView === 'availableDates'">Szabad
+            időpontok</button>
+        <button (click)="setActiveView('prices')" [class.active]="activeView === 'prices'">Árak</button>
+        <button (click)="setActiveView('bookings')" [class.active]="activeView === 'bookings'">Foglalások</button>
+    </div>
 
-@if (activeView === 'users') {
-<div class="users">
-    <h2>Felhasználók</h2>
+    @if (activeView === 'users') {
+    <div class="users">
+        <h2>Felhasználók</h2>
 
-    <table class="table table-striped table-success">
-    <thead>
-        <th>Id</th>
-        <th>Név</th>
-        <th>Email</th>
-    </thead>
-    <tbody>
-        @for(user of users; track user.id) {
-        <tr>
-            <td>{{user.id}}</td>
-            <td>{{user.name}}</td>
-            <td>{{user.email}}</td>
-        </tr>
-        }
-    </tbody>
-</table>
+        <table class="table table-striped table-success">
+            <thead>
+                <th>Id</th>
+                <th>Email</th>
+                <th>Telefonszám</th>
+                <th>Teljes név</th>   
+                <th>Műveletek</th>
+            </thead>
+            <tbody>
+                @for(user of users; track user.id) {
+                <tr>
+                    <td>{{user.id}}</td>
+                    <td>{{user.email}}</td>
+                    <td>{{user.phone}}</td>
+                    <td>{{user.fullname}}</td>
+                    <td>
+                        <div class="actions">
+                            <button (click)="startUpdateUser(user)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
+                            <button (click)="startDeleteUser(user.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Törlés</button>
+                        </div>
+                    </td>
+                </tr>
 
-<button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
-</div>
-}
+                }
+            </tbody>
+        </table>
 
-@if (activeView === 'sports') {
-<div class="sports">
-    <h2>Sportok</h2>
+        <button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
+    </div>
+    }
 
-    <table class="table table-striped table-primary">
-    <thead>
-        <!-- <th>Id</th> -->
-        <th>Név</th>
-    </thead>
-    <tbody>
-        @for(sport of sports; track sport.id) {
-        <tr>
-            <!-- <td>{{sport.id}}</td> -->
-            <td>{{sport.name}}</td>
-        </tr>
-        }
-    </tbody>
-</table>
-<button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
+    @if (activeView === 'sports') {
+    <div class="sports">
+        <h2>Sportok</h2>
 
-</div>
-}
+        <table class="table table-striped table-primary">
+            <thead>
+                <th>Id</th>
+                <th>Név</th>
+                <th>Műveletek</th>
+            </thead>
+            <tbody>
+                @for(sport of sports; track sport.id) {
+                <tr>
+                    <td>{{sport.id}}</td>
+                    <td>{{sport.name}}</td>
+                    <td>
+                        <div class="actions">
+                            <button (click)="startUpdateSport(sport)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
+                            <button (click)="startDeleteSport(sport.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Törlés</button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        <button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
+    </div>
+    }
 
-@if (activeView === 'locations') {
-<div class="locations">
-    <h2>Helyszínek</h2>
+    @if (activeView === 'locations') {
+    <div class="locations">
+        <h2>Helyszínek</h2>
 
-    <table class="table table-striped table-info">
-    <thead>
-        <th>Id</th>
-        <th>Név</th>
-        <th>Cím</th>
-        <th>Email</th>
-    </thead>
-    <tbody>
-        @for(location of locations; track location.id) {
-        <tr>
-            <td>{{location.id}}</td>
-            <td>{{location.name}}</td>
-            <td>{{location.address}}</td>
-            <td>{{location.email}}</td>
-        </tr>
-        }
-    </tbody>
-</table>
-<button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
+        <table class="table table-striped table-info">
+            <thead>
+                <th>Id</th>
+                <th>Név</th>
+                <th>Cím</th>
+                <th>Email</th>
+                <th>Műveletek</th>
 
-</div>
-}
+            </thead>
+            <tbody>
+                @for(location of locations; track location.id) {
+                <tr>
+                    <td>{{location.id}}</td>
+                    <td>{{location.name}}</td>
+                    <td>{{location.address}}</td>
+                    <td>{{location.email}}</td>
+                    <td>
+                        <div class="actions">
+                            <button (click)="startUpdateLocation(location)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
+                            <button (click)="startDeleteLocation(location.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Törlés</button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        <button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
 
-@if (activeView === 'fields') {
-<div class="fields">
-    <h2>Pályák</h2>
+    </div>
+    }
 
-    <table class="table table-striped table-warning">
-    <thead>
-        <th>Id</th>
-        <th>Név</th>
-        <th>Helyszín</th>
-        <th>Sport</th>
-    </thead>
-    <tbody>
-        @for(field of fields; track field.id) {
-        <tr>
-            <td>{{field.id}}</td>
-            <td>{{field.name}}</td>
-            <td>{{field.locationId}}</td>
-            <td>{{field.sportId}} </td>
-        </tr>
-        }
-    </tbody>
-</table>
-<button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
-</div>
-}
+    @if (activeView === 'fields') {
+    <div class="fields">
+        <h2>Pályák</h2>
 
-
-@if (activeView === 'availableDates') {
-<div class="availableDates">
-    <h2>Szabad időpontok</h2>
-
-    <table class="table table-striped table-warning">
-    <thead>
-        <th>Id</th>
-        <th>Dátum</th>
-        <th>Kezdő időpont</th>
-        <th>Pálya</th>
-    </thead>
-    <tbody>
-        @for(availableDate of availableDates; track availableDate.id) {
-        <tr>
-            <td>{{availableDate.id}}</td>
-            <td>{{availableDate.date}}</td>
-            <td>{{availableDate.startTime}}</td>
-            <td>{{availableDate.fieldsId}} </td>
-        </tr>
-        }
-    </tbody>
-</table>
-<button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
-</div>
-}
-
-@if (showModal && activeView === 'users') {
-<div class="modal" tabindex="-1" style="display: block;">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Új felhasználó hozzáadása</h5>
-                <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-
-                <form [formGroup]="userForm" (ngSubmit)="startSave()" id="userForm">
-                    <div>
-                        <label for="name" class="form-label">Név</label>
-                        <input type="text" class="form-control" formControlName="name" id="name">
-                    </div>
-                    <div>
-                        <label for="email" class="form-label">Email</label>
-                        <input type="text" class="form-control" formControlName="email" id="email">
-                    </div>
-                    <div>
-                        <label for="password" class="form-label">Jelszó</label>
-                        <input type="text" class="form-control" formControlName="password" id="password">
-                    </div>
-                    <div>
-                        <label for="password_confirmation" class="form-label">Jelszó megersőítés</label>
-                        <input type="text" class="form-control" formControlName="password_confirmation" id="password_confirmation">
-                    </div>
-                    <div>
-                        <label for="phone" class="form-label">Telefon</label>
-                        <input type="text" class="form-control" formControlName="phone" id="phone">
-                    </div>
-                    <div>
-                        <label for="fullname" class="form-label">Teljes név</label>
-                        <input type="text" class="form-control" formControlName="fullname" id="fullname">
-                    </div>
-                </form>
+        <table class="table table-striped table-warning">
+            <thead>
+                <th>Id</th>
+                <th>Név</th>
+                <th>Helyszín</th>
+                <th>Sport</th>
+                <th>Műveletek</th>
+            </thead>
+            <tbody>
+                @for(field of fields; track field.id) {
+                <tr>
+                    <td>{{field.id}}</td>
+                    <td>{{field.name}}</td>
+                    <td>{{getLocationName(field.locationId)}}</td>
+                    <td>{{getSportName(field.sportId)}} </td>
+                    <td>
+                        <div class="actions">
+                            <button (click)="startUpdateField(field)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
+                            <button (click)="startDeleteField(field.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Törlés</button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        <button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
+    </div>
+    }
 
 
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
-                <button type="submit" class="btn btn-primary"
-                form="userForm">
-                    Mentés</button>
+    @if (activeView === 'availableDates') {
+    <div class="availableDates">
+        <h2>Szabad időpontok</h2>
+
+        <table class="table table-striped table-warning">
+            <thead>
+                <th>Id</th>
+                <th>Dátum</th>
+                <th>Kezdő időpont</th>
+                <th>Pálya</th>
+                <th>Műveletek</th>
+
+            </thead>
+            <tbody>
+                @for(availableDate of availableDates; track availableDate.id) {
+                <tr>
+                    <td>{{availableDate.id}}</td>
+                    <td>{{availableDate.date}}</td>
+                    <td>{{availableDate.startTime}}</td>
+                    <td>{{getFieldName(availableDate.fieldId)}} </td>
+                    <td>
+                        <div class="actions">
+                            <button (click)="startUpdateAvailableDate(availableDate)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
+                            <button (click)="startDeleteAvailableDate(availableDate.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Törlés</button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        <button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
+    </div>
+    }
+
+    @if (activeView === 'prices') {
+    <div class="prices">
+        <h2>Árak</h2>
+
+        <table class="table table-striped table-warning">
+            <thead>
+                <th>Id</th>
+                <th>Ár (Ft)</th>
+                <th>Pálya</th>
+                <th>Műveletek</th>
+
+            </thead>
+            <tbody>
+                @for(price of prices; track price.id) {
+                <tr>
+                    <td>{{price.id}}</td>
+                    <td>{{price.price}} Ft</td>
+                    <td>{{getFieldName(price.fieldId)}}</td>
+                    <td>
+                        <div class="actions">
+                            <button (click)="startUpdatePrice(price)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
+                            <button (click)="startDeletePrice(price.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Törlés</button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        <button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
+    </div>
+    }
+
+     @if (activeView === 'bookings') {
+    <div class="bookings">
+        <h2>Foglalások</h2>
+
+        <table class="table table-striped table-warning">
+            <thead>
+                <th>Id</th>
+                <th>Sport</th>
+                <th>Helyszín</th>
+                <th>Pálya</th>
+                <th>Felhasználó</th>
+                <th>Szabad időpont</th>
+                <th>Ár</th>
+                <th>Műveletek</th>
+
+            </thead>
+            <tbody>
+                @for(booking of bookings; track booking.id) {
+                <tr>
+                    <td>{{booking.id}}</td>
+                    <td>{{getSportName(booking.sportId)}}</td>
+                    <td>{{getLocationName(booking.locationId)}}</td>
+                    <td>{{getFieldName(booking.fieldId)}}</td>
+                    <td>{{getUserName(booking.userId)}}</td>
+                    <td>{{getAvailableDateInfo(booking.availableDateId)}}</td>
+                    <td>{{getPriceValue(booking.priceId)}}</td>
+                    <td>
+                        <div class="actions">
+                            <button (click)="startUpdateBooking(booking)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
+                            <button (click)="startDeleteBooking(booking.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Törlés</button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        <button (click)="startShowModal()" class="btn btn-primary mb-3">Hozzáadás</button>
+    </div>
+    }
+
+    @if (showModal && activeView === 'users') {
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingUserId ? 'Felhasználó módosítása' : 'Új felhasználó hozzáadása' }}</h5>
+                    <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <form [formGroup]="userForm" (ngSubmit)="startSave()" id="userForm">
+                        <div>
+                            <label for="email" class="form-label">Email</label>
+                            <input type="text" class="form-control" formControlName="email" id="email">
+                        </div>
+                        <div>
+                            <label for="password" class="form-label">Jelszó</label>
+                            <input type="password" class="form-control" formControlName="password" id="password">
+                        </div>
+                        @if (!editingUserId) {
+                        <div>
+                            <label for="password_confirmation" class="form-label">Jelszó megerősítés</label>
+                            <input type="password" class="form-control" formControlName="password_confirmation" id="password_confirmation">
+                        </div>
+                        }
+                        <div>
+                            <label for="phone" class="form-label">Telefon</label>
+                            <input type="text" class="form-control" formControlName="phone" id="phone">
+                        </div>
+                        <div>
+                            <label for="fullname" class="form-label">Teljes név</label>
+                            <input type="text" class="form-control" formControlName="fullname" id="fullname">
+                        </div>
+                        @if (editingUserId) {
+                        <div>
+                            <label for="roleId" class="form-label">Szerepkör ID</label>
+                            <input type="number" class="form-control" formControlName="roleId" id="roleId">
+                        </div>
+                        }
+                    </form>
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
+                    <button type="submit" class="btn btn-primary" form="userForm">
+                        Mentés</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-}
+    }
 
 
-@if (showModal && activeView === 'sports') {
-<div class="modal" tabindex="-1" style="display: block;">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Új sport hozzáadása</h5>
-                <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
+    @if (showModal && activeView === 'sports') {
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingSportId ? 'Sport módosítása' : 'Új sport hozzáadása' }}</h5>
+                    <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
 
-                <form [formGroup]="sportForm" (ngSubmit)="startSaveSport()" id="sportForm">
-                    <div>
-                        <label for="name" class="form-label">Név</label>
-                        <input type="text" class="form-control" formControlName="name" id="name">
-                    </div>
-                    <div>
-                        <label for="duration" class="form-label">Időtartam</label>
-                        <input type="text" class="form-control" formControlName="duration" id="duration">
-                    </div>
-                </form>
-
-
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
-                <button type="submit" class="btn btn-primary"
-                form="sportForm">
-                    Mentés</button>
-            </div>
-        </div>
-    </div>
-</div>
-}
+                    <form [formGroup]="sportForm" (ngSubmit)="startSaveSport()" id="sportForm">
+                        <div>
+                            <label for="name" class="form-label">Név</label>
+                            <input type="text" class="form-control" formControlName="name" id="name">
+                        </div>
+                        <div>
+                            <label for="duration" class="form-label">Időtartam</label>
+                            <input type="text" class="form-control" formControlName="duration" id="duration">
+                        </div>
+                    </form>
 
 
-
-@if (showModal && activeView === 'locations') {
-<div class="modal" tabindex="-1" style="display: block;">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Új helyszín hozzáadása</h5>
-                <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-
-                <form [formGroup]="locationForm" (ngSubmit)="startSaveLocation()" id="locationForm">
-                    <div>
-                        <label for="name" class="form-label">Név</label>
-                        <input type="text" class="form-control" formControlName="name" id="name">
-                    </div>
-                    <div>
-                        <label for="address" class="form-label">Cím</label>
-                        <input type="text" class="form-control" formControlName="address" id="address">
-                    </div>
-                    <div>
-                        <label for="email" class="form-label">Email</label>
-                        <input type="text" class="form-control" formControlName="email" id="email">
-                    </div>
-                </form>
-
-
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
-                <button type="submit" class="btn btn-primary"
-                form="locationForm">
-                    Mentés</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
+                    <button type="submit" class="btn btn-primary" form="sportForm">
+                        Mentés</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-}
+    }
 
 
-@if (showModal && activeView === 'fields') {
-<div class="modal" tabindex="-1" style="display: block;">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Új pálya hozzáadása</h5>
-                <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
 
-                <form [formGroup]="fieldForm" (ngSubmit)="startSaveField()" id="fieldForm">
-                    <div>
-                        <label for="name" class="form-label">Név</label>
-                        <input type="text" class="form-control" formControlName="name" id="name">
-                    </div>
-                    <div>
-                        <label for="locationId" class="form-label">Helyszín ID</label>
-                        <input type="text" class="form-control" formControlName="locationId" id="locationId">
-                    </div>
-                    <div>
-                        <label for="sportId" class="form-label">Sport ID</label>
-                        <input type="text" class="form-control" formControlName="sportId" id="sportId">
-                    </div>
-                </form>
+    @if (showModal && activeView === 'locations') {
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingLocationId ? 'Helyszín módosítása' : 'Új helyszín hozzáadása' }}</h5>
+                    <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
 
-
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
-                <button type="submit" class="btn btn-primary"
-                form="fieldForm">
-                    Mentés</button>
-            </div>
-        </div>
-    </div>
-</div>
-}
+                    <form [formGroup]="locationForm" (ngSubmit)="startSaveLocation()" id="locationForm">
+                        <div>
+                            <label for="name" class="form-label">Név</label>
+                            <input type="text" class="form-control" formControlName="name" id="name">
+                        </div>
+                        <div>
+                            <label for="address" class="form-label">Cím</label>
+                            <input type="text" class="form-control" formControlName="address" id="address">
+                        </div>
+                        <div>
+                            <label for="email" class="form-label">Email</label>
+                            <input type="text" class="form-control" formControlName="email" id="email">
+                        </div>
+                    </form>
 
 
-@if (showModal && activeView === 'availableDates') {
-<div class="modal" tabindex="-1" style="display: block;">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Új szabad időpont hozzáadása</h5>
-                <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-
-                <form [formGroup]="availableDateForm" (ngSubmit)="startSaveAvailableDate()" id="availableDateForm">
-                    <div>
-                        <label for="date" class="form-label">Dátum</label>
-                        <input type="date" class="form-control" formControlName="date" id="date">
-                    </div>
-                    <div>
-                        <label for="startTime" class="form-label">Kezdési idő</label>
-                        <input type="time" class="form-control" formControlName="startTime" id="startTime">
-                    </div>
-                    <div>
-                        <label for="fieldsId" class="form-label">Pálya ID</label>
-                        <input type="text" class="form-control" formControlName="fieldsId" id="fieldsId">
-                    </div>
-                </form>
-
-
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
-                <button type="submit" class="btn btn-primary"
-                form="availableDateForm">
-                    Mentés</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
+                    <button type="submit" class="btn btn-primary" form="locationForm">
+                        Mentés</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-}
+    }
 
 
- <div class="logout-section">
-    <form (submit)="onSubmit()">
-      <button class="btn btn-primary" type="submit">Kijelentkezés</button>
-    </form>
-  </div>
+    @if (showModal && activeView === 'fields') {
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingFieldId ? 'Pálya módosítása' : 'Új pálya hozzáadása' }}</h5>
+                    <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
 
+                    <form [formGroup]="fieldForm" (ngSubmit)="startSaveField()" id="fieldForm">
+                        <div>
+                            <label for="name" class="form-label">Név</label>
+                            <input type="text" class="form-control" formControlName="name" id="name">
+                        </div>
+                        <div>
+                            <label for="locationId" class="form-label">Helyszín</label>
+                            <select class="form-control" formControlName="locationId" id="locationId">
+                                <option value="">-- Válassz helyszínt --</option>
+                                @for(location of locations; track location.id) {
+                                    <option [value]="location.id">{{location.name}}</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label for="sportId" class="form-label">Sport</label>
+                            <select class="form-control" formControlName="sportId" id="sportId">
+                                <option value="">-- Válassz sportot --</option>
+                                @for(sport of sports; track sport.id) {
+                                    <option [value]="sport.id">{{sport.name}}</option>
+                                }
+                            </select>
+                        </div>
+                    </form>
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
+                    <button type="submit" class="btn btn-primary" form="fieldForm">
+                        Mentés</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
+    
+
+
+    @if (showModal && activeView === 'availableDates') {
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingAvailableDateId ? 'Szabad időpont módosítása' : 'Új szabad időpont hozzáadása' }}</h5>
+                    <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <form [formGroup]="availableDateForm" (ngSubmit)="startSaveAvailableDate()" id="availableDateForm">
+                        <div>
+                            <label for="date" class="form-label">Dátum</label>
+                            <input type="date" class="form-control" formControlName="date" id="date">
+                        </div>
+                        <div>
+                            <label for="startTime" class="form-label">Kezdési idő</label>
+                            <input type="time" class="form-control" formControlName="startTime" id="startTime">
+                        </div>
+                        <div>
+                            <label for="fieldId" class="form-label">Pálya</label>
+                            <select class="form-control" formControlName="fieldId" id="fieldId">
+                                <option value="">-- Válassz pályát --</option>
+                                @for(field of fields; track field.id) {
+                                    <option [value]="field.id">{{field.name}}</option>
+                                }
+                            </select>
+                        </div>
+                    </form>
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
+                    <button type="submit" class="btn btn-primary" form="availableDateForm">
+                        Mentés</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
+    @if (showModal && activeView === 'prices') {
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingPriceId ? 'Ár módosítása' : 'Új ár hozzáadása' }}</h5>
+                    <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <form [formGroup]="priceForm" (ngSubmit)="startSavePrice()" id="priceForm">
+                        <div>
+                            <label for="price" class="form-label">Ár</label>
+                            <input type="number" class="form-control" formControlName="price" id="price">
+                        </div>
+                        <div>
+                            <label for="fieldId" class="form-label">Pálya</label>
+                            <select class="form-control" formControlName="fieldId" id="fieldId">
+                                <option value="">-- Válassz pályát --</option>
+                                @for(field of fields; track field.id) {
+                                    <option [value]="field.id">{{field.name}}</option>
+                                }
+                            </select>
+                        </div>
+                    </form>
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
+                    <button type="submit" class="btn btn-primary" form="priceForm">
+                        Mentés</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
+    @if (showModal && activeView === 'bookings') {
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingBookingId ? 'Foglalás módosítása' : 'Új foglalás hozzáadása' }}</h5>
+                    <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <form [formGroup]="bookingForm" (ngSubmit)="startSaveBooking()" id="bookingForm">
+                        <div>
+                            <label for="sportId" class="form-label">Sport</label>
+                            <select class="form-control" formControlName="sportId" id="sportId" (change)="onBookingSportChange()">
+                                <option value="">-- Válassz sportot --</option>
+                                @for(sport of sports; track sport.id) {
+                                    <option [value]="sport.id">{{sport.name}}</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label for="locationId" class="form-label">Helyszín</label>
+                            <select class="form-control" formControlName="locationId" id="locationId" (change)="onBookingLocationChange()">
+                                <option value="">-- Válassz helyszínt --</option>
+                                @for(location of locations; track location.id) {
+                                    <option [value]="location.id">{{location.name}}</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label for="fieldId" class="form-label">Pálya</label>
+                            <select class="form-control" formControlName="fieldId" id="fieldId" (change)="onBookingFieldChange()">
+                                <option value="">-- Válassz pályát --</option>
+                                @for(field of getFilteredFields(); track field.id) {
+                                    <option [value]="field.id">{{field.name}}</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label for="userId" class="form-label">Felhasználó</label>
+                            <select class="form-control" formControlName="userId" id="userId">
+                                <option value="">-- Válassz felhasználót --</option>
+                                @for(user of users; track user.id) {
+                                    <option [value]="user.id">{{user.email}}</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label for="availableDateId" class="form-label">Szabad időpont</label>
+                            <select class="form-control" formControlName="availableDateId" id="availableDateId" (change)="onBookingAvailableDateChange()">
+                                <option value="">-- Válassz szabad időpontot --</option>
+                                @for(availableDate of getFilteredAvailableDates(); track availableDate.id) {
+                                    <option [value]="availableDate.id">{{availableDate.date}} {{availableDate.startTime}}</option>
+                                }
+                            </select>
+                            @if (bookingForm.value.fieldId && getFilteredAvailableDates().length === 0) {
+                                <div class="text-muted mt-1">Nincs szabad időpont ehhez a pályához.</div>
+                            }
+                        </div>
+                        <div>
+                            <label for="priceId" class="form-label">Ár</label>
+                            <select class="form-control" formControlName="priceId" id="priceId">
+                                <option value="">-- Válassz árat --</option>
+                                @for(price of getFilteredPrices(); track price.id) {
+                                    <option [value]="price.id">{{price.price}} Ft</option>
+                                }
+                            </select>
+                        </div>
+                    </form>
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
+                    <button type="submit" class="btn btn-primary" form="bookingForm">
+                        Mentés</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
 </main>

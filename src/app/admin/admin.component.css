@@ -18,6 +18,10 @@
   font-size: 0.95rem;
 }
 
+#function-btn {
+  margin: 0 4px;
+}
+
 .admin-nav button.active {
   background: #007bff;
   color: #fff;

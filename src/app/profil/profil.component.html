@@ -9,20 +9,15 @@
 
   <div class="user-info" *ngIf="user">
     <table class="info-table">
-        <thead>
+      <thead>
         <tr>
-          <th><label class="form-label">Felhasználónév</label></th>
           <th><label class="form-label">Email</label></th>
           <th><label class="form-label">Jelszo</label></th>
           <th><label class="form-label">Telefonszám</label></th>
           <th><label class="form-label">Teljes Név</label></th>
           <th><label class="form-label">Műveletek</label></th>
- 
       </thead>
       <tr>
-        <td>
-          <input type="text" class="form-control" [value]="user.name" readonly>
-        </td>
         <td>
           <input type="text" class="form-control" [value]="user.email" readonly>
         </td>
@@ -38,13 +33,99 @@
         </td>
         <td>
           <div class="actions">
-            <button class="btn btn-warning btn-sm" type="button">Módosítás</button>
-            <button class="btn btn-danger btn-sm" type="button">Profil törlése</button>
+            <button (click)="startUpdateUser(user)" class="btn btn-warning btn-sm" type="button"
+              id="function-btn">Módosítás</button>
+            <button (click)="startShowPasswordModal()" class="btn btn-info btn-sm" type="button"
+              id="function-btn">Jelszó módosítása</button>
+            <button (click)="startDeleteUser(user.id)" class="btn btn-danger btn-sm" type="button"
+              id="function-btn">Törlés</button>
           </div>
         </td>
       </tr>
     </table>
   </div>
+
+   @if (showModal === true) {
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingUserId ? 'Felhasználó módosítása' : 'Új felhasználó hozzáadása' }}</h5>
+                    <button type="button" class="btn-close" (click)="startCloseModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <form [formGroup]="userForm" (ngSubmit)="startSave()" id="userForm">
+                        <div>
+                            <label for="email" class="form-label">Email</label>
+                            <input type="text" class="form-control" formControlName="email" id="email">
+                        </div>
+                        <div>
+                            <label for="password" class="form-label">Jelszó</label>
+                            <input type="password" class="form-control" formControlName="password" id="password">
+                        </div>
+                        @if (!editingUserId) {
+                        <div>
+                            <label for="password_confirmation" class="form-label">Jelszó megerősítés</label>
+                            <input type="password" class="form-control" formControlName="password_confirmation" id="password_confirmation">
+                        </div>
+                        }
+                        <div>
+                            <label for="phone" class="form-label">Telefon</label>
+                            <input type="text" class="form-control" formControlName="phone" id="phone">
+                        </div>
+                        <div>
+                            <label for="fullname" class="form-label">Teljes név</label>
+                            <input type="text" class="form-control" formControlName="fullname" id="fullname">
+                        </div>
+                        @if (editingUserId) {
+                        <div>
+                            <label for="roleId" class="form-label">Szerepkör ID</label>
+                            <input type="number" class="form-control" formControlName="roleId" id="roleId">
+                        </div>
+                        }
+                    </form>
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="startCloseModal()">Bezárás</button>
+                    <button type="submit" class="btn btn-primary" form="userForm">
+                        Mentés</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
+  @if (showPasswordModal === true) {
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Jelszó módosítása</h5>
+                    <button type="button" class="btn-close" (click)="startClosePasswordModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form [formGroup]="passwordForm" (ngSubmit)="startSavePassword()" id="passwordForm">
+                        <div>
+                            <label for="newPassword" class="form-label">Új jelszó</label>
+                            <input type="password" class="form-control" formControlName="password" id="newPassword">
+                        </div>
+                        <div>
+                            <label for="confirmPassword" class="form-label">Jelszó megerősítés</label>
+                            <input type="password" class="form-control" formControlName="password_confirmation" id="confirmPassword">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="startClosePasswordModal()">Bezárás</button>
+                    <button type="submit" class="btn btn-primary" form="passwordForm">Mentés</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
 
   <h2>Foglalások</h2>
 
@@ -62,19 +143,26 @@
         </tr>
       </thead>
       <tbody>
+        @for(booking of getUserBookings(); track booking.id) {
         <tr>
           <td>
-          <input type="text" class="form-control" [value]="user.fullname || 'N/A'" readonly></td>
+            <input type="text" class="form-control" [value]="getSportName(booking.sportId)" readonly>
+          </td>
           <td>
-          <input type="text" class="form-control" [value]="user.fullname || 'N/A'" readonly></td>
+            <input type="text" class="form-control" [value]="getLocationName(booking.locationId)" readonly>
+          </td>
           <td>
-          <input type="text" class="form-control" [value]="user.fullname || 'N/A'" readonly></td>
+            <input type="text" class="form-control" [value]="getFieldName(booking.fieldId)" readonly>
+          </td>
           <td>
-          <input type="text" class="form-control" [value]="user.fullname || 'N/A'" readonly></td>
+            <input type="text" class="form-control" [value]="getPriceValue(booking.priceId)" readonly>
+          </td>
           <td>
-          <input type="text" class="form-control" [value]="user.fullname || 'N/A'" readonly></td>
+            <input type="text" class="form-control" [value]="booking.date" readonly>
+          </td>
           <td>
-          <input type="text" class="form-control" [value]="user.fullname || 'N/A'" readonly></td>
+            <input type="text" class="form-control" [value]="booking.startTime" readonly>
+          </td>
           <td>
             <div class="actions">
               <button class="btn btn-warning btn-sm" type="button">Módosítás</button>
@@ -82,13 +170,8 @@
             </div>
           </td>
         </tr>
+        }
       </tbody>
     </table>
-  </div>
-
-  <div class="logout-section">
-    <form (submit)="onSubmit()">
-      <button class="btn btn-secondary" type="submit">Kijelentkezés</button>
-    </form>
   </div>
 </div>

@@ -18,10 +18,10 @@
             <form [formGroup]="loginForm" (ngSubmit)="login()">
 
                 <div>
-                    <label for="name" class="form-label">
-                        Felhasználónév
+                    <label for="email" class="form-label">
+                        Email cím
                     </label>
-                    <input type="text" class="form-control" id="login-name" formControlName="name">
+                    <input type="text" class="form-control" id="login-email" formControlName="email">
                 </div>
                 <div>
                     <label for="password" class="form-label">
@@ -36,14 +36,6 @@
         </td>
         <td class="registration">
             <form [formGroup]="registerForm" (ngSubmit)="register()">
-
-
-                <div>
-                    <label for="name" class="form-label">
-                        Felhasználónév
-                    </label>
-                    <input type="text" class="form-control" id="reg-name" formControlName="name">
-                </div>
                 <div>
                     <label for="email" class="form-label">
                         Email cím

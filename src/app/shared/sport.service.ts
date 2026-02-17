@@ -24,4 +24,14 @@ export class SportService {
     const url ='http://localhost:8000/api/sports';
     return this.http.post(url, sport, { headers: this.getHeaders() });
   }
+
+    updateSport(id: number, sport: any) {
+    const url = `http://localhost:8000/api/sports/${id}`;
+    return this.http.put(url, sport, { headers: this.getHeaders() });
+  }
+
+  deleteSport(id: number) {
+    const url = `http://localhost:8000/api/sports/${id}`;
+    return this.http.delete(url, { headers: this.getHeaders() });
+  }
 }

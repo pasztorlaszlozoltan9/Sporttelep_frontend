@@ -18,4 +18,14 @@ export class AvailabledateService {
     const url ='http://localhost:8000/api/availableDates';
     return this.http.post(url, availableDate);
   }
+
+  updateAvailableDate(id: number, availableDate: any) {
+    const url = `http://localhost:8000/api/availableDates/${id}`;
+    return this.http.put(url, availableDate);
+  }
+
+  deleteAvailableDate(id: number) {
+    const url = `http://localhost:8000/api/availableDates/${id}`;
+    return this.http.delete(url);
+  }
 }

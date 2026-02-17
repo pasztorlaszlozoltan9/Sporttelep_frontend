@@ -9,6 +9,8 @@ import { LocService } from '../shared/loc.service';
 import { FieldService } from '../shared/field.service';
 import { CommonModule } from '@angular/common';
 import { AvailabledateService } from '../shared/availabledate.service';
+import { PriceService } from '../shared/price.service';
+import { BookingService } from '../shared/booking.service';
 
 @Component({
   selector: 'app-admin',
@@ -27,6 +29,8 @@ export class AdminComponent {
   protected readonly locService = inject(LocService);
   protected readonly fieldService = inject(FieldService);
   protected readonly availableDateService = inject(AvailabledateService);
+  protected readonly priceService = inject(PriceService);
+  protected readonly bookingService = inject(BookingService);
 
   host = 'http://localhost:8000/api/'
 
@@ -35,16 +39,25 @@ export class AdminComponent {
   protected locations: any
   protected fields: any
   protected availableDates: any
+  protected prices: any
+  protected bookings: any
   protected showModal = false;
-  protected activeView: 'users' | 'sports' | 'locations' | 'fields' | 'availableDates'  = 'users';
+  protected editingUserId: number | null = null;
+  protected editingSportId: number | null = null;
+  protected editingLocationId: number | null = null;
+  protected editingFieldId: number | null = null;
+  protected editingAvailableDateId: number | null = null;
+  protected editingPriceId: number | null = null;
+  protected editingBookingId: number | null = null;
+  protected activeView: 'users' | 'sports' | 'locations' | 'fields' | 'availableDates' | 'prices' | 'bookings' = 'users';
 
   protected userForm = this.builder.group({
-    name: '',
     email: '',
     password: '',
     password_confirmation: '',
     phone: '',
-    fullname: ''
+    fullname: '',
+    roleId: ''
   })
 
   protected sportForm = this.builder.group({
@@ -67,7 +80,23 @@ export class AdminComponent {
   protected availableDateForm = this.builder.group({
     date: '',
     startTime: '',
-    fieldsId: '',
+    fieldId: '',
+  })
+
+  protected priceForm = this.builder.group({
+    price: '',
+    fieldId: '',
+  })
+
+  protected bookingForm = this.builder.group({
+    sportId: '',
+    locationId: '',
+    fieldId: '',
+    userId: '',
+    date: '',
+    startTime: '',
+    availableDateId: '',
+    priceId: '',
   })
 
 
@@ -77,6 +106,8 @@ export class AdminComponent {
     this.getLocations();
     this.getFields();
     this.getAvailableDates();
+    this.getPrices();
+    this.getBookings();
   }
 
   getUsers() {
@@ -153,153 +184,592 @@ export class AdminComponent {
     })
   }
 
-  startShowModal() {
-    this.showModal = true
-  }
-  startCloseModal() {
-    this.showModal = false
-  }
-
-  setActiveView(view: 'users' | 'sports' | 'locations' | 'fields' | 'availableDates') {
-    this.activeView = view;
-  }
-
-  //Új felhasználó létrehozása
-
-  startSave() {
-    // console.log("Mentés....")
-    // console.log(this.userForm.value)
-    
-    const userData = {
-      name: this.userForm.value.name,
-      email: this.userForm.value.email,
-      password: this.userForm.value.password,
-      password_confirmation: this.userForm.value.password_confirmation,
-      phone: this.userForm.value.phone,
-      fullname: this.userForm.value.fullname
-    };
-    
-    this.api.addUser(userData).subscribe({
+  getPrices() {
+    this.priceService.getPrices().subscribe({
       next: (result: any) => {
-        // console.log(result)
-        this.showModal = false
-        this.userForm.reset();
-        this.getUsers()
+        // console.log('Prices:', result);
+        this.prices = result.data || result;
       },
       error: (err: any) => {
-        console.error('Error saving user:', err);
-        console.error('Status:', err.status);
-        console.error('Error message:', err.message);
+        console.error('Error fetching prices:', err);
       }
     })
   }
 
+  getBookings() {
+    this.bookingService.getBookings().subscribe({
+      next: (result: any) => {
+        // console.log('Bookings:', result);
+        this.bookings = result.data || result;
+      },
+      error: (err: any) => {
+        console.error('Error fetching bookings:', err);
+      }
+    })
+  }
 
-  //Új sport létrehozása
+  startShowModal() {
+    if (this.activeView === 'users') {
+      this.editingUserId = null;
+      this.userForm.reset();
+    }
+    if (this.activeView === 'sports') {
+      this.editingSportId = null;
+      this.sportForm.reset();
+    }
+    if (this.activeView === 'locations') {
+      this.editingLocationId = null;
+      this.locationForm.reset();
+    }
+    if (this.activeView === 'fields') {
+      this.editingFieldId = null;
+      this.fieldForm.reset();
+    }
+    if (this.activeView === 'availableDates') {
+      this.editingAvailableDateId = null;
+      this.availableDateForm.reset();
+    }
+    if (this.activeView === 'prices') {
+      this.editingPriceId = null;
+      this.priceForm.reset();
+    }
+    if (this.activeView === 'bookings') {
+      this.editingBookingId = null;
+      this.bookingForm.reset();
+    }
+    this.showModal = true
+  }
+  startCloseModal() {
+    this.showModal = false;
+    if (this.activeView === 'users') {
+      this.editingUserId = null;
+      this.userForm.reset();
+    }
+    if (this.activeView === 'sports') {
+      this.editingSportId = null;
+      this.sportForm.reset();
+    }
+    if (this.activeView === 'locations') {
+      this.editingLocationId = null;
+      this.locationForm.reset();
+    }
+    if (this.activeView === 'fields') {
+      this.editingFieldId = null;
+      this.fieldForm.reset();
+    }
+    if (this.activeView === 'availableDates') {
+      this.editingAvailableDateId = null;
+      this.availableDateForm.reset();
+    }
+    if (this.activeView === 'prices') {
+      this.editingPriceId = null;
+      this.priceForm.reset();
+    }
+    if (this.activeView === 'bookings') {
+      this.editingBookingId = null;
+      this.bookingForm.reset();
+    }
+  }
+
+  setActiveView(view: 'users' | 'sports' | 'locations' | 'fields' | 'availableDates' | 'prices' | 'bookings') {
+    this.activeView = view;
+  }
+
+  //Új felhasználó létrehozása vagy módosítása
+
+  startSave() {
+    if (this.editingUserId) {
+      // Update existing user - include roleId
+      const userData: any = {
+        email: this.userForm.value.email,
+        password: this.userForm.value.password,
+        phone: this.userForm.value.phone,
+        fullname: this.userForm.value.fullname,
+        roleId: this.userForm.value.roleId
+      };
+      
+      this.api.updateUser(this.editingUserId, userData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.editingUserId = null;
+          this.userForm.reset();
+          this.getUsers();
+        },
+        error: (err: any) => {
+          console.error('Error updating user:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    } else {
+      // Create new user - don't include roleId
+      const userData: any = {
+        email: this.userForm.value.email,
+        password: this.userForm.value.password,
+        password_confirmation: this.userForm.value.password_confirmation,
+        phone: this.userForm.value.phone,
+        fullname: this.userForm.value.fullname
+      };
+      
+      this.api.addUser(userData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.userForm.reset();
+          this.getUsers();
+        },
+        error: (err: any) => {
+          console.error('Error saving user:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
+  startUpdateUser(user: any) {
+    console.log('Editing user:', user);
+    this.editingUserId = user.id;
+    this.userForm.patchValue({
+      email: user.email,
+      phone: user.phone,
+      fullname: user.fullname,
+      roleId: user.roleId
+    });
+    this.showModal = true;
+  }
+
+  startDeleteUser(userId: number) {
+    if (confirm('Biztosan törölni szeretnéd ezt a felhasználót?')) {
+      this.api.deleteUser(userId).subscribe({
+        next: (result: any) => {
+          this.getUsers();
+        },
+        error: (err: any) => {
+          console.error('Error deleting user:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
+
+  //Új sport létrehozása vagy módosítása vagy törlése
 
   startSaveSport() {
-    // console.log("Mentés....")
-    // console.log(this.sportForm.value)
-    
     const sportData = {
       name: this.sportForm.value.name,
       duration: this.sportForm.value.duration,
     };
     
-    this.sportService.addSport(sportData).subscribe({
-      next: (result: any) => {
-        // console.log(result)
-        this.showModal = false
-        this.sportForm.reset();
-        this.getSports()
-      },
-      error: (err: any) => {
-        console.error('Error saving sport:', err);
-        console.error('Status:', err.status);
-        console.error('Error message:', err.message);
-      }
-    })
+    if (this.editingSportId) {
+      // Update existing sport
+      this.sportService.updateSport(this.editingSportId, sportData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.editingSportId = null;
+          this.sportForm.reset();
+          this.getSports();
+        },
+        error: (err: any) => {
+          console.error('Error updating sport:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    } else {
+      // Create new sport
+      this.sportService.addSport(sportData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.sportForm.reset();
+          this.getSports();
+        },
+        error: (err: any) => {
+          console.error('Error saving sport:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
   }
 
-  // Új helyszín létrehozása
+  startUpdateSport(sport: any) {
+    console.log('Editing sport:', sport);
+    this.editingSportId = sport.id;
+    this.sportForm.patchValue({
+      name: sport.name,
+      duration: sport.duration
+    });
+    this.showModal = true;
+  }
+
+  startDeleteSport(sportId: number) {
+    if (confirm('Biztosan törölni szeretnéd ezt a sporágot?')) {
+      this.sportService.deleteSport(sportId).subscribe({
+        next: (result: any) => {
+          this.getSports();
+        },
+        error: (err: any) => {
+          console.error('Error deleting sport:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
+  // Új helyszín létrehozása vagy módosítása vagy törlése
 
   startSaveLocation() {
-    // console.log("Mentés....")
-    // console.log(this.locationForm.value)
-    
     const locationData = {
       name: this.locationForm.value.name,
       address: this.locationForm.value.address,
       email: this.locationForm.value.email
     };
     
-    this.locService.addLocation(locationData).subscribe({
-      next: (result: any) => {
-        // console.log(result)
-        this.showModal = false
-        this.locationForm.reset();
-        this.getLocations()
-      },
-      error: (err: any) => {
-        console.error('Error saving location:', err);
-        console.error('Status:', err.status);
-        console.error('Error message:', err.message);
-      }
-    })
+    if (this.editingLocationId) {
+      // Update existing location
+      this.locService.updateLocation(this.editingLocationId, locationData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.editingLocationId = null;
+          this.locationForm.reset();
+          this.getLocations();
+        },
+        error: (err: any) => {
+          console.error('Error updating location:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    } else {
+      // Create new location
+      this.locService.addLocation(locationData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.locationForm.reset();
+          this.getLocations();
+        },
+        error: (err: any) => {
+          console.error('Error saving location:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
   }
 
-  //Új pályák létrehozása
+  startUpdateLocation(location: any) {
+    console.log('Editing location:', location);
+    this.editingLocationId = location.id;
+    this.locationForm.patchValue({
+      name: location.name,
+      address: location.address,
+      email: location.email
+    });
+    this.showModal = true;
+  }
+
+  startDeleteLocation(locationId: number) {
+    if (confirm('Biztosan törölni szeretnéd ezt a helyszín?')) {
+      this.locService.deleteLocation(locationId).subscribe({
+        next: (result: any) => {
+          this.getLocations();
+        },
+        error: (err: any) => {
+          console.error('Error deleting location:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
+  
+
+  //Új pályák létrehozása vagy módosítása vagy törlése
 
    startSaveField() {
-    // console.log("Mentés....")
-    // console.log(this.fieldForm.value)
-    
     const fieldData = {
       name: this.fieldForm.value.name,
       locationId: this.fieldForm.value.locationId,
       sportId: this.fieldForm.value.sportId
     };
     
-    this.fieldService.addField(fieldData).subscribe({
-      next: (result: any) => {
-        // console.log(result)
-        this.showModal = false
-        this.fieldForm.reset();
-        this.getFields()
-      },
-      error: (err: any) => {
-        console.error('Error saving field:', err);
-        console.error('Status:', err.status);
-        console.error('Error message:', err.message);
-      }
-    })
+    if (this.editingFieldId) {
+      // Update existing field
+      this.fieldService.updateField(this.editingFieldId, fieldData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.editingFieldId = null;
+          this.fieldForm.reset();
+          this.getFields();
+        },
+        error: (err: any) => {
+          console.error('Error updating field:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    } else {
+      // Create new field
+      this.fieldService.addField(fieldData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.fieldForm.reset();
+          this.getFields();
+        },
+        error: (err: any) => {
+          console.error('Error saving field:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
   }
 
-  //Új szabad időpont létrehozása
+  startUpdateField(field: any) {
+    console.log('Editing field:', field);
+    // Set the editing state
+    this.editingFieldId = field.id;
+    // Populate the form with the selected field's data
+    this.fieldForm.patchValue({
+      name: field.name,
+      locationId: field.locationId,
+      sportId: field.sportId
+    });
+    // Open the modal
+    this.showModal = true;
+  }
+
+  startDeleteField(fieldId: number) {
+    if (confirm('Biztosan törlöni szeretnéd ezt a pályát?')) {
+      this.fieldService.deleteField(fieldId).subscribe({
+        next: (result: any) => {
+          this.getFields();
+        },
+        error: (err: any) => {
+          console.error('Error deleting field:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
+  
+
+  //Új szabad időpont létrehozása vagy módosítása vagy törlése
   startSaveAvailableDate() {
-    // console.log("Mentés....")
-    // console.log(this.availableDateForm.value)
-    
     const availableDateData = {
       date: this.availableDateForm.value.date,
       startTime: this.availableDateForm.value.startTime,
-      fieldsId: this.availableDateForm.value.fieldsId
+      fieldId: this.availableDateForm.value.fieldId
     };
     
-    this.availableDateService.addAvailableDate(availableDateData).subscribe({
-      next: (result: any) => {
-        // console.log(result)
-        this.showModal = false
-        this.availableDateForm.reset();
-        this.getAvailableDates()
-      },
-      error: (err: any) => {
-        console.error('Error saving available date:', err);
-        console.error('Status:', err.status);
-        console.error('Error message:', err.message);
-      }
-    })
+    if (this.editingAvailableDateId) {
+      // Update existing date
+      this.availableDateService.updateAvailableDate(this.editingAvailableDateId, availableDateData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.editingAvailableDateId = null;
+          this.availableDateForm.reset();
+          this.getAvailableDates();
+        },
+        error: (err: any) => {
+          console.error('Error updating available date:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    } else {
+      // Create new date
+      this.availableDateService.addAvailableDate(availableDateData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.availableDateForm.reset();
+          this.getAvailableDates();
+        },
+        error: (err: any) => {
+          console.error('Error saving available date:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
   }
+
+  startUpdateAvailableDate(availableDate: any) {
+    console.log('Editing available date:', availableDate);
+    // Set the editing state
+    this.editingAvailableDateId = availableDate.id;
+    // Populate the form with the selected date's data
+    this.availableDateForm.patchValue({
+      date: availableDate.date,
+      startTime: availableDate.startTime,
+      fieldId: availableDate.fieldId
+    });
+    // Open the modal
+    this.showModal = true;
+  }
+
+  startDeleteAvailableDate(availableDateId: number) {
+    if (confirm('Biztosan törölni szeretnéd ezt az időpontot?')) {
+      this.availableDateService.deleteAvailableDate(availableDateId).subscribe({
+        next: (result: any) => {
+          this.getAvailableDates();
+        },
+        error: (err: any) => {
+          console.error('Error deleting available date:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
+  //Új ár létrehozása vagy módosítása vagy törlése
+
+   startSavePrice() {
+    const priceData = {
+      price: this.priceForm.value.price,
+      fieldId: this.priceForm.value.fieldId
+    };
+    
+    if (this.editingPriceId) {
+      // Update existing price
+      this.priceService.updatePrice(this.editingPriceId, priceData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.editingPriceId = null;
+          this.priceForm.reset();
+          this.getPrices();
+        },
+        error: (err: any) => {
+          console.error('Error updating price:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    } else {
+      // Create new price
+      this.priceService.addPrice(priceData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.priceForm.reset();
+          this.getPrices();
+        },
+        error: (err: any) => {
+          console.error('Error saving price:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
+  startUpdatePrice(price: any) {
+    console.log('Editing price:', price);
+    this.editingPriceId = price.id;
+    this.priceForm.patchValue({
+      price: price.price,
+      fieldId: price.fieldId
+    });
+    this.showModal = true;
+  }
+
+  startDeletePrice(priceId: number) {
+    if (confirm('Biztosan törölni szeretnéd ezt az árat?')) {
+      this.priceService.deletePrice(priceId).subscribe({
+        next: (result: any) => {
+          this.getPrices();
+        },
+        error: (err: any) => {
+          console.error('Error deleting price:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
+  //Új foglalás létrehozása vagy módosítása vagy törlése
+   startSaveBooking() {
+    const bookingData = {
+      sportId: this.bookingForm.value.sportId,
+      locationId: this.bookingForm.value.locationId,
+      fieldId: this.bookingForm.value.fieldId,
+      userId: this.bookingForm.value.userId,
+      availableDateId: this.bookingForm.value.availableDateId,
+      priceId: this.bookingForm.value.priceId,
+      date: this.bookingForm.value.date,
+      startTime: this.bookingForm.value.startTime
+    };
+    
+    if (this.editingBookingId) {
+      // Update existing booking
+      this.bookingService.updateBooking(this.editingBookingId, bookingData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.editingBookingId = null;
+          this.bookingForm.reset();
+          this.getBookings();
+        },
+        error: (err: any) => {
+          console.error('Error updating booking:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    } else {
+      // Create new booking
+      this.bookingService.addBooking(bookingData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.bookingForm.reset();
+          this.getBookings();
+        },
+        error: (err: any) => {
+          console.error('Error saving booking:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
+  startUpdateBooking(booking: any) {
+    console.log('Editing booking:', booking);
+    this.editingBookingId = booking.id;
+    this.bookingForm.patchValue({
+      sportId: booking.sportId,
+      locationId: booking.locationId,
+      fieldId: booking.fieldId,
+      userId: booking.userId,
+      availableDateId: booking.availableDateId,
+      priceId: booking.priceId,
+      date: booking.date,
+      startTime: booking.startTime
+    });
+    this.showModal = true;
+  }
+
+  startDeleteBooking(bookingId: number) {
+    if (confirm('Biztosan törölni szeretnéd ezt a foglalást?')) {
+      this.bookingService.deleteBooking(bookingId).subscribe({
+        next: (result: any) => {
+          this.getBookings();
+        },
+        error: (err: any) => {
+          console.error('Error deleting booking:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
+        }
+      });
+    }
+  }
+
 
   //Kijelentkezés
   onSubmit(): void {
@@ -307,5 +777,120 @@ export class AdminComponent {
     window.dispatchEvent(new Event('authStateChanged'));
     this.router.navigate(['/login']);
     console.log('Logout successful!');
+  }
+
+  private parseId(value: unknown): number | null {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  onBookingSportChange() {
+    this.bookingForm.patchValue({
+      fieldId: '',
+      availableDateId: '',
+      priceId: ''
+    });
+  }
+
+  onBookingLocationChange() {
+    this.bookingForm.patchValue({
+      fieldId: '',
+      availableDateId: '',
+      priceId: ''
+    });
+  }
+
+  onBookingFieldChange() {
+    this.bookingForm.patchValue({
+      availableDateId: '',
+      priceId: '',
+      date: '',
+      startTime: ''
+    });
+  }
+
+  onBookingAvailableDateChange() {
+    const availableDateId = this.parseId(this.bookingForm.value.availableDateId);
+    if (!availableDateId || !this.availableDates) {
+      this.bookingForm.patchValue({ date: '', startTime: '' });
+      return;
+    }
+    const availableDate = (this.availableDates as any[]).find(d => d.id === availableDateId);
+    this.bookingForm.patchValue({
+      date: availableDate?.date || '',
+      startTime: availableDate?.startTime || ''
+    });
+  }
+
+  getFilteredFields(): any[] {
+    const sportId = this.parseId(this.bookingForm.value.sportId);
+    const locationId = this.parseId(this.bookingForm.value.locationId);
+    if (!this.fields || !sportId || !locationId) return [];
+    return (this.fields as any[]).filter(
+      field => field.sportId === sportId && field.locationId === locationId
+    );
+  }
+
+  getFilteredAvailableDates(): any[] {
+    const fieldId = this.parseId(this.bookingForm.value.fieldId);
+    if (!this.availableDates || !fieldId) return [];
+    return (this.availableDates as any[]).filter(date => {
+      if (date.fieldId !== fieldId) return false;
+      return !this.isAvailableDateBooked(date.id) || this.isEditingThisAvailableDate(date.id);
+    });
+  }
+
+  getFilteredPrices(): any[] {
+    const fieldId = this.parseId(this.bookingForm.value.fieldId);
+    if (!this.prices || !fieldId) return [];
+    return (this.prices as any[]).filter(price => price.fieldId === fieldId);
+  }
+
+  private isAvailableDateBooked(availableDateId: number): boolean {
+    if (!this.bookings) return false;
+    return (this.bookings as any[]).some(booking => booking.availableDateId === availableDateId);
+  }
+
+  private isEditingThisAvailableDate(availableDateId: number): boolean {
+    if (!this.editingBookingId || !this.bookings) return false;
+    const currentBooking = (this.bookings as any[]).find(b => b.id === this.editingBookingId);
+    return currentBooking?.availableDateId === availableDateId;
+  }
+
+  // Helper methods for booking display
+  getSportName(sportId: number): string {
+    if (!this.sports) return 'N/A';
+    const sport = (this.sports as any[]).find(s => s.id === sportId);
+    return sport?.name || 'N/A';
+  }
+
+  getLocationName(locationId: number): string {
+    if (!this.locations) return 'N/A';
+    const location = (this.locations as any[]).find(l => l.id === locationId);
+    return location?.name || 'N/A';
+  }
+
+  getFieldName(fieldId: number): string {
+    if (!this.fields) return 'N/A';
+    const field = (this.fields as any[]).find(f => f.id === fieldId);
+    return field?.name || 'N/A';
+  }
+
+  getUserName(userId: number): string {
+    if (!this.users) return 'N/A';
+    const user = (this.users as any[]).find(u => u.id === userId);
+    return user?.email || 'N/A';
+  }
+
+  getAvailableDateInfo(availableDateId: number): string {
+    if (!this.availableDates) return 'N/A';
+    const availableDate = (this.availableDates as any[]).find(d => d.id === availableDateId);
+    return availableDate ? `${availableDate.date} ${availableDate.startTime}` : 'N/A';
+  }
+
+  getPriceValue(priceId: number): string {
+    if (!this.prices) return 'N/A';
+    const price = (this.prices as any[]).find(p => p.id === priceId);
+    return price?.price ? `${price.price} Ft` : 'N/A';
   }
 }

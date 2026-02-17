@@ -18,11 +18,13 @@
       <!-- <li><a id="link1" routerLink="/booking">Foglalás</a></li> -->
       <!-- <li><a id="link2" routerLink="/locations">Helyszínek</a></li>
       <li><a id="link3" routerLink="/sports">Sportágak</a></li> -->
-      <li *ngIf="isLoggedIn"><a id="link6" routerLink="/profil">Profil</a>
+      <li *ngIf="isLoggedIn && !isAdminLoggedIn"><a id="link6" routerLink="/profil">Profil</a>
       </li>
+      <li *ngIf="isAdminLoggedIn"><a id="link7" routerLink="/admin">Admin</a></li>
       <li><a id="link4" routerLink="/contact">Kapcsolat</a>
       </li>
       <li *ngIf="!isLoggedIn"><a id="link5" routerLink="/login">Belépés</a></li>
+      <li *ngIf="isLoggedIn"><a id="link8" href="#" (click)="logout(); $event.preventDefault()">Kijelentkezés</a></li>
 
     </ul>
   </nav>

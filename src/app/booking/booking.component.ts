@@ -21,12 +21,13 @@ export class BookingComponent implements OnInit {
   fieldId: number | null = null;
   date: string | null = null;
   startTime: string | null = null;
-  slotId: number | null = null;
+  availableDateId: number | null = null;
 
   sportName: string = '';
   locationName: string = '';
   fieldName: string = '';
   price: string = '';
+  userId: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -38,18 +39,19 @@ export class BookingComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
-      this.sportId = params['sportId'] ? +params['sportId'] : null;
-      this.locationId = params['locationId'] ? +params['locationId'] : null;
-      this.fieldId = params['fieldId'] ? +params['fieldId'] : null;
-      this.date = params['date'] || null;
-      this.startTime = params['startTime'] || null;
-      this.slotId = params['slotId'] ? +params['slotId'] : null;
+    const bookingData = this.bookingService.getBookingData();
+    this.sportId = bookingData.sportId || null;
+    this.locationId = bookingData.locationId || null;
+    this.fieldId = bookingData.fieldId || null;
+    this.userId = bookingData.userId || null;
+    this.date = bookingData.date || null;
+    this.startTime = bookingData.startTime || null;
+    this.availableDateId = bookingData.availableDateId || null;
+    this.price = bookingData.priceId || null;
 
-      if (this.sportId && this.locationId && this.fieldId) {
-        this.loadBookingDetails();
-      }
-    });
+    if (this.sportId && this.locationId && this.fieldId ) {
+      this.loadBookingDetails();
+    }
   }
 
   loadBookingDetails(): void {
@@ -69,12 +71,11 @@ export class BookingComponent implements OnInit {
       }
     });
 
-    // Fetch field name and price
+    // Fetch field name
     this.fieldService.getFields().subscribe({
       next: (res: any) => {
         const field = (res.data ?? res).find((f: any) => f.id === this.fieldId);
         this.fieldName = field?.name || 'N/A';
-        this.price = field?.price || 'N/A';
       }
     });
   }
@@ -84,19 +85,30 @@ export class BookingComponent implements OnInit {
       sportId: this.sportId,
       locationId: this.locationId,
       fieldId: this.fieldId,
+      userId: this.userId,
+      availableDateId: this.availableDateId,
+      priceId: this.price,
       date: this.date,
-      startTime: this.startTime,
-      slotId: this.slotId,
-      price: this.price
+      startTime: this.startTime
     };
 
     console.log('Booking submitted:', bookingData);
 
     // Call booking service to save
-    // this.bookingService.create(bookingData).subscribe({...});
+    this.bookingService.addBooking(bookingData).subscribe({
+      next: (result: any) => {
+        console.log('Booking saved successfully:', result);
+        this.bookingService.clearBookingData();
+        this.router.navigate(['/profil']);
+      },
+      error: (err: any) => {
+        console.error('Error saving booking:', err);
+      }
+    });
   }
 
   goBack(): void {
     this.router.navigate(['/main']);
   }
 }
+

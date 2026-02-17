@@ -2,14 +2,13 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../shared/auth.service';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from "@angular/router";
 import { HttpClient } from '@angular/common/http';
 import { AdminGuard } from '../shared/admin.guard';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink,],
+  imports: [ReactiveFormsModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
 })
@@ -32,11 +31,10 @@ export class LoginComponent {
 
   ngOnInit() {
     this.loginForm = this.builder.group({
-      name: [''],
+      email: [''],
       password: [''],
     });
     this.registerForm = this.builder.group({
-      name: [''],
       email: [''],
       phone: [''],
       fullname: [''],
@@ -130,11 +128,10 @@ export class LoginComponent {
         this.router.navigate(['/profil']);
       },
       error: (error: any) => {
-        const nameControl = this.registerForm.get('name');
         const emailControl = this.registerForm.get('email');
         console.log('error:', error);
         if (error.error.message.includes('User already exists')) {
-          console.log(nameControl.errors);
+          console.log(emailControl?.errors);
           alert('Felhasználó már létezik!');
         } else {
           alert('Hibás regisztrációs adatok!');

@@ -24,4 +24,14 @@ export class FieldService {
     const url ='http://localhost:8000/api/fields';
     return this.http.post(url, field, { headers: this.getHeaders() });
   }
+
+   updateField(id: number, field: any) {
+    const url = `http://localhost:8000/api/fields/${id}`;
+    return this.http.put(url, field, { headers: this.getHeaders() });
+  }
+
+  deleteField(id: number) {
+    const url = `http://localhost:8000/api/fields/${id}`;
+    return this.http.delete(url, { headers: this.getHeaders() });
+  }
 }
