@@ -5,7 +5,8 @@ admin@admin.com
 titok
 
 Frontend feladat:
-	Alertek helyett sweetalert2 használata
+	Alertek helyett sweetalert2 használata 
+	https://szit.hu/doku.php?id=oktatas:web:angular:angular_sweetalert2
 
 	Foglalások párhuzamosan való ellenörzése
 	Foglalás megerősítése (gomb) --> átvisz a fizetés felületre
