@@ -1,5 +1,8 @@
 TODO list
 202
+Levi:
+	Reszponzivitás:
+		admin és profil és booking felület --> bootstrap kártya formátum
 
 admin@admin.com
 titok
@@ -34,8 +37,7 @@ Frontend feladat:
 			foglalás törlése	(csak értesítést küldjön róla --> csak admin teheti meg)
 		Profil törlése (csak értesítést küldjön róla --> csak admin teheti meg)
 
-	Reszponzivitás:
-		admin és profil és booking felület --> bootstrap kártya formátum
+
 	
 	Főoldal:
 		Sportok megjelenése -->  card
