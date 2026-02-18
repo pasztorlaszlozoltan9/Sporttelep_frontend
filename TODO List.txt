@@ -1,21 +1,14 @@
 TODO list
 202
 
-Frontend feladat:
-	Főoldal:
-		Sportok megjelenése -->  card
-		Sportra kattintás (click) --> felugrik egy naptár, ahol kiválasztás után megjelenik az elérhető helyszínek listája
-		Helyszínre kattintás (click) --> alul jelnleg meg az elérhető pályák és áraik
-		Pályára kattintás (click) --> kiválasztja a pályát
-		
-		Foglalásra katttintás --> Átvisz a booking.html-re a kiválasztott adatokkal
+admin@admin.com
+titok
 
-		Foglalás:
-		Időpontfoglaló létrehozása:
-			Szabad időpontok backendről importálása
-		Megjelenés:
-			Sport (idő (60 perc)); helyszín; pálya; Ár; Dátum; Kezdő idő
-			Foglalás megerősítése (gomb) --> átvisz a fizetés felületre
+Frontend feladat:
+	Alertek helyett sweetalert2 használata
+
+	Foglalások párhuzamosan való ellenörzése
+	Foglalás megerősítése (gomb) --> átvisz a fizetés felületre
 
 	Fizetés (simpleyPay teszt felület):
 		Számlázási adatok:
@@ -23,28 +16,28 @@ Frontend feladat:
 			- Adószám (csak cégek részére)
 			- Lakcím (irányítószám, utca név, házszám, város, ország)
 			- Email cím
+	
+	Sikeres foglalásról email: 
+	https://szit.hu/doku.php?id=oktatas:web:express:e-mail_kueldes
+
+	
 
 	Bejelenkezés:
 		Apple, Google, Facebook integrálása
 	Regisztráció:
-		Megerősítő email küldése
+		Megerősítő email küldése: https://szit.hu/doku.php?id=oktatas:web:express:e-mail_kueldes
 
 	Profil:
-		Személyes adatok (teljes név, email cím, telefonszám, )
 		Foglalások (email figyelmeztetés 24 órával korábban --> ingyenes lemondás 20 órával korábban)
 			foglalás módosítása (csak értesítést küldjön róla --> csak admin teheti meg)
 			foglalás törlése	(csak értesítést küldjön róla --> csak admin teheti meg)
 		Profil törlése (csak értesítést küldjön róla --> csak admin teheti meg)
-		Kijelentkezés (újratölti az oldalt adatok nélkül)
 
-Gyöngyi:
-Backend feladat:
-	Minden helyszínen 3 sportág
-	Minden sportág legyen legalább 1 helyszínen
-	Pályák létrehozás (Minden helyszínen legyen legalább 1 sport 2 pályával)
-	User létrehozás (3 darab)
-	Admin létrehozás (1 darab)
-	Szabad időpontok létrehozása (Minden pályához tartozzon napi 2 időpont)
+	Reszponzivitás:
+		admin és profil és booking felület --> bootstrap kártya formátum
 	
-	
-	
+	Főoldal:
+		Sportok megjelenése -->  card
+		Sportra kattintás (click) --> felugrik egy naptár, ahol kiválasztás után megjelenik az elérhető helyszínek listája
+		Helyszínre kattintás (click) --> alul jelnleg meg az elérhető pályák és áraik
+		Pályára kattintás (click) --> kiválasztja a pályát
