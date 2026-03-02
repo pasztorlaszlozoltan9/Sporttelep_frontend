@@ -4,6 +4,7 @@ import { AuthService } from '../shared/auth.service';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AdminGuard } from '../shared/admin.guard';
+import  Swal from  'sweetalert2';
 
 @Component({
   selector: 'app-login',
@@ -103,8 +104,10 @@ export class LoginComponent {
         },50);
       },
       error: () => {
-
-        alert('Hibás felhasználónév vagy jelszó!')
+        Swal.fire({
+          title: "Hibás felhasználónév vagy jelszó",
+          icon: "error"
+        });
       }
     })
 
@@ -121,15 +124,25 @@ export class LoginComponent {
       next: (response: any) => {
         localStorage.setItem('token', response.accessToken);
         this.registerForm.reset();
-        alert('Sikeres regisztráció!');
+        Swal.fire({
+          title: "Sikeres regisztráció!",
+          icon: "success",
+          draggable: true
+        });
         this.router.navigate(['/profil']);
       },
       error: (error: any) => {
         const emailControl = this.registerForm.get('email');
         if (error.error.message.includes('User already exists')) {
-          alert('Felhasználó már létezik!');
+          Swal.fire({
+            title: "Felhasználó már létezik!",
+            icon: "error"
+          });
         } else {
-          alert('Hibás regisztrációs adatok!');
+          Swal.fire({
+            title:"Hiba a regisztráció során!",
+            icon: "error"
+          })
         }
       }
     });
