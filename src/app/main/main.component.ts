@@ -7,6 +7,7 @@ import { FieldService } from '../shared/field.service';
 import { AvailabledateService } from '../shared/availabledate.service';
 import { PriceService } from '../shared/price.service';
 import { BookingService } from '../shared/booking.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-main',
@@ -161,8 +162,8 @@ export class MainComponent implements OnInit {
 
   goToBooking(): void {
     if (!this.userId) {
-      alert('Foglaláshoz be kell jelentkezned! Kérjük, bejelentkezz vagy regisztrálj.');
       this.router.navigate(['/login']);
+      Swal.fire("Foglaláshoz be kell jelentkezned! Kérjük, bejelentkezz vagy regisztrálj.");
       return;
     }
     

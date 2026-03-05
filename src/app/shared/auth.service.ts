@@ -30,5 +30,9 @@ export class AuthService {
     this.router.navigate(['/login']);
 
   }
-  
+
+  sendVerificationToken(token: string) {
+    const url = this.host + '/verify-email/' + token
+    return this.http.get(url)
+  }
 }
