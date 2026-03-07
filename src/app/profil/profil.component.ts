@@ -4,6 +4,8 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { AdminService } from '../shared/admin.service';
+import { AuthService } from '../shared/auth.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-profil',
@@ -26,18 +28,21 @@ export class ProfilComponent implements OnInit {
   protected fields: any = []
   protected prices: any = []
   protected availableDates: any = []
-  
+
   protected editingUserId: number | null = null;
   protected showModal = false;
   protected showPasswordModal = false;
+  protected showDeleteModal = false;
+  protected deletingUserId: number | null = null;
 
   protected userForm = this.builder.group({
     email: '',
     password: '',
-    password_confirmation: '',
+    currentPassword: '',
     phone: '',
     fullname: '',
-    roleId: ''
+    roleId: '',
+    verified: ''
   })
 
   protected passwordForm = this.builder.group({
@@ -45,9 +50,15 @@ export class ProfilComponent implements OnInit {
     password_confirmation: ''
   })
 
+  protected deleteForm = this.builder.group({
+    password: '',
+    password_confirmation: ''
+  })
+
   constructor(
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private auth: AuthService
   ) { }
 
   startShowModal() {
@@ -70,6 +81,12 @@ export class ProfilComponent implements OnInit {
   startClosePasswordModal() {
     this.showPasswordModal = false;
     this.passwordForm.reset();
+  }
+
+  startCloseDeleteModal() {
+    this.showDeleteModal = false;
+    this.deletingUserId = null;
+    this.deleteForm.reset();
   }
 
 
@@ -131,28 +148,82 @@ export class ProfilComponent implements OnInit {
     }
   }
 
-  startSave() {
+  async startSave() {
+    const confirmation = await Swal.fire({
+      title: 'Biztosan mented a változtatásokat?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Mentés',
+      cancelButtonText: 'Mégsem'
+    });
+
+    if (!confirmation.isConfirmed) {
+      return;
+    }
+
     if (this.editingUserId) {
+      
+      const currentPassword = this.userForm.value.currentPassword?.trim();
+      const loginEmail = this.user?.email?.trim();
+
+      if (!currentPassword) {
+        Swal.fire({
+          title: 'Add meg a jelenlegi jelszavad!',
+          icon: 'error'
+        });
+        return;
+      }
+
+      if (!loginEmail) {
+        Swal.fire({
+          title: 'A felhasználói email nem elérhető a hitelesítéshez!',
+          icon: 'error'
+        });
+        return;
+      }
+
       // Update existing user - include roleId
       const userData: any = {
         email: this.userForm.value.email,
         password: this.userForm.value.password,
         phone: this.userForm.value.phone,
         fullname: this.userForm.value.fullname,
-        roleId: this.userForm.value.roleId
+        roleId: this.userForm.value.roleId,
+        verified: this.userForm.value.verified
       };
+      
 
-      this.api.updateUser(this.editingUserId, userData).subscribe({
-        next: (result: any) => {
-          this.showModal = false;
-          this.editingUserId = null;
-          this.userForm.reset();
-          this.loadUserData();
+      this.auth.login({ email: loginEmail, password: currentPassword }).subscribe({
+        next: () => {
+          this.api.updateUser(this.editingUserId!, userData).subscribe({
+            next: (result: any) => {
+              this.showModal = false;
+              this.editingUserId = null;
+              this.userForm.reset();
+              Swal.fire({
+                title: "Sikeres módosítás!",
+                icon: "success",
+                draggable: true
+              });
+              this.loadUserData();
+            },
+            error: (err: any) => {
+              Swal.fire({
+                title: "Hiba történt a módosítás során!",
+                icon: "error",
+                draggable: true
+              });
+              console.error('Error updating user:', err);
+              console.error('Status:', err.status);
+              console.error('Error message:', err.message);
+            }
+          });
         },
-        error: (err: any) => {
-          console.error('Error updating user:', err);
-          console.error('Status:', err.status);
-          console.error('Error message:', err.message);
+        error: () => {
+          Swal.fire({
+            title: 'Hibás jelszó! A mentés megszakítva.',
+            icon: 'error'
+          });
         }
       });
     } else {
@@ -160,7 +231,7 @@ export class ProfilComponent implements OnInit {
       const userData: any = {
         email: this.userForm.value.email,
         password: this.userForm.value.password,
-        password_confirmation: this.userForm.value.password_confirmation,
+        // password_confirmation: this.userForm.value.password_confirmation,
         phone: this.userForm.value.phone,
         fullname: this.userForm.value.fullname
       };
@@ -169,8 +240,18 @@ export class ProfilComponent implements OnInit {
         next: (result: any) => {
           this.showModal = false;
           this.userForm.reset();
+          Swal.fire({
+            title: "Sikeres létrehozás!",
+            icon: "success",
+            draggable: true
+          });
         },
         error: (err: any) => {
+          Swal.fire({
+            title: "Hiba történt a létrehozás során!",
+            icon: "error",
+            draggable: true
+          });
           console.error('Error saving user:', err);
           console.error('Status:', err.status);
           console.error('Error message:', err.message);
@@ -183,29 +264,107 @@ export class ProfilComponent implements OnInit {
     this.editingUserId = user.id;
     this.userForm.patchValue({
       email: user.email,
+      currentPassword: '',
       phone: user.phone,
       fullname: user.fullname,
-      roleId: user.roleId
+      roleId: user.roleId,
+      verified: user.verified
     });
     this.showModal = true;
   }
 
-  startDeleteUser(userId: number) {
-    if (confirm('Biztosan törölni szeretnéd ezt a felhasználót?')) {
-      this.api.deleteUser(userId).subscribe({
-        next: (result: any) => {
+  async startDeleteUser(userId: number) {
+    const confirmation = await Swal.fire({
+      title: 'Biztosan törölni szeretnéd ezt a felhasználót?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Törlés',
+      cancelButtonText: 'Mégsem'
+    });
 
-        },
-        error: (err: any) => {
-          console.error('Error deleting user:', err);
-          console.error('Status:', err.status);
-          console.error('Error message:', err.message);
-        }
-      });
+    if (!confirmation.isConfirmed) {
+      return;
     }
+
+    this.deletingUserId = userId;
+    this.deleteForm.reset();
+    this.showDeleteModal = true;
   }
 
-  startSavePassword() {
+  confirmDeleteUser() {
+    const password = this.deleteForm.value.password?.trim();
+    const passwordConfirmation = this.deleteForm.value.password_confirmation?.trim();
+    const loginEmail = this.user?.email?.trim();
+
+    if (!password || !passwordConfirmation) {
+      Swal.fire({
+        title: 'A törléshez add meg a jelszót és a megerősítést!',
+        icon: 'error'
+      });
+      return;
+    }
+
+    if (password !== passwordConfirmation) {
+      Swal.fire({
+        title: 'A két jelszó nem egyezik!',
+        icon: 'error'
+      });
+      return;
+    }
+
+    if (!loginEmail || !this.deletingUserId) {
+      Swal.fire({
+        title: 'Hiányzik felhasználói adat a törléshez!',
+        icon: 'error'
+      });
+      return;
+    }
+
+    this.auth.login({ email: loginEmail, password }).subscribe({
+      next: () => {
+        this.api.deleteUser(this.deletingUserId!).subscribe({
+          next: () => {
+            this.startCloseDeleteModal();
+            Swal.fire({
+              title: 'Sikeres törlés!',
+              icon: 'success',
+              draggable: true
+            });
+            this.auth.logout();
+          },
+          error: (err: any) => {
+            console.error('Error deleting user:', err);
+            console.error('Status:', err.status);
+            console.error('Error message:', err.message);
+            Swal.fire({
+              title: 'Hiba történt a törlés során!',
+              icon: 'error'
+            });
+          }
+        });
+      },
+      error: () => {
+        Swal.fire({
+          title: 'Hibás jelszó! A törlés megszakítva.',
+          icon: 'error'
+        });
+      }
+    });
+  }
+
+  async startSavePassword() {
+    const confirmation = await Swal.fire({
+      title: 'Biztosan mented az új jelszót?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Mentés',
+      cancelButtonText: 'Mégsem'
+    });
+
+    if (!confirmation.isConfirmed) {
+      return;
+    }
+
     const password = this.passwordForm.value.password?.trim();
     const passwordConfirmation = this.passwordForm.value.password_confirmation?.trim();
 
@@ -240,6 +399,11 @@ export class ProfilComponent implements OnInit {
     }).subscribe({
       next: (response: any) => {
         this.showPasswordModal = false;
+        Swal.fire({
+          title: "Sikeres módosítás!",
+          icon: "success",
+          draggable: true
+        });
         this.passwordForm.reset();
       },
       error: (err: any) => {

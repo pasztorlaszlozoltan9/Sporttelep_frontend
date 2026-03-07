@@ -25,6 +25,11 @@ export class AuthService {
     return this.http.post(url, user)
   }
 
+  googleLogin(idToken: string, phoneNumber: string) {
+    const url = this.host + 'google-signin';
+    return this.http.post(url, { idToken, phoneNumber });
+  }
+
   logout(){
     localStorage.removeItem('token');
     this.router.navigate(['/login']);

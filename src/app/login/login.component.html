@@ -1,7 +1,6 @@
 <head>
     <meta charset="utf-8">
     <title>Bejelentkezés</title>
-
 </head>
 
 <table>
@@ -30,9 +29,13 @@
                     <input type="password" class="form-control" id="login-password" formControlName="password">
                 </div>
 
-                <button class="btn btn-primary" type="submit">Belépés</button>
-
+                <button class="btn btn-primary mb-4" type="submit">Belépés</button>
             </form>
+
+            <p>Vagy</p>
+
+            <div id="googleSignInButton"></div>
+
         </td>
         <td class="registration">
             <form [formGroup]="registerForm" (ngSubmit)="register()">

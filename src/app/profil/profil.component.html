@@ -12,7 +12,6 @@
       <thead>
         <tr>
           <th><label class="form-label">Email</label></th>
-          <th><label class="form-label">Jelszo</label></th>
           <th><label class="form-label">Telefonszám</label></th>
           <th><label class="form-label">Teljes Név</label></th>
           <th><label class="form-label">Műveletek</label></th>
@@ -21,9 +20,7 @@
         <td>
           <input type="text" class="form-control" [value]="user.email" readonly>
         </td>
-        <td>
-          <input type="password" class="form-control" [value]="user.password" readonly>
-        </td>
+
         <td>
           <input type="text" class="form-control" [value]="user.phone" readonly>
         </td>
@@ -64,10 +61,10 @@
                             <label for="password" class="form-label">Jelszó</label>
                             <input type="password" class="form-control" formControlName="password" id="password">
                         </div>
-                        @if (!editingUserId) {
+                        @if (editingUserId) {
                         <div>
-                            <label for="password_confirmation" class="form-label">Jelszó megerősítés</label>
-                            <input type="password" class="form-control" formControlName="password_confirmation" id="password_confirmation">
+                          <label for="currentPassword" class="form-label">Jelszó Megerősítés</label>
+                          <input type="password" class="form-control" formControlName="currentPassword" id="currentPassword">
                         </div>
                         }
                         <div>
@@ -78,12 +75,6 @@
                             <label for="fullname" class="form-label">Teljes név</label>
                             <input type="text" class="form-control" formControlName="fullname" id="fullname">
                         </div>
-                        @if (editingUserId) {
-                        <div>
-                            <label for="roleId" class="form-label">Szerepkör ID</label>
-                            <input type="number" class="form-control" formControlName="roleId" id="roleId">
-                        </div>
-                        }
                     </form>
 
 
@@ -124,6 +115,35 @@
                 </div>
             </div>
         </div>
+    </div>
+    }
+
+    @if (showDeleteModal === true) {
+    <div class="modal" tabindex="-1" style="display: block;">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Felhasznalo torlese</h5>
+            <button type="button" class="btn-close" (click)="startCloseDeleteModal()" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form [formGroup]="deleteForm" (ngSubmit)="confirmDeleteUser()" id="deleteForm">
+              <div>
+                <label for="deletePassword" class="form-label">Jelszo</label>
+                <input type="password" class="form-control" formControlName="password" id="deletePassword">
+              </div>
+              <div>
+                <label for="deleteConfirmPassword" class="form-label">Jelszo megerositese</label>
+                <input type="password" class="form-control" formControlName="password_confirmation" id="deleteConfirmPassword">
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="startCloseDeleteModal()">Bezárás</button>
+            <button type="submit" class="btn btn-danger" form="deleteForm">Torles vegrehajtasa</button>
+          </div>
+        </div>
+      </div>
     </div>
     }
 
