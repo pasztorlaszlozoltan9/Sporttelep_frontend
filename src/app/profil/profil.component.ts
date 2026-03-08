@@ -16,6 +16,15 @@ import Swal from 'sweetalert2';
   styleUrls: ['./profil.component.css']
 })
 export class ProfilComponent implements OnInit {
+  private readonly defaultCardImage: string = 'pics/index_background.jpg';
+  private readonly locationImageByKey: Record<string, string> = {
+    'bme sporttelep': 'bme sporttelep.jpg',
+    'pokorny jozsef sport es szabadidokozpont': 'Pokorny József Sport- és Szabadidőközpont.jpg',
+    'varosligeti sportcentrum': 'városligeti sportcentrum.jpg',
+    'ujbudai sportcentrum': 'Újbudai Sportcentrum.jpg',
+    'ujpalotai uti sporttelep': 'Újpalotai úti Sporttelep.jpg'
+  };
+
   private readonly emailJsServiceId: string = 'sporttelepek_0825';
   private readonly emailJsBookingUpdateTemplateId: string = 'template_pz3d5z8';
   private readonly emailJsBookingDeleteTemplateId: string = 'template_9cdc5ki';
@@ -451,7 +460,20 @@ export class ProfilComponent implements OnInit {
 
   getUserBookings(): any[] {
     if (!this.user?.id || !this.bookings) return [];
-    return this.bookings.filter((b: any) => b.userId === this.user.id);
+    return (this.bookings as any[])
+      .filter((b: any) => b.userId === this.user.id)
+      .sort((a: any, b: any) => {
+        const firstDate = String(a?.date ?? '');
+        const secondDate = String(b?.date ?? '');
+        const dateCompare = firstDate.localeCompare(secondDate);
+        if (dateCompare !== 0) {
+          return dateCompare;
+        }
+
+        const firstStart = String(a?.startTime ?? '');
+        const secondStart = String(b?.startTime ?? '');
+        return firstStart.localeCompare(secondStart);
+      });
   }
 
   getSportName(sportId: number): string {
@@ -464,6 +486,38 @@ export class ProfilComponent implements OnInit {
     if (!this.locations) return 'N/A';
     const location = (this.locations as any[]).find(l => l.id === locationId);
     return location?.name || 'N/A';
+  }
+
+  private normalizeNameKey(value: string): string {
+    return String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  private encodePathSegments(path: string): string {
+    return path
+      .split('/')
+      .map((segment: string) => encodeURIComponent(segment))
+      .join('/');
+  }
+
+  getLocationCardImage(locationId: number): string {
+    if (!this.locations) {
+      return this.defaultCardImage;
+    }
+
+    const location = (this.locations as any[]).find((l: any) => l.id === locationId);
+    const locationName = String(location?.name ?? '').trim();
+    if (!locationName) {
+      return this.defaultCardImage;
+    }
+
+    const mapped = this.locationImageByKey[this.normalizeNameKey(locationName)] ?? `${locationName}.jpg`;
+    return this.encodePathSegments(`pics/locations/${mapped}`);
   }
 
   getFieldName(fieldId: number): string {
@@ -701,7 +755,7 @@ export class ProfilComponent implements OnInit {
         }
 
         await Swal.fire({
-          title: 'Sikeres módosítás és email értesítés!',
+          title: 'Sikeres módosítás!',
           icon: 'success'
         });
       },
@@ -784,7 +838,7 @@ export class ProfilComponent implements OnInit {
             }
 
             await Swal.fire({
-              title: 'Sikeres törlés és email értesítés!',
+              title: 'Sikeres törlés!',
               icon: 'success'
             });
           },

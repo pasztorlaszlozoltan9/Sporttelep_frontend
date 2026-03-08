@@ -18,22 +18,33 @@ export class VerifyEmailComponent {
   error = false
 
   ngOnInit() {
-    //Token kinyerése az URL-ből
+    // Token kinyerése az URL-ből.
     const token = this.route.snapshot.paramMap.get('token')
-    console.log('Token:', token)
-    if (token) {
-      //Küldés a backend-nek
-      this.auth.sendVerificationToken(token).subscribe({
-        next: () => {
-          this.loading = false
-          this.success = true
-        },
-        error: () => {
-          this.loading = false
-          this.error = true
-        }
-      })
+    if (!token) {
+      this.loading = false
+      this.error = true
+      return
     }
+
+    // Küldés a backendnek.
+    this.auth.sendVerificationToken(token).subscribe({
+      next: () => {
+        this.loading = false
+        this.success = true
+      },
+      error: () => {
+        this.loading = false
+        this.error = true
+      }
+    })
+  }
+
+  goToLogin(): void {
+    this.router.navigate(['/login'])
+  }
+
+  goToHome(): void {
+    this.router.navigate(['/'])
   }
 
 }

@@ -1,14 +1,30 @@
+<section class="verify-shell">
+    <div class="verify-card">
+        <p class="verify-eyebrow">Email hitelesítés</p>
 
-@if(loading) {
-    <div class="spinner-border text-info" role="status">
-    <span class="visually-hidden">Ellenőrzés...</span>
+        @if (loading) {
+        <div class="status-icon loading" aria-label="Ellenőrzés folyamatban"></div>
+        <h1>Megerősítés folyamatban...</h1>
+        <p>Ellenőrizzük a megerősítő linkedet. Ez csak néhány másodperc.</p>
+        }
+
+        @if (success) {
+        <div class="status-icon success" aria-label="Sikeres megerősítés">✓</div>
+        <h1>Sikeres email megerősítés</h1>
+        <p>A fiókod aktiválva lett. Most már be tudsz jelentkezni.</p>
+        <div class="verify-actions">
+            <button class="primary-btn" type="button" (click)="goToLogin()">Tovább a bejelentkezéshez</button>
+        </div>
+        }
+
+        @if (error) {
+        <div class="status-icon error" aria-label="Sikertelen megerősítés">!</div>
+        <h1>Sikertelen megerősítés</h1>
+        <p>A megerősítő link lejárt vagy érvénytelen. Kérj új megerősítő emailt, majd próbáld újra.</p>
+        <div class="verify-actions">
+            <button class="secondary-btn" type="button" (click)="goToLogin()">Vissza a bejelentkezéshez</button>
+            <button class="primary-btn" type="button" (click)="goToHome()">Főoldal</button>
+        </div>
+        }
     </div>
-}
-
-@if(success) {
-    Sikeres regisztráció!
-}
-
-@if(error) {
-    Sikertelen regisztráció!
-}
+</section>

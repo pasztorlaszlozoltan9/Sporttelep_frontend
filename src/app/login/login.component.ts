@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../shared/auth.service';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AdminGuard } from '../shared/admin.guard';
 import  Swal from  'sweetalert2';
@@ -15,9 +15,13 @@ import  Swal from  'sweetalert2';
 })
 export class LoginComponent {
   private readonly googleClientId = '201182991102-dc6nvg3uf9dvf30dp4bs6igmcrjcq4vh.apps.googleusercontent.com';
+  private googleResizeTimeout: any = null;
+  private readonly onResizeHandler = () => this.scheduleGoogleButtonRender();
+  title = "Bejelentkezés";
 
   loginForm !: any;
   registerForm !: any;
+  showRegisterForm: boolean = false;
   user: any = null;
   host = 'http://localhost:8000/api/'
 
@@ -37,15 +41,28 @@ export class LoginComponent {
       password: [''],
     });
     this.registerForm = this.builder.group({
-      email: [''],
-      phone: [''],
-      fullname: [''],
-      password: [''],
-      password_confirmation: ['']
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', Validators.required],
+      fullname: ['', Validators.required],
+      password: ['', [Validators.required]],
+      password_confirmation: ['', [Validators.required]]
     })
 
     this.loadUserData();
     this.initializeGoogleSignIn();
+    window.addEventListener('resize', this.onResizeHandler);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.onResizeHandler);
+    if (this.googleResizeTimeout) {
+      clearTimeout(this.googleResizeTimeout);
+      this.googleResizeTimeout = null;
+    }
+  }
+
+  toggleRegisterForm(): void {
+    this.showRegisterForm = !this.showRegisterForm;
   }
 
   loadUserData(): void {
@@ -109,15 +126,35 @@ export class LoginComponent {
     const googleButtonContainer = document.getElementById('googleSignInButton');
     if (googleButtonContainer) {
       googleButtonContainer.innerHTML = '';
+      const containerWidth =
+        googleButtonContainer.clientWidth ||
+        googleButtonContainer.parentElement?.clientWidth ||
+        320;
+      const responsiveWidth = Math.min(
+        Math.max(containerWidth - 8, 180),
+        420
+      );
+
       win.google.accounts.id.renderButton(googleButtonContainer, {
         type: 'standard',
         theme: 'outline',
         size: 'large',
-        text: 'signin_with',
+        text: 'continue_with',
         shape: 'rectangular',
-        width: 260
+        width: responsiveWidth,
+        logo_alignment: 'left'
       });
     }
+  }
+
+  private scheduleGoogleButtonRender(): void {
+    if (this.googleResizeTimeout) {
+      clearTimeout(this.googleResizeTimeout);
+    }
+
+    this.googleResizeTimeout = setTimeout(() => {
+      this.initializeGoogleSignIn();
+    }, 120);
   }
 
   private handleGoogleCredential(response: any): void {
@@ -348,6 +385,35 @@ export class LoginComponent {
       return;
     }
 
+    const password = String(this.registerForm.value.password ?? '');
+    const passwordConfirmation = String(this.registerForm.value.password_confirmation ?? '');
+
+    if (!this.isPasswordValid(password)) {
+      Swal.fire({
+        title: 'Gyenge jelszó',
+        text: 'A jelszónak legalább 8 karakterből kell állnia, és tartalmaznia kell kisbetűt, nagybetűt, valamint speciális karaktert.',
+        icon: 'warning'
+      });
+      return;
+    }
+
+    if (password !== passwordConfirmation) {
+      Swal.fire({
+        title: 'A két jelszó nem egyezik',
+        icon: 'warning'
+      });
+      return;
+    }
+
+    if (this.registerForm.invalid) {
+      Swal.fire({
+        title: 'Hiányzó adatok',
+        text: 'Tölts ki minden kötelező mezőt helyesen.',
+        icon: 'warning'
+      });
+      return;
+    }
+
     this.auth.register(this.registerForm.value).subscribe({
       next: (response: any) => {
         localStorage.removeItem('token');
@@ -375,6 +441,35 @@ export class LoginComponent {
         }
       }
     });
+  }
+
+  protected isPasswordLongEnough(): boolean {
+    const password = String(this.registerForm?.value?.password ?? '');
+    return password.length >= 8;
+  }
+
+  protected hasLowercaseInPassword(): boolean {
+    const password = String(this.registerForm?.value?.password ?? '');
+    return /[a-z]/.test(password);
+  }
+
+  protected hasUppercaseInPassword(): boolean {
+    const password = String(this.registerForm?.value?.password ?? '');
+    return /[A-Z]/.test(password);
+  }
+
+  protected hasSpecialCharInPassword(): boolean {
+    const password = String(this.registerForm?.value?.password ?? '');
+    return /[^A-Za-z0-9]/.test(password);
+  }
+
+  protected isPasswordValid(password: string): boolean {
+    const minLengthOk = password.length >= 8;
+    const lowercaseOk = /[a-z]/.test(password);
+    const uppercaseOk = /[A-Z]/.test(password);
+    const specialOk = /[^A-Za-z0-9]/.test(password);
+
+    return minLengthOk && lowercaseOk && uppercaseOk && specialOk;
   }
 
 }

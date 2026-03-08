@@ -1,38 +1,90 @@
-<div class="payment-container">
-  <h2>Fieztés</h2>
+<section class="payment-shell">
+  <header class="payment-header">
+    <h2>Fizetés</h2>
+    <p>Ellenőrizd az adatokat, majd véglegesítsd a foglalást.</p>
+  </header>
 
-  <div class="summary">
-    <p><strong>Összeg:</strong> {{ amountLabel }}</p>
+  <div class="payment-card">
+    <div class="summary">
+      <span class="summary-label">Fizetendő összeg</span>
+      <strong class="summary-value">{{ amountLabel }}</strong>
+    </div>
+
+    <form (ngSubmit)="submitPayment()" class="payment-form">
+      <div class="form-row full">
+        <label for="cardName">Kártyabirtokos neve</label>
+        <input id="cardName" name="cardName" type="text" [(ngModel)]="cardName" required>
+      </div>
+
+      <div class="form-row full">
+        <label for="billingEmail">Számlázási email cím</label>
+        <input id="billingEmail" name="billingEmail" type="email" [(ngModel)]="billingEmail" required>
+      </div>
+
+      <div class="form-row full">
+        <label for="cardNumber">Kártyaszám</label>
+        <input
+          id="cardNumber"
+          name="cardNumber"
+          type="text"
+          maxlength="19"
+          inputmode="numeric"
+          placeholder="1234 5678 9012 3456"
+          [(ngModel)]="cardNumber"
+          (ngModelChange)="onCardNumberInput($event)"
+          required
+        >
+      </div>
+
+      <div class="split-row">
+        <div class="form-row">
+          <label for="expiryMonth">Lejárat (hó)</label>
+          <input
+            id="expiryMonth"
+            name="expiryMonth"
+            type="text"
+            maxlength="2"
+            inputmode="numeric"
+            placeholder="MM"
+            [(ngModel)]="expiryMonth"
+            (ngModelChange)="onExpiryMonthInput($event)"
+            required
+          >
+        </div>
+        <div class="form-row">
+          <label for="expiryYear">Lejárat (év)</label>
+          <input
+            id="expiryYear"
+            name="expiryYear"
+            type="text"
+            maxlength="2"
+            inputmode="numeric"
+            placeholder="YY"
+            [(ngModel)]="expiryYear"
+            (ngModelChange)="onExpiryYearInput($event)"
+            required
+          >
+        </div>
+        <div class="form-row">
+          <label for="cvc">CVC</label>
+          <input
+            id="cvc"
+            name="cvc"
+            type="password"
+            maxlength="3"
+            inputmode="numeric"
+            placeholder="123"
+            [(ngModel)]="cvc"
+            (ngModelChange)="onCvcInput($event)"
+            required
+          >
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Fizetés</button>
+        <button type="button" class="btn btn-secondary" (click)="cancel()">Mégse</button>
+      </div>
+    </form>
   </div>
-
-  <form (ngSubmit)="submitPayment()" class="payment-form">
-    <label for="cardName">Kártya tulajdonos neve</label>
-    <input id="cardName" name="cardName" type="text" [(ngModel)]="cardName" required>
-
-    <label for="billingEmail">Email cím</label>
-    <input id="billingEmail" name="billingEmail" type="email" [(ngModel)]="billingEmail" required>
-
-    <label for="cardNumber">Kártyaszám</label>
-    <input id="cardNumber" name="cardNumber" type="text" maxlength="16" inputmode="numeric" placeholder="1234567890123456" [(ngModel)]="cardNumber" (ngModelChange)="onCardNumberInput($event)" required>
-
-    <div class="row">
-      <div>
-        <label for="expiryMonth">Lejárat (hó)</label>
-        <input id="expiryMonth" name="expiryMonth" type="text" maxlength="2" inputmode="numeric" placeholder="MM" [(ngModel)]="expiryMonth" (ngModelChange)="onExpiryMonthInput($event)" required>
-      </div>
-      <div>
-        <label for="expiryYear">Lejárat (év)</label>
-        <input id="expiryYear" name="expiryYear" type="text" maxlength="2" inputmode="numeric" placeholder="YY" [(ngModel)]="expiryYear" (ngModelChange)="onExpiryYearInput($event)" required>
-      </div>
-      <div>
-        <label for="cvc">CVC</label>
-        <input id="cvc" name="cvc" type="password" maxlength="3" inputmode="numeric" placeholder="123" [(ngModel)]="cvc" (ngModelChange)="onCvcInput($event)" required>
-      </div>
-    </div>
-
-    <div class="actions">
-      <button type="submit" class="btn primary">Fizetés</button>
-      <button type="button" class="btn secondary" (click)="cancel()">Mégse</button>
-    </div>
-  </form>
-</div>
+</section>

@@ -50,8 +50,8 @@ export class PaymentComponent implements OnInit {
 
     if (!this.bookingData?.sportId || !this.bookingData?.locationId || !this.bookingData?.fieldId || !this.bookingData?.availableDateId) {
       Swal.fire({
-        title: 'Nincs fizetendo foglalas',
-        text: 'Eloszor valassz ki egy foglalasi idopontot.',
+        title: 'Nincs fizetendő foglalás',
+        text: 'Először válassz ki egy foglalási időpontot.',
         icon: 'warning'
       });
       this.router.navigate(['/main']);
@@ -74,7 +74,9 @@ export class PaymentComponent implements OnInit {
 
   onCardNumberInput(value: string): void {
     const digitsOnly = (value || '').replace(/\D+/g, '');
-    this.cardNumber = digitsOnly.slice(0, 16);
+    const capped = digitsOnly.slice(0, 16);
+    const grouped = capped.match(/.{1,4}/g)?.join(' ') ?? '';
+    this.cardNumber = grouped;
   }
 
   onExpiryMonthInput(value: string): void {
@@ -161,7 +163,7 @@ export class PaymentComponent implements OnInit {
         } else {
           await Swal.fire({
             title: 'Sikeres fizetés',
-            text: 'A fizetésed feldolgozásra került, a foglalás mentve és a user email kiküldve.',
+            text: 'A fizetésed feldolgozásra került, a foglalásod elmentettük.',
             icon: 'success',
             confirmButtonText: 'Tovább'
           });

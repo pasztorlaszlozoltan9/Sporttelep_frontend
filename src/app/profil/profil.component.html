@@ -1,45 +1,30 @@
-<head>
-  <meta charset="utf-8">
-  <title>Profil</title>
+<section class="profil-shell">
+  <header class="profil-header">
+    <h2>Profil</h2>
+    <p>Itt kezelheted a felhasználói adataidat és foglalásaidat.</p>
+  </header>
 
-</head>
+  <div class="profil-card" *ngIf="user">
+    <div class="profil-info-grid">
+      <div class="info-item">
+        <span class="info-label">Email</span>
+        <span class="info-value">{{ user.email || 'N/A' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Telefonszám</span>
+        <span class="info-value">{{ user.phone || 'N/A' }}</span>
+      </div>
+      <div class="info-item full">
+        <span class="info-label">Teljes név</span>
+        <span class="info-value">{{ user.fullname || 'N/A' }}</span>
+      </div>
+    </div>
 
-<div class="profil-container">
-  <h2>Profil</h2>
-
-  <div class="user-info" *ngIf="user">
-    <table class="info-table">
-      <thead>
-        <tr>
-          <th><label class="form-label">Email</label></th>
-          <th><label class="form-label">Telefonszám</label></th>
-          <th><label class="form-label">Teljes Név</label></th>
-          <th><label class="form-label">Műveletek</label></th>
-      </thead>
-      <tr>
-        <td>
-          <input type="text" class="form-control" [value]="user.email" readonly>
-        </td>
-
-        <td>
-          <input type="text" class="form-control" [value]="user.phone" readonly>
-        </td>
-        <td>
-
-          <input type="text" class="form-control" [value]="user.fullname || 'N/A'" readonly>
-        </td>
-        <td>
-          <div class="actions">
-            <button (click)="startUpdateUser(user)" class="btn btn-warning btn-sm" type="button"
-              id="function-btn">Módosítás</button>
-            <button (click)="startShowPasswordModal()" class="btn btn-info btn-sm" type="button"
-              id="function-btn">Jelszó módosítása</button>
-            <button (click)="startDeleteUser(user.id)" class="btn btn-danger btn-sm" type="button"
-              id="function-btn">Törlés</button>
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div class="actions profile-actions">
+      <button (click)="startUpdateUser(user)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
+      <button (click)="startShowPasswordModal()" class="btn btn-info btn-sm" type="button" id="function-btn">Jelszó módosítása</button>
+      <button (click)="startDeleteUser(user.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Törlés</button>
+    </div>
   </div>
 
    @if (showModal === true) {
@@ -147,53 +132,32 @@
     </div>
     }
 
-  <h2>Foglalások</h2>
-
-  <div class="bookings-info" *ngIf="user">
-    <table class="bookings-table">
-      <thead>
-        <tr>
-          <th><label class="form-label">Sport</label></th>
-          <th><label class="form-label">Helyszín</label></th>
-          <th><label class="form-label">Pálya</label></th>
-          <th><label class="form-label">Ár</label></th>
-          <th><label class="form-label">Dátum</label></th>
-          <th><label class="form-label">Kezdési idő</label></th>
-          <th><label class="form-label">Műveletek</label></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for(booking of getUserBookings(); track booking.id) {
-        <tr>
-          <td>
-            <input type="text" class="form-control" [value]="getSportName(booking.sportId)" readonly>
-          </td>
-          <td>
-            <input type="text" class="form-control" [value]="getLocationName(booking.locationId)" readonly>
-          </td>
-          <td>
-            <input type="text" class="form-control" [value]="getFieldName(booking.fieldId)" readonly>
-          </td>
-          <td>
-            <input type="text" class="form-control" [value]="getPriceValue(booking.priceId)" readonly>
-          </td>
-          <td>
-            <input type="text" class="form-control" [value]="booking.date" readonly>
-          </td>
-          <td>
-            <input type="text" class="form-control" [value]="booking.startTime" readonly>
-          </td>
-          <td>
-            <div class="actions">
-              <button class="btn btn-warning btn-sm" type="button" (click)="startUpdateBooking(booking)">Módosítás</button>
-              <button class="btn btn-danger btn-sm" type="button" (click)="startDeleteBooking(booking.id)">Foglalás törlése</button>
-            </div>
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+  <section class="bookings-section" *ngIf="user">
+    <h2>Foglalások</h2>
+    <div class="bookings-grid">
+      @for(booking of getUserBookings(); track booking.id) {
+      <article class="booking-card" [style.background-image]="'url(' + getLocationCardImage(booking.locationId) + ')'">
+        <div class="booking-card-content">
+          <div class="booking-grid">
+            <div class="info-item"><span class="info-label">Sport</span><span class="info-value">{{ getSportName(booking.sportId) }}</span></div>
+            <div class="info-item"><span class="info-label">Helyszín</span><span class="info-value">{{ getLocationName(booking.locationId) }}</span></div>
+            <div class="info-item"><span class="info-label">Pálya</span><span class="info-value">{{ getFieldName(booking.fieldId) }}</span></div>
+            <div class="info-item"><span class="info-label">Ár</span><span class="info-value">{{ getPriceValue(booking.priceId) }}</span></div>
+            <div class="info-item"><span class="info-label">Dátum</span><span class="info-value">{{ booking.date }}</span></div>
+            <div class="info-item"><span class="info-label">Kezdés</span><span class="info-value">{{ booking.startTime }}</span></div>
+          </div>
+          <div class="actions booking-actions">
+            <button class="btn btn-warning btn-sm" type="button" (click)="startUpdateBooking(booking)">Módosítás</button>
+            <button class="btn btn-danger btn-sm" type="button" (click)="startDeleteBooking(booking.id)">Foglalás törlése</button>
+          </div>
+        </div>
+      </article>
+      }
+      @if (getUserBookings().length === 0) {
+      <div class="empty-bookings">Még nincs foglalásod.</div>
+      }
+    </div>
+  </section>
 
   @if (showBookingModal === true) {
   <div class="modal" tabindex="-1" style="display: block;">
@@ -299,4 +263,4 @@
     </div>
   </div>
   }
-</div>
+</section>
