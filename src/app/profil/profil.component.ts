@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { AdminService } from '../shared/admin.service';
 import { AuthService } from '../shared/auth.service';
+import emailjs from '@emailjs/browser';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -15,6 +16,11 @@ import Swal from 'sweetalert2';
   styleUrls: ['./profil.component.css']
 })
 export class ProfilComponent implements OnInit {
+  private readonly emailJsServiceId: string = 'sporttelepek_0825';
+  private readonly emailJsBookingUpdateTemplateId: string = 'template_pz3d5z8';
+  private readonly emailJsBookingDeleteTemplateId: string = 'template_9cdc5ki';
+  private readonly emailJsPublicKey: string = '__s7hNRM8XTSCfrSd';
+  private readonly mainAdminEmail: string = 'admin@admin.com';
 
   user: any = null;
   host = 'http://localhost:8000/api/'
@@ -33,7 +39,11 @@ export class ProfilComponent implements OnInit {
   protected showModal = false;
   protected showPasswordModal = false;
   protected showDeleteModal = false;
+  protected showBookingModal = false;
+  protected showBookingDeleteModal = false;
   protected deletingUserId: number | null = null;
+  protected editingBookingId: number | null = null;
+  protected deletingBookingId: number | null = null;
 
   protected userForm = this.builder.group({
     email: '',
@@ -53,6 +63,21 @@ export class ProfilComponent implements OnInit {
   protected deleteForm = this.builder.group({
     password: '',
     password_confirmation: ''
+  })
+
+  protected bookingForm = this.builder.group({
+    sportId: '',
+    locationId: '',
+    fieldId: '',
+    userId: '',
+    date: '',
+    startTime: '',
+    availableDateId: '',
+    priceId: '',
+  })
+
+  protected bookingDeleteForm = this.builder.group({
+    password: ''
   })
 
   constructor(
@@ -87,6 +112,18 @@ export class ProfilComponent implements OnInit {
     this.showDeleteModal = false;
     this.deletingUserId = null;
     this.deleteForm.reset();
+  }
+
+  startCloseBookingModal() {
+    this.showBookingModal = false;
+    this.editingBookingId = null;
+    this.bookingForm.reset();
+  }
+
+  startCloseBookingDeleteModal() {
+    this.showBookingDeleteModal = false;
+    this.deletingBookingId = null;
+    this.bookingDeleteForm.reset();
   }
 
 
@@ -445,5 +482,327 @@ export class ProfilComponent implements OnInit {
     if (!this.prices) return 'N/A';
     const price = (this.prices as any[]).find(p => p.id === priceId);
     return price?.price ? `${price.price} Ft` : 'N/A';
+  }
+
+  private parseId(value: unknown): number | null {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  onBookingSportChange() {
+    this.bookingForm.patchValue({
+      fieldId: '',
+      availableDateId: '',
+      priceId: '',
+      date: '',
+      startTime: ''
+    });
+  }
+
+  onBookingLocationChange() {
+    this.bookingForm.patchValue({
+      fieldId: '',
+      availableDateId: '',
+      priceId: '',
+      date: '',
+      startTime: ''
+    });
+  }
+
+  onBookingFieldChange() {
+    this.bookingForm.patchValue({
+      availableDateId: '',
+      priceId: '',
+      date: '',
+      startTime: ''
+    });
+  }
+
+  onBookingAvailableDateChange() {
+    const availableDateId = this.parseId(this.bookingForm.value.availableDateId);
+    if (!availableDateId || !this.availableDates) {
+      this.bookingForm.patchValue({ date: '', startTime: '' });
+      return;
+    }
+
+    const availableDate = (this.availableDates as any[]).find((d: any) => d.id === availableDateId);
+    this.bookingForm.patchValue({
+      date: availableDate?.date || '',
+      startTime: availableDate?.startTime || ''
+    });
+  }
+
+  getFilteredFields(): any[] {
+    const sportId = this.parseId(this.bookingForm.value.sportId);
+    const locationId = this.parseId(this.bookingForm.value.locationId);
+    if (!this.fields || !sportId || !locationId) return [];
+
+    return (this.fields as any[]).filter((field: any) => field.sportId === sportId && field.locationId === locationId);
+  }
+
+  getFilteredAvailableDates(): any[] {
+    const fieldId = this.parseId(this.bookingForm.value.fieldId);
+    if (!this.availableDates || !fieldId) return [];
+
+    return (this.availableDates as any[]).filter((date: any) => {
+      if (date.fieldId !== fieldId) return false;
+      return !this.isAvailableDateBooked(date.id) || this.isEditingThisAvailableDate(date.id);
+    });
+  }
+
+  getFilteredPrices(): any[] {
+    const fieldId = this.parseId(this.bookingForm.value.fieldId);
+    if (!this.prices || !fieldId) return [];
+
+    return (this.prices as any[]).filter((price: any) => price.fieldId === fieldId);
+  }
+
+  private isAvailableDateBooked(availableDateId: number): boolean {
+    if (!this.bookings) return false;
+    return (this.bookings as any[]).some((booking: any) => booking.availableDateId === availableDateId);
+  }
+
+  private isEditingThisAvailableDate(availableDateId: number): boolean {
+    if (!this.editingBookingId || !this.bookings) return false;
+    const currentBooking = (this.bookings as any[]).find((b: any) => b.id === this.editingBookingId);
+    return currentBooking?.availableDateId === availableDateId;
+  }
+
+  startUpdateBooking(booking: any) {
+    this.editingBookingId = booking.id;
+    this.bookingForm.patchValue({
+      sportId: booking.sportId,
+      locationId: booking.locationId,
+      fieldId: booking.fieldId,
+      userId: booking.userId,
+      availableDateId: booking.availableDateId,
+      priceId: booking.priceId,
+      date: booking.date,
+      startTime: booking.startTime
+    });
+    this.showBookingModal = true;
+  }
+
+  private buildBookingNotificationData(booking: any) {
+    return {
+      sportName: this.getSportName(Number(booking?.sportId)),
+      locationName: this.getLocationName(Number(booking?.locationId)),
+      fieldName: this.getFieldName(Number(booking?.fieldId)),
+      bookingDate: booking?.date || 'N/A',
+      bookingStartTime: booking?.startTime || 'N/A',
+      bookingPrice: this.getPriceValue(Number(booking?.priceId)),
+      userEmail: this.user?.email || 'N/A'
+    };
+  }
+
+  private async sendAdminBookingActionEmail(action: 'update' | 'delete', booking: any): Promise<string | null> {
+    const templateId = action === 'update'
+      ? this.emailJsBookingUpdateTemplateId
+      : this.emailJsBookingDeleteTemplateId;
+    const actionLabel = action === 'update' ? 'módosítás' : 'törlés';
+
+    const data = this.buildBookingNotificationData(booking);
+    const bookingSummary = [
+      `Muvelet: Foglalas ${actionLabel}`,
+      `Foglalo email: ${data.userEmail}`,
+      `Sport: ${data.sportName}`,
+      `Helyszin: ${data.locationName}`,
+      `Palya: ${data.fieldName}`,
+      `Datum: ${data.bookingDate}`,
+      `Kezdesi ido: ${data.bookingStartTime}`,
+      `Ar: ${data.bookingPrice}`
+    ].join('\n');
+
+    const templateParams = {
+      to_email: this.mainAdminEmail,
+      email: this.mainAdminEmail,
+      from_email: data.userEmail || 'noreply@budapestsporttelepek.local',
+      reply_to: data.userEmail || '',
+      message: bookingSummary,
+      action_type: actionLabel,
+      user_email: data.userEmail,
+      sport_name: data.sportName,
+      location_name: data.locationName,
+      field_name: data.fieldName,
+      booking_date: data.bookingDate,
+      booking_start_time: data.bookingStartTime,
+      booking_price: data.bookingPrice
+    };
+
+    try {
+      await emailjs.send(
+        this.emailJsServiceId,
+        templateId,
+        templateParams,
+        { publicKey: this.emailJsPublicKey }
+      );
+      return null;
+    } catch (error: any) {
+      console.error(`EmailJS admin booking ${actionLabel} notification error:`, error);
+      const status = error?.status ? `status: ${error.status}` : 'status: unknown';
+      const details = error?.text || error?.message || 'unknown error';
+      return `${status}, details: ${details}`;
+    }
+  }
+
+  async startSaveBooking() {
+    if (!this.editingBookingId || !this.user?.id) {
+      return;
+    }
+
+    const confirmed = await Swal.fire({
+      title: 'Biztosan mented a módosítást?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Mentés',
+      cancelButtonText: 'Mégsem'
+    });
+
+    if (!confirmed.isConfirmed) {
+      return;
+    }
+
+    const bookingData = {
+      sportId: this.bookingForm.value.sportId,
+      locationId: this.bookingForm.value.locationId,
+      fieldId: this.bookingForm.value.fieldId,
+      userId: this.user.id,
+      availableDateId: this.bookingForm.value.availableDateId,
+      priceId: this.bookingForm.value.priceId,
+      date: this.bookingForm.value.date,
+      startTime: this.bookingForm.value.startTime,
+      email: this.user?.email || null
+    };
+
+    this.http.put(`${this.host}bookings/${this.editingBookingId}`, bookingData).subscribe({
+      next: async (response: any) => {
+        const adminEmailError = await this.sendAdminBookingActionEmail('update', bookingData);
+
+        this.startCloseBookingModal();
+        this.loadAllData();
+
+        const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
+        if (emailWarning) {
+          await Swal.fire({
+            title: 'Foglalás módosítva, de email figyelmeztetés',
+            text: String(emailWarning),
+            icon: 'warning'
+          });
+          return;
+        }
+
+        if (adminEmailError) {
+          await Swal.fire({
+            title: 'Foglalás módosítva, de admin email nem ment ki',
+            text: `EmailJS hiba: ${adminEmailError}`,
+            icon: 'warning'
+          });
+          return;
+        }
+
+        await Swal.fire({
+          title: 'Sikeres módosítás és email értesítés!',
+          icon: 'success'
+        });
+      },
+      error: async (err: any) => {
+        console.error('Error updating booking:', err);
+        await Swal.fire({
+          title: 'Hiba történt a módosítás során!',
+          icon: 'error'
+        });
+      }
+    });
+  }
+
+  async startDeleteBooking(bookingId: number) {
+    const confirmed = await Swal.fire({
+      title: 'Biztosan törölni szeretnéd ezt a foglalást?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Törlés',
+      cancelButtonText: 'Mégsem'
+    });
+
+    if (!confirmed.isConfirmed) {
+      return;
+    }
+
+    this.deletingBookingId = bookingId;
+    this.bookingDeleteForm.reset();
+    this.showBookingDeleteModal = true;
+  }
+
+  confirmDeleteBooking() {
+    const password = this.bookingDeleteForm.value.password?.trim();
+    const loginEmail = this.user?.email?.trim();
+
+    if (!password) {
+      Swal.fire({
+        title: 'A törléshez add meg a jelszavad!',
+        icon: 'error'
+      });
+      return;
+    }
+
+    if (!loginEmail || !this.deletingBookingId) {
+      Swal.fire({
+        title: 'Hiányzik felhasználói adat a törléshez!',
+        icon: 'error'
+      });
+      return;
+    }
+
+    this.auth.login({ email: loginEmail, password }).subscribe({
+      next: () => {
+        const bookingToDelete = (this.bookings as any[])?.find((b: any) => b.id === this.deletingBookingId);
+
+        this.http.delete(`${this.host}bookings/${this.deletingBookingId}`).subscribe({
+          next: async (response: any) => {
+            const adminEmailError = await this.sendAdminBookingActionEmail('delete', bookingToDelete);
+
+            this.startCloseBookingDeleteModal();
+            this.loadAllData();
+
+            const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
+            if (emailWarning) {
+              await Swal.fire({
+                title: 'Foglalás törölve, de email figyelmeztetés',
+                text: String(emailWarning),
+                icon: 'warning'
+              });
+              return;
+            }
+
+            if (adminEmailError) {
+              await Swal.fire({
+                title: 'Foglalás törölve, de admin email nem ment ki',
+                text: `EmailJS hiba: ${adminEmailError}`,
+                icon: 'warning'
+              });
+              return;
+            }
+
+            await Swal.fire({
+              title: 'Sikeres törlés és email értesítés!',
+              icon: 'success'
+            });
+          },
+          error: async (err: any) => {
+            console.error('Error deleting booking:', err);
+            await Swal.fire({
+              title: 'Hiba történt a törlés során!',
+              icon: 'error'
+            });
+          }
+        });
+      },
+      error: () => {
+        Swal.fire({
+          title: 'Hibás jelszó! A törlés megszakítva.',
+          icon: 'error'
+        });
+      }
+    });
   }
 }

@@ -185,9 +185,8 @@
           </td>
           <td>
             <div class="actions">
-              <button class="btn btn-warning btn-sm" type="button">Módosítás</button>
-              <button class="btn btn-danger btn-sm" type="button">Foglalás törlése</button>
-              <button class="btn btn-danger btn-sm" type="button">Kijelentkezés</button>
+              <button class="btn btn-warning btn-sm" type="button" (click)="startUpdateBooking(booking)">Módosítás</button>
+              <button class="btn btn-danger btn-sm" type="button" (click)="startDeleteBooking(booking.id)">Foglalás törlése</button>
             </div>
           </td>
         </tr>
@@ -195,4 +194,109 @@
       </tbody>
     </table>
   </div>
+
+  @if (showBookingModal === true) {
+  <div class="modal" tabindex="-1" style="display: block;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Foglalás módosítása</h5>
+          <button type="button" class="btn-close" (click)="startCloseBookingModal()" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form [formGroup]="bookingForm" (ngSubmit)="startSaveBooking()" id="bookingForm">
+            <div>
+              <label for="bookingSportId" class="form-label">Sport</label>
+              <select class="form-control" formControlName="sportId" id="bookingSportId" (change)="onBookingSportChange()">
+                <option value="">-- Válassz sportot --</option>
+                @for(sport of sports; track sport.id) {
+                <option [value]="sport.id">{{sport.name}}</option>
+                }
+              </select>
+            </div>
+
+            <div>
+              <label for="bookingLocationId" class="form-label">Helyszín</label>
+              <select class="form-control" formControlName="locationId" id="bookingLocationId" (change)="onBookingLocationChange()">
+                <option value="">-- Válassz helyszínt --</option>
+                @for(location of locations; track location.id) {
+                <option [value]="location.id">{{location.name}}</option>
+                }
+              </select>
+            </div>
+
+            <div>
+              <label for="bookingFieldId" class="form-label">Pálya</label>
+              <select class="form-control" formControlName="fieldId" id="bookingFieldId" (change)="onBookingFieldChange()">
+                <option value="">-- Válassz pályát --</option>
+                @for(field of getFilteredFields(); track field.id) {
+                <option [value]="field.id">{{field.name}}</option>
+                }
+              </select>
+            </div>
+
+            <div>
+              <label for="bookingAvailableDateId" class="form-label">Szabad időpont</label>
+              <select class="form-control" formControlName="availableDateId" id="bookingAvailableDateId" (change)="onBookingAvailableDateChange()">
+                <option value="">-- Válassz időpontot --</option>
+                @for(availableDate of getFilteredAvailableDates(); track availableDate.id) {
+                <option [value]="availableDate.id">{{availableDate.date}} {{availableDate.startTime}}</option>
+                }
+              </select>
+            </div>
+
+            <div>
+              <label for="bookingPriceId" class="form-label">Ár</label>
+              <select class="form-control" formControlName="priceId" id="bookingPriceId">
+                <option value="">-- Válassz árat --</option>
+                @for(price of getFilteredPrices(); track price.id) {
+                <option [value]="price.id">{{price.price}} Ft</option>
+                }
+              </select>
+            </div>
+
+            <div>
+              <label for="bookingDate" class="form-label">Dátum</label>
+              <input type="text" class="form-control" formControlName="date" id="bookingDate" readonly>
+            </div>
+
+            <div>
+              <label for="bookingStartTime" class="form-label">Kezdési idő</label>
+              <input type="text" class="form-control" formControlName="startTime" id="bookingStartTime" readonly>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="startCloseBookingModal()">Bezárás</button>
+          <button type="submit" class="btn btn-primary" form="bookingForm">Mentés</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
+  @if (showBookingDeleteModal === true) {
+  <div class="modal" tabindex="-1" style="display: block;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Foglalás törlése</h5>
+          <button type="button" class="btn-close" (click)="startCloseBookingDeleteModal()" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form [formGroup]="bookingDeleteForm" (ngSubmit)="confirmDeleteBooking()" id="bookingDeleteForm">
+            <div>
+              <label for="bookingDeletePassword" class="form-label">Jelszó</label>
+              <input type="password" class="form-control" formControlName="password" id="bookingDeletePassword">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="startCloseBookingDeleteModal()">Bezárás</button>
+          <button type="submit" class="btn btn-danger" form="bookingDeleteForm">Törlés végrehajtása</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
 </div>
