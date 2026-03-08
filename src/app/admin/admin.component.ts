@@ -21,8 +21,6 @@ import Swal from 'sweetalert2';
   styleUrl: './admin.component.css'
 })
 export class AdminComponent {
-  private readonly passwordEditPlaceholder = '********';
-
   protected readonly api = inject(AdminService);
   protected readonly builder = inject(FormBuilder)
   protected readonly auth: AuthService = inject(AuthService)
@@ -47,6 +45,7 @@ export class AdminComponent {
   protected showModal = false;
   protected showDeleteModal = false;
   protected editingUserPassword: string | null = null;
+  protected editingUserVerified: boolean = false;
   protected deletingUserId: number | null = null;
   protected editingUserId: number | null = null;
   protected editingSportId: number | null = null;
@@ -122,15 +121,12 @@ export class AdminComponent {
   }
 
   getUsers() {
-    // console.log("lekérés...")
     const token = localStorage.getItem('token');
-    // console.log("Token:", token);
     if (token) {
       try {
 
         this.api.getUsers().subscribe({
           next: (result: any) => {
-            // console.log(result);
             this.users = result.data || result
           },
           error: (err: any) => {
@@ -150,7 +146,6 @@ export class AdminComponent {
   getSports() {
     this.sportService.getSport().subscribe({
       next: (result: any) => {
-        // console.log('Sports:', result);
         this.sports = result.data || result;
       },
       error: (err: any) => {
@@ -162,7 +157,6 @@ export class AdminComponent {
   getLocations() {
     this.locService.getLocation().subscribe({
       next: (result: any) => {
-        // console.log('Locations:', result);
         this.locations = result.data || result;
       },
       error: (err: any) => {
@@ -172,9 +166,8 @@ export class AdminComponent {
   }
 
   getFields() {
-    this.fieldService.getFields().subscribe({
+    this.fieldService.getField().subscribe({
       next: (result: any) => {
-        // console.log('Fields:', result);
         this.fields = result.data || result;
       },
       error: (err: any) => {
@@ -186,7 +179,6 @@ export class AdminComponent {
   getAvailableDates() {
     this.availableDateService.getAvailableDates().subscribe({
       next: (result: any) => {
-        // console.log('Available Dates:', result);
         this.availableDates = result.data || result;
       },
       error: (err: any) => {
@@ -198,7 +190,6 @@ export class AdminComponent {
   getPrices() {
     this.priceService.getPrices().subscribe({
       next: (result: any) => {
-        // console.log('Prices:', result);
         this.prices = result.data || result;
       },
       error: (err: any) => {
@@ -210,7 +201,6 @@ export class AdminComponent {
   getBookings() {
     this.bookingService.getBookings().subscribe({
       next: (result: any) => {
-        // console.log('Bookings:', result);
         this.bookings = result.data || result;
       },
       error: (err: any) => {
@@ -223,6 +213,7 @@ export class AdminComponent {
     if (this.activeView === 'users') {
       this.editingUserId = null;
       this.editingUserPassword = null;
+      this.editingUserVerified = false;
       this.userForm.reset();
     }
     if (this.activeView === 'sports') {
@@ -256,6 +247,7 @@ export class AdminComponent {
     if (this.activeView === 'users') {
       this.editingUserId = null;
       this.editingUserPassword = null;
+      this.editingUserVerified = false;
       this.userForm.reset();
     }
     if (this.activeView === 'sports') {
@@ -326,27 +318,31 @@ export class AdminComponent {
     }
 
     if (this.editingUserId) {
-      // Update existing user - include roleId
-      const typedPassword = this.userForm.value.password?.trim();
+      if (!this.editingUserPassword) {
+        Swal.fire({
+          title: 'Nem található a felhasználó aktuális jelszava a mentéshez!',
+          icon: 'error'
+        });
+        return;
+      }
+
+      // Admin oldalon nem változtatunk más felhasználó jelszaván.
+      // A backend által elvárt payloadhoz a meglévő user jelszót küldjük tovább.
       const userData: any = {
         email: this.userForm.value.email,
+        password: this.editingUserPassword,
         phone: this.userForm.value.phone,
         fullname: this.userForm.value.fullname,
-        roleId: this.userForm.value.roleId
+        roleId: Number(this.userForm.value.roleId),
+        verified: this.editingUserVerified
       };
-
-      // Update password only when admin explicitly changes it.
-      if (typedPassword && typedPassword !== this.passwordEditPlaceholder) {
-        userData.password = typedPassword;
-      } else if (this.editingUserPassword) {
-        userData.password = this.editingUserPassword;
-      }
       
       this.api.updateUser(this.editingUserId, userData).subscribe({
         next: (result: any) => {
           this.showModal = false;
           this.editingUserId = null;
           this.editingUserPassword = null;
+          this.editingUserVerified = false;
           this.userForm.reset();
           this.getUsers();
           Swal.fire({
@@ -402,12 +398,13 @@ export class AdminComponent {
   }
 
   startUpdateUser(user: any) {
-    console.log('Editing user:', user);
     this.editingUserId = user.id;
     this.editingUserPassword = user.password ?? null;
+    this.editingUserVerified = Boolean(user.verified);
     this.userForm.patchValue({
       email: user.email,
-      password: this.passwordEditPlaceholder,
+      password: '',
+      password_confirmation: '',
       phone: user.phone,
       fullname: user.fullname,
       roleId: user.roleId
@@ -561,7 +558,6 @@ export class AdminComponent {
   }
 
   startUpdateSport(sport: any) {
-    console.log('Editing sport:', sport);
     this.editingSportId = sport.id;
     this.sportForm.patchValue({
       name: sport.name,
@@ -665,7 +661,6 @@ export class AdminComponent {
   }
 
   startUpdateLocation(location: any) {
-    console.log('Editing location:', location);
     this.editingLocationId = location.id;
     this.locationForm.patchValue({
       name: location.name,
@@ -772,7 +767,6 @@ export class AdminComponent {
   }
 
   startUpdateField(field: any) {
-    console.log('Editing field:', field);
     // Set the editing state
     this.editingFieldId = field.id;
     // Populate the form with the selected field's data
@@ -881,7 +875,6 @@ export class AdminComponent {
   }
 
   startUpdateAvailableDate(availableDate: any) {
-    console.log('Editing available date:', availableDate);
     // Set the editing state
     this.editingAvailableDateId = availableDate.id;
     // Populate the form with the selected date's data
@@ -988,7 +981,6 @@ export class AdminComponent {
   }
 
   startUpdatePrice(price: any) {
-    console.log('Editing price:', price);
     this.editingPriceId = price.id;
     this.priceForm.patchValue({
       price: price.price,
@@ -1096,7 +1088,6 @@ export class AdminComponent {
   }
 
   startUpdateBooking(booking: any) {
-    console.log('Editing booking:', booking);
     this.editingBookingId = booking.id;
     this.bookingForm.patchValue({
       sportId: booking.sportId,
@@ -1145,7 +1136,6 @@ export class AdminComponent {
     this.auth.logout();
     window.dispatchEvent(new Event('authStateChanged'));
     this.router.navigate(['/login']);
-    console.log('Logout successful!');
   }
 
   private getLoggedInUserEmail(): string | null {

@@ -13,7 +13,8 @@ export class BookingService {
     date: null,
     startTime: null,
     availableDateId: null,
-    priceId: null
+    priceId: null,
+    note: null
   };
 
   constructor(private http: HttpClient) { }
@@ -27,6 +28,12 @@ export class BookingService {
     const url = 'http://localhost:8000/api/bookings';
     return this.http.post(url, booking);
   }
+
+  sendBookingSuccessEmailToUser(bookingId: number) {
+    const url = `http://localhost:8000/api/bookings/${bookingId}/send-confirmation-email`;
+    return this.http.post(url, {});
+  }
+
   updateBooking(id: number, booking: any) {
     const url = `http://localhost:8000/api/bookings/${id}`;
     return this.http.put(url, booking);
@@ -53,7 +60,8 @@ export class BookingService {
       date: null,
       startTime: null,
       availableDateId: null,
-      priceId: null
+      priceId: null,
+      note: null
     };
   }
 }

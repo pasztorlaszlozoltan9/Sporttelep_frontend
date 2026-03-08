@@ -10,11 +10,13 @@ import { AdminComponent } from './admin/admin.component';
 import { AdminGuard } from './shared/admin.guard';
 import { RegisterComponent } from './register/register.component';
 import { VerifyEmailComponent } from './verify-email/verify-email.component';
+import { PaymentComponent } from './payment/payment.component';
 
 export const routes: Routes = [
     { path: '', component: MainComponent },
     { path: 'main', component: MainComponent },
     { path: 'booking', component: BookingComponent},
+    { path: 'payment', component: PaymentComponent},
     { path: 'locations', component: LocationsComponent},
     { path: 'login', component: LoginComponent},
     { path: 'contact', component: ContactComponent},

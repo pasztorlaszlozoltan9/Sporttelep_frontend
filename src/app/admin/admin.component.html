@@ -268,7 +268,7 @@
                 <th>Helyszín</th>
                 <th>Pálya</th>
                 <th>Felhasználó</th>
-                <th>Szabad időpont</th>
+                <th>Időpont</th>
                 <th>Ár</th>
                 <th>Műveletek</th>
 
@@ -326,11 +326,11 @@
                             <label for="email" class="form-label">Email</label>
                             <input type="text" class="form-control" formControlName="email" id="email">
                         </div>
-                        <div>
-                            <label for="password" class="form-label">{{ editingUserId ? 'Jelszó' : 'Jelszó' }}</label>
-                            <input type="password" class="form-control" formControlName="password" id="password" [placeholder]="editingUserId ? 'Hagyd így, ha nem módosítod' : ''">
-                        </div>
                         @if (!editingUserId) {
+                        <div>
+                            <label for="password" class="form-label">Jelszó</label>
+                            <input type="password" class="form-control" formControlName="password" id="password">
+                        </div>
                         <div>
                             <label for="password_confirmation" class="form-label">Jelszó megerősítés</label>
                             <input type="password" class="form-control" formControlName="password_confirmation" id="password_confirmation">

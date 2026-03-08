@@ -6,6 +6,8 @@ import { SportService } from '../shared/sport.service';
 import { LocService } from '../shared/loc.service';
 import { FieldService } from '../shared/field.service';
 import { BookingService } from '../shared/booking.service';
+import { UserService } from '../shared/user.service';
+import { PriceService } from '../shared/price.service';
 
 @Component({
   selector: 'app-booking',
@@ -26,8 +28,11 @@ export class BookingComponent implements OnInit {
   sportName: string = '';
   locationName: string = '';
   fieldName: string = '';
+  userEmail: string = '';
+  priceId: number | null = null;
   price: string = '';
   userId: number | null = null;
+  bookingNote: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -35,21 +40,23 @@ export class BookingComponent implements OnInit {
     private sportService: SportService,
     private locService: LocService,
     private fieldService: FieldService,
-    private bookingService: BookingService
+    private bookingService: BookingService,
+    private userService: UserService,
+    private priceService: PriceService
   ) {}
 
   ngOnInit(): void {
     const bookingData = this.bookingService.getBookingData();
-    this.sportId = bookingData.sportId || null;
-    this.locationId = bookingData.locationId || null;
-    this.fieldId = bookingData.fieldId || null;
-    this.userId = bookingData.userId || null;
+    this.sportId = bookingData.sportId ? Number(bookingData.sportId) : null;
+    this.locationId = bookingData.locationId ? Number(bookingData.locationId) : null;
+    this.fieldId = bookingData.fieldId ? Number(bookingData.fieldId) : null;
+    this.userId = bookingData.userId ? Number(bookingData.userId) : null;
     this.date = bookingData.date || null;
     this.startTime = bookingData.startTime || null;
     this.availableDateId = bookingData.availableDateId || null;
-    this.price = bookingData.priceId || null;
+    this.priceId = bookingData.priceId ? Number(bookingData.priceId) : null;
 
-    if (this.sportId && this.locationId && this.fieldId ) {
+    if (this.sportId && this.locationId && this.fieldId && this.userId) {
       this.loadBookingDetails();
     }
   }
@@ -72,39 +79,49 @@ export class BookingComponent implements OnInit {
     });
 
     // Fetch field name
-    this.fieldService.getFields().subscribe({
+    this.fieldService.getField().subscribe({
       next: (res: any) => {
         const field = (res.data ?? res).find((f: any) => f.id === this.fieldId);
         this.fieldName = field?.name || 'N/A';
       }
     });
+  
+
+    // Fetch user email
+    this.userService.getUser().subscribe({
+      next: (res: any) => {
+        const users = res.data ?? res;
+        const user = (users as any[]).find((u: any) => Number(u.id) === Number(this.userId));
+        this.userEmail = user?.email || 'N/A';
+      }
+    });
+
+    // Resolve price id to a readable price value for UI and email.
+    this.priceService.getPrices().subscribe({
+      next: (res: any) => {
+        const prices = res.data ?? res;
+        const selectedPrice = (prices as any[]).find((p: any) => Number(p.id) === Number(this.priceId));
+        this.price = selectedPrice?.price ? `${selectedPrice.price} Ft` : 'N/A';
+      }
+    });
   }
 
+
+
   onSubmit(): void {
-    const bookingData = {
+    this.bookingService.setBookingData({
       sportId: this.sportId,
       locationId: this.locationId,
       fieldId: this.fieldId,
       userId: this.userId,
       availableDateId: this.availableDateId,
-      priceId: this.price,
+      priceId: this.priceId,
       date: this.date,
-      startTime: this.startTime
-    };
-
-    console.log('Booking submitted:', bookingData);
-
-    // Call booking service to save
-    this.bookingService.addBooking(bookingData).subscribe({
-      next: (result: any) => {
-        console.log('Booking saved successfully:', result);
-        this.bookingService.clearBookingData();
-        this.router.navigate(['/profil']);
-      },
-      error: (err: any) => {
-        console.error('Error saving booking:', err);
-      }
+      startTime: this.startTime,
+      note: this.bookingNote?.trim() || null
     });
+
+    this.router.navigate(['/payment']);
   }
 
   goBack(): void {

@@ -71,7 +71,7 @@ export class MainComponent implements OnInit {
   loadAllData(): void {
     this.sportService.getSport().subscribe({ next: (res: any) => this.sportList = res.data ?? res ?? [] });
     this.locService.getLocation().subscribe({ next: (res: any) => this.locList = res.data ?? res ?? [] });
-    this.fieldService.getFields().subscribe({ next: (res: any) => this.fieldsList = res.data ?? res ?? [] });
+    this.fieldService.getField().subscribe({ next: (res: any) => this.fieldsList = res.data ?? res ?? [] });
     this.availableDateService.getAvailableDates().subscribe({ next: (res: any) => this.datesList = res.data ?? res ?? [] });
     this.priceService.getPrices().subscribe({ next: (res: any) => this.pricesList = res.data ?? res ?? [] });
     this.bookingService.getBookings().subscribe({ next: (res: any) => this.bookingsList = res.data ?? res ?? [] });

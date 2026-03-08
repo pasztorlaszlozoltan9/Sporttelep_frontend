@@ -15,7 +15,7 @@ export class FieldService {
     });
   }
 
-  getFields() {
+  getField() {
     const url ='http://localhost:8000/api/fields';
     return this.http.get(url, { headers: this.getHeaders() });
   }

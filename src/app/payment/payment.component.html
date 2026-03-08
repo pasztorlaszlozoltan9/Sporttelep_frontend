@@ -1,0 +1,38 @@
+<div class="payment-container">
+  <h2>Fieztés</h2>
+
+  <div class="summary">
+    <p><strong>Összeg:</strong> {{ amountLabel }}</p>
+  </div>
+
+  <form (ngSubmit)="submitPayment()" class="payment-form">
+    <label for="cardName">Kártya tulajdonos neve</label>
+    <input id="cardName" name="cardName" type="text" [(ngModel)]="cardName" required>
+
+    <label for="billingEmail">Email cím</label>
+    <input id="billingEmail" name="billingEmail" type="email" [(ngModel)]="billingEmail" required>
+
+    <label for="cardNumber">Kártyaszám</label>
+    <input id="cardNumber" name="cardNumber" type="text" maxlength="16" inputmode="numeric" placeholder="1234567890123456" [(ngModel)]="cardNumber" (ngModelChange)="onCardNumberInput($event)" required>
+
+    <div class="row">
+      <div>
+        <label for="expiryMonth">Lejárat (hó)</label>
+        <input id="expiryMonth" name="expiryMonth" type="text" maxlength="2" inputmode="numeric" placeholder="MM" [(ngModel)]="expiryMonth" (ngModelChange)="onExpiryMonthInput($event)" required>
+      </div>
+      <div>
+        <label for="expiryYear">Lejárat (év)</label>
+        <input id="expiryYear" name="expiryYear" type="text" maxlength="2" inputmode="numeric" placeholder="YY" [(ngModel)]="expiryYear" (ngModelChange)="onExpiryYearInput($event)" required>
+      </div>
+      <div>
+        <label for="cvc">CVC</label>
+        <input id="cvc" name="cvc" type="password" maxlength="3" inputmode="numeric" placeholder="123" [(ngModel)]="cvc" (ngModelChange)="onCvcInput($event)" required>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn primary">Fizetés</button>
+      <button type="button" class="btn secondary" (click)="cancel()">Mégse</button>
+    </div>
+  </form>
+</div>
