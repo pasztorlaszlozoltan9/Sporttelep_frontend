@@ -1,79 +1,96 @@
-<head>
-    <meta charset="utf-8">
-    <title>Bejelentkezés</title>
-</head>
+<section class="auth-layout" [class.register-open]="showRegisterForm">
+    <aside class="auth-branding">
+        <div class="branding-card" #brandingCard>
+            <div class="branding-overlay"></div>
+            <img
+                src="/pics/branding-image.jpg"
+                alt="Sport arena"
+                class="branding-image"
+            >
+            <div class="branding-content">
+                <h1>Budapest Sporttelepek</h1>
+                <p>Találd meg a tökéletes pályát, és foglald le másodpercek alatt.</p>
+            </div>
+        </div>
+    </aside>
 
-<table>
-    <tr>
-        <td class="login">
-            <h2>Bejelentkezés</h2>
-        </td>
-        <td class="registration">
-            <h2>Regisztráció</h2>
-        </td>
-    </tr>
-    <tr>
-        <td class="login">
-            <form [formGroup]="loginForm" (ngSubmit)="login()">
+    <main class="auth-panel">
+        <div class="auth-card" #authCard>
+            <header class="auth-header">
+                <h2>Bejelentkezés</h2>
+                <p>Üdvözlünk a legnépszerűbb sportfoglaló platformon.</p>
+            </header>
 
-                <div>
-                    <label for="email" class="form-label">
-                        Email cím
-                    </label>
-                    <input type="text" class="form-control" id="login-email" formControlName="email">
-                </div>
-                <div>
-                    <label for="password" class="form-label">
-                        Jelszó
-                    </label>
-                    <input type="password" class="form-control" id="login-password" formControlName="password">
-                </div>
+            <div class="social-login-row">
+                <!--
+                <button type="button" class="social-btn" aria-label="Facebook login">
+                    Belepes Facebookkal
+                </button>
+                -->
+                <div id="googleSignInButton" class="google-slot"></div>
+            </div>
 
-                <button class="btn btn-primary mb-4" type="submit">Belépés</button>
-            </form>
+            <div class="divider"><span>VAGY</span></div>
 
-            <p>Vagy</p>
+            <div class="forms-grid">
+                <section class="form-block" [class.is-active]="!showRegisterForm" [class.is-hidden]="showRegisterForm" [attr.aria-hidden]="showRegisterForm">
+                    <h3>Bejelentkezés</h3>
+                    <form [formGroup]="loginForm" (ngSubmit)="login()" class="auth-form">
+                        <label for="login-email">Email cím</label>
+                        <input type="email" id="login-email" formControlName="email" placeholder="pelda@email.hu">
 
-            <div id="googleSignInButton"></div>
+                        <label for="login-password">Jelszó</label>
+                        <input type="password" id="login-password" formControlName="password" placeholder="••••••••">
 
-        </td>
-        <td class="registration">
-            <form [formGroup]="registerForm" (ngSubmit)="register()">
-                <div>
-                    <label for="email" class="form-label">
-                        Email cím
-                    </label>
-                    <input type="text" class="form-control" id="reg-email" formControlName="email">
-                </div>
-                <div>
-                    <label for="phone" class="form-label">
-                        Telefonszám
-                    </label>
-                    <input type="text" class="form-control" id="reg-phone" formControlName="phone">
-                </div>
-                <div>
-                    <label for="fullname" class="form-label">
-                        Teljes név
-                    </label>
-                    <input type="text" class="form-control" id="reg-fullname" formControlName="fullname">
-                </div>
-                <div>
-                    <label for="password" class="form-label">
-                        Jelszó
-                    </label>
-                    <input type="password" class="form-control" id="reg-password" formControlName="password">
-                </div>
-                <div>
-                    <label for="password" class="form-label">
-                        Jelszó megerősítése
-                    </label>
-                    <input type="password" class="form-control" id="reg-password_confirmation"
-                        formControlName="password_confirmation">
-                </div>
+                        <button class="primary-btn" type="submit">Bejelentkezés</button>
 
-                <button class="btn btn-primary" type="submit">Regisztráció</button>
+                        <p class="register-hint">
+                            Ha még nem regisztráltál, <button type="button" class="inline-link" (click)="toggleRegisterForm()">itt teheted meg.</button>
+                        </p>
+                    </form>
+                </section>
 
-            </form>
-        </td>
-    </tr>
-</table>
+                <section class="form-block" [class.is-active]="showRegisterForm" [class.is-hidden]="!showRegisterForm" [attr.aria-hidden]="!showRegisterForm">
+                    <h3>Regisztráció</h3>
+                    <form [formGroup]="registerForm" (ngSubmit)="register()" class="auth-form">
+                        <label for="reg-email">Email cím</label>
+                        <input type="email" id="reg-email" formControlName="email" placeholder="pelda@email.hu">
+
+                        <label for="reg-phone">Telefonszám</label>
+                        <input type="text" id="reg-phone" formControlName="phone" placeholder="+36301234567">
+                        @if (shouldShowPhoneWarning()) {
+                        <p class="password-warning">A telefonszámnak + jellel kell kezdődnie (pl. +36301234567).</p>
+                        }
+
+                        <label for="reg-fullname">Teljes név</label>
+                        <input type="text" id="reg-fullname" formControlName="fullname" placeholder="Teljes neved">
+
+                        <label for="reg-password">Jelszó</label>
+                        <input type="password" id="reg-password" formControlName="password" placeholder="••••••••">
+
+                        <div class="password-rules" aria-live="polite">
+                            <p class="rules-title">Jelszó követelmények:</p>
+                            <p [class.ok]="isPasswordLongEnough()">Legalább 8 karakter</p>
+                            <p [class.ok]="hasLowercaseInPassword()">Legalább 1 kisbetű</p>
+                            <p [class.ok]="hasUppercaseInPassword()">Legalább 1 nagybetű</p>
+                            <p [class.ok]="hasSpecialCharInPassword()">Legalább 1 speciális karakter</p>
+                        </div>
+
+                        <label for="reg-password_confirmation">Jelszó megerősítése</label>
+                        <input type="password" id="reg-password_confirmation" formControlName="password_confirmation" placeholder="••••••••">
+
+                        @if (registerForm?.value?.password && registerForm?.value?.password_confirmation && registerForm?.value?.password !== registerForm?.value?.password_confirmation) {
+                        <p class="password-warning">A két jelszó nem egyezik.</p>
+                        }
+
+                        <button class="primary-btn" type="submit">Regisztráció</button>
+
+                        <p class="register-hint">
+                            Ha már regisztráltál, <button type="button" class="inline-link" (click)="toggleRegisterForm()">lépj vissza a belépéshez.</button>
+                        </p>
+                    </form>
+                </section>
+            </div>
+        </div>
+    </main>
+</section>

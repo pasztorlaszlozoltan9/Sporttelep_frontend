@@ -16,6 +16,15 @@ import Swal from 'sweetalert2';
   styleUrls: ['./profil.component.css']
 })
 export class ProfilComponent implements OnInit {
+  private readonly defaultCardImage: string = 'pics/index_background.jpg';
+  private readonly locationImageByKey: Record<string, string> = {
+    'bme sporttelep': 'bme sporttelep.jpg',
+    'pokorny jozsef sport es szabadidokozpont': 'Pokorny József Sport- és Szabadidőközpont.jpg',
+    'varosligeti sportcentrum': 'városligeti sportcentrum.jpg',
+    'ujbudai sportcentrum': 'Újbudai Sportcentrum.jpg',
+    'ujpalotai uti sporttelep': 'Újpalotai úti Sporttelep.jpg'
+  };
+
   private readonly emailJsServiceId: string = 'sporttelepek_0825';
   private readonly emailJsBookingUpdateTemplateId: string = 'template_pz3d5z8';
   private readonly emailJsBookingDeleteTemplateId: string = 'template_9cdc5ki';
@@ -34,6 +43,7 @@ export class ProfilComponent implements OnInit {
   protected fields: any = []
   protected prices: any = []
   protected availableDates: any = []
+  
 
   protected editingUserId: number | null = null;
   protected showModal = false;
@@ -41,6 +51,7 @@ export class ProfilComponent implements OnInit {
   protected showDeleteModal = false;
   protected showBookingModal = false;
   protected showBookingDeleteModal = false;
+  protected isBookingActionInProgress = false;
   protected deletingUserId: number | null = null;
   protected editingBookingId: number | null = null;
   protected deletingBookingId: number | null = null;
@@ -198,8 +209,18 @@ export class ProfilComponent implements OnInit {
       return;
     }
 
+    const phone = String(this.userForm.value.phone ?? '').trim();
+    if (!this.isPhoneValid(phone)) {
+      Swal.fire({
+        title: 'Érvénytelen telefonszám',
+        text: 'A telefonszámnak + jellel kell kezdődnie (pl. +36301234567).',
+        icon: 'warning'
+      });
+      return;
+    }
+
     if (this.editingUserId) {
-      
+
       const currentPassword = this.userForm.value.currentPassword?.trim();
       const loginEmail = this.user?.email?.trim();
 
@@ -223,12 +244,12 @@ export class ProfilComponent implements OnInit {
       const userData: any = {
         email: this.userForm.value.email,
         password: this.userForm.value.password,
-        phone: this.userForm.value.phone,
+        phone,
         fullname: this.userForm.value.fullname,
         roleId: this.userForm.value.roleId,
         verified: this.userForm.value.verified
       };
-      
+
 
       this.auth.login({ email: loginEmail, password: currentPassword }).subscribe({
         next: () => {
@@ -269,7 +290,7 @@ export class ProfilComponent implements OnInit {
         email: this.userForm.value.email,
         password: this.userForm.value.password,
         // password_confirmation: this.userForm.value.password_confirmation,
-        phone: this.userForm.value.phone,
+        phone,
         fullname: this.userForm.value.fullname
       };
 
@@ -368,6 +389,8 @@ export class ProfilComponent implements OnInit {
               draggable: true
             });
             this.auth.logout();
+            window.dispatchEvent(new Event('authStateChanged'));
+            // this.checkLoginStatus();
           },
           error: (err: any) => {
             console.error('Error deleting user:', err);
@@ -451,7 +474,20 @@ export class ProfilComponent implements OnInit {
 
   getUserBookings(): any[] {
     if (!this.user?.id || !this.bookings) return [];
-    return this.bookings.filter((b: any) => b.userId === this.user.id);
+    return (this.bookings as any[])
+      .filter((b: any) => b.userId === this.user.id)
+      .sort((a: any, b: any) => {
+        const firstDate = String(a?.date ?? '');
+        const secondDate = String(b?.date ?? '');
+        const dateCompare = firstDate.localeCompare(secondDate);
+        if (dateCompare !== 0) {
+          return dateCompare;
+        }
+
+        const firstStart = String(a?.startTime ?? '');
+        const secondStart = String(b?.startTime ?? '');
+        return firstStart.localeCompare(secondStart);
+      });
   }
 
   getSportName(sportId: number): string {
@@ -464,6 +500,38 @@ export class ProfilComponent implements OnInit {
     if (!this.locations) return 'N/A';
     const location = (this.locations as any[]).find(l => l.id === locationId);
     return location?.name || 'N/A';
+  }
+
+  private normalizeNameKey(value: string): string {
+    return String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  private encodePathSegments(path: string): string {
+    return path
+      .split('/')
+      .map((segment: string) => encodeURIComponent(segment))
+      .join('/');
+  }
+
+  getLocationCardImage(locationId: number): string {
+    if (!this.locations) {
+      return this.defaultCardImage;
+    }
+
+    const location = (this.locations as any[]).find((l: any) => l.id === locationId);
+    const locationName = String(location?.name ?? '').trim();
+    if (!locationName) {
+      return this.defaultCardImage;
+    }
+
+    const mapped = this.locationImageByKey[this.normalizeNameKey(locationName)] ?? `${locationName}.jpg`;
+    return this.encodePathSegments(`pics/locations/${mapped}`);
   }
 
   getFieldName(fieldId: number): string {
@@ -646,6 +714,10 @@ export class ProfilComponent implements OnInit {
   }
 
   async startSaveBooking() {
+    if (this.isBookingActionInProgress) {
+      return;
+    }
+
     if (!this.editingBookingId || !this.user?.id) {
       return;
     }
@@ -674,39 +746,49 @@ export class ProfilComponent implements OnInit {
       email: this.user?.email || null
     };
 
+    this.isBookingActionInProgress = true;
+    this.showProcessingAlert('Foglalás módosítása folyamatban...');
+
     this.http.put(`${this.host}bookings/${this.editingBookingId}`, bookingData).subscribe({
       next: async (response: any) => {
-        const adminEmailError = await this.sendAdminBookingActionEmail('update', bookingData);
+        try {
+          const adminEmailError = await this.sendAdminBookingActionEmail('update', bookingData);
 
-        this.startCloseBookingModal();
-        this.loadAllData();
+          this.startCloseBookingModal();
+          this.loadAllData();
+          Swal.close();
 
-        const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
-        if (emailWarning) {
+          const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
+          if (emailWarning) {
+            await Swal.fire({
+              title: 'Foglalás módosítva, de email figyelmeztetés',
+              text: String(emailWarning),
+              icon: 'warning'
+            });
+            return;
+          }
+
+          if (adminEmailError) {
+            await Swal.fire({
+              title: 'Foglalás módosítva, de admin email nem ment ki',
+              text: `EmailJS hiba: ${adminEmailError}`,
+              icon: 'warning'
+            });
+            return;
+          }
+
           await Swal.fire({
-            title: 'Foglalás módosítva, de email figyelmeztetés',
-            text: String(emailWarning),
-            icon: 'warning'
+            title: 'Sikeres módosítás!',
+            icon: 'success'
           });
-          return;
+        } finally {
+          this.isBookingActionInProgress = false;
         }
-
-        if (adminEmailError) {
-          await Swal.fire({
-            title: 'Foglalás módosítva, de admin email nem ment ki',
-            text: `EmailJS hiba: ${adminEmailError}`,
-            icon: 'warning'
-          });
-          return;
-        }
-
-        await Swal.fire({
-          title: 'Sikeres módosítás és email értesítés!',
-          icon: 'success'
-        });
       },
       error: async (err: any) => {
         console.error('Error updating booking:', err);
+        this.isBookingActionInProgress = false;
+        Swal.close();
         await Swal.fire({
           title: 'Hiba történt a módosítás során!',
           icon: 'error'
@@ -716,6 +798,10 @@ export class ProfilComponent implements OnInit {
   }
 
   async startDeleteBooking(bookingId: number) {
+    if (this.isBookingActionInProgress) {
+      return;
+    }
+
     const confirmed = await Swal.fire({
       title: 'Biztosan törölni szeretnéd ezt a foglalást?',
       icon: 'warning',
@@ -730,79 +816,109 @@ export class ProfilComponent implements OnInit {
 
     this.deletingBookingId = bookingId;
     this.bookingDeleteForm.reset();
-    this.showBookingDeleteModal = true;
-  }
+    this.isBookingActionInProgress = true;
+    this.showProcessingAlert('Foglalás törlése folyamatban...');
 
-  confirmDeleteBooking() {
-    const password = this.bookingDeleteForm.value.password?.trim();
-    const loginEmail = this.user?.email?.trim();
+    const bookingToDelete = (this.bookings as any[])?.find((b: any) => b.id === this.deletingBookingId);
 
-    if (!password) {
-      Swal.fire({
-        title: 'A törléshez add meg a jelszavad!',
-        icon: 'error'
-      });
-      return;
-    }
+    this.http.delete(`${this.host}bookings/${this.deletingBookingId}`).subscribe({
+      next: async (response: any) => {
+        try {
+          const adminEmailError = await this.sendAdminBookingActionEmail('delete', bookingToDelete);
 
-    if (!loginEmail || !this.deletingBookingId) {
-      Swal.fire({
-        title: 'Hiányzik felhasználói adat a törléshez!',
-        icon: 'error'
-      });
-      return;
-    }
+          this.startCloseBookingDeleteModal();
+          this.loadAllData();
+          Swal.close();
 
-    this.auth.login({ email: loginEmail, password }).subscribe({
-      next: () => {
-        const bookingToDelete = (this.bookings as any[])?.find((b: any) => b.id === this.deletingBookingId);
-
-        this.http.delete(`${this.host}bookings/${this.deletingBookingId}`).subscribe({
-          next: async (response: any) => {
-            const adminEmailError = await this.sendAdminBookingActionEmail('delete', bookingToDelete);
-
-            this.startCloseBookingDeleteModal();
-            this.loadAllData();
-
-            const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
-            if (emailWarning) {
-              await Swal.fire({
-                title: 'Foglalás törölve, de email figyelmeztetés',
-                text: String(emailWarning),
-                icon: 'warning'
-              });
-              return;
-            }
-
-            if (adminEmailError) {
-              await Swal.fire({
-                title: 'Foglalás törölve, de admin email nem ment ki',
-                text: `EmailJS hiba: ${adminEmailError}`,
-                icon: 'warning'
-              });
-              return;
-            }
-
+          const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
+          if (emailWarning) {
             await Swal.fire({
-              title: 'Sikeres törlés és email értesítés!',
-              icon: 'success'
+              title: 'Foglalás törölve, de email figyelmeztetés',
+              text: String(emailWarning),
+              icon: 'warning'
             });
-          },
-          error: async (err: any) => {
-            console.error('Error deleting booking:', err);
-            await Swal.fire({
-              title: 'Hiba történt a törlés során!',
-              icon: 'error'
-            });
+            return;
           }
-        });
+
+          if (adminEmailError) {
+            await Swal.fire({
+              title: 'Foglalás törölve, de admin email nem ment ki',
+              text: `EmailJS hiba: ${adminEmailError}`,
+              icon: 'warning'
+            });
+            return;
+          }
+
+          await Swal.fire({
+            title: 'Sikeres törlés!',
+            icon: 'success'
+          });
+        } finally {
+          this.isBookingActionInProgress = false;
+        }
       },
-      error: () => {
-        Swal.fire({
-          title: 'Hibás jelszó! A törlés megszakítva.',
+      error: async (err: any) => {
+        console.error('Error deleting booking:', err);
+        this.isBookingActionInProgress = false;
+        Swal.close();
+        await Swal.fire({
+          title: 'Hiba történt a törlés során!',
           icon: 'error'
         });
       }
     });
   }
+
+  private showProcessingAlert(message: string): void {
+    void Swal.fire({
+      title: 'Folyamatban',
+      text: message,
+      icon: 'info',
+      timer: 12000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+  }
+
+ //Jelszó ellenörzés
+   protected isPasswordLongEnough(): boolean {
+    const password = String(this.passwordForm?.value?.password ?? '');
+    return password.length >= 8;
+  }
+
+   protected hasLowercaseInPassword(): boolean {
+    const password = String(this.passwordForm?.value?.password ?? '');
+    return /[a-z]/.test(password);
+  }
+
+   protected hasUppercaseInPassword(): boolean {
+    const password = String(this.passwordForm?.value?.password ?? '');
+    return /[A-Z]/.test(password);
+  }
+
+   protected hasSpecialCharInPassword(): boolean {
+    const password = String(this.passwordForm?.value?.password ?? '');
+    return /[^A-Za-z0-9]/.test(password);
+  }
+
+  protected isPasswordValid(password: string): boolean {
+    const minLengthOk = password.length >= 8;
+    const lowercaseOk = /[a-z]/.test(password);
+    const uppercaseOk = /[A-Z]/.test(password);
+    const specialOk = /[^A-Za-z0-9]/.test(password);
+
+    return minLengthOk && lowercaseOk && uppercaseOk && specialOk;
+  }
+
+  private isPhoneValid(phone: string): boolean {
+    return /^\+[0-9]{8,15}$/.test(String(phone ?? '').trim());
+  }
+
+  
 }
+

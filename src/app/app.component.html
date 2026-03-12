@@ -1,40 +1,39 @@
-<head>
-  <meta charset="utf-8">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Poppins:wght@600&display=swap">
-  <link rel="icon" type="image/x-icon" href="/css_teszt/public/favicon.ico">
-</head>
+<div class="site-shell">
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand-mark">SP</div>
+      <h1>Budapest <span>Sporttelepek</span></h1>
+    </div>
 
-<body>
-  <header>
-    <h1>Budapest Sporttelepek</h1>
+    <nav id="navbar" class="topnav">
+      <button
+        id="showNavbarBtn"
+        type="button"
+        class="menu-toggle"
+        (click)="toggleNavbar()"
+        aria-expanded="false"
+        aria-controls="navUl"
+        aria-label="Menü megnyitása"
+      >
+        Menü
+      </button>
+
+      <ul id="navUl">
+        <li><a id="link1" routerLink="/main" (click)="onNavLinkClick('/main', $event)">Főoldal</a></li>
+        <li *ngIf="isLoggedIn"><a id="link6" routerLink="/profil" (click)="onNavLinkClick('/profil', $event)">Profil</a></li>
+        <li *ngIf="isAdminLoggedIn"><a id="link7" routerLink="/admin" (click)="onNavLinkClick('/admin', $event)">Admin</a></li>
+        <li><a id="link4" routerLink="/contact" (click)="onNavLinkClick('/contact', $event)">Kapcsolat</a></li>
+        <li *ngIf="!isLoggedIn"><a id="link5" class="cta-link" routerLink="/login" (click)="onNavLinkClick('/login', $event)">Belépés</a></li>
+        <li *ngIf="isLoggedIn"><a id="link8" href="#" (click)="logout(); closeNavbar(); $event.preventDefault()">Kijelentkezés</a></li>
+      </ul>
+    </nav>
   </header>
 
-  <nav id="navbar">
-    <button id="showNavbarBtn" type="button" class="btn  dropdown-toggle" data-bs-toggle="dropdown"
-      aria-expanded="false"></button>
-    <ul id="navUl">
-      <li><a id="link1" routerLink="/main">Főoldal</a>
-      </li>
-      <!-- <li><a id="link1" routerLink="/booking">Foglalás</a></li> -->
-      <!-- <li><a id="link2" routerLink="/locations">Helyszínek</a></li>
-      <li><a id="link3" routerLink="/sports">Sportágak</a></li> -->
-      <li *ngIf="isLoggedIn"><a id="link6" routerLink="/profil">Profil</a>
-      </li>
-      <li *ngIf="isAdminLoggedIn"><a id="link7" routerLink="/admin">Admin</a></li>
-      <li><a id="link4" routerLink="/contact">Kapcsolat</a>
-      </li>
-      <li *ngIf="!isLoggedIn"><a id="link5" routerLink="/login">Belépés</a></li>
-      <li *ngIf="isLoggedIn"><a id="link8" href="#" (click)="logout(); $event.preventDefault()">Kijelentkezés</a></li>
-
-    </ul>
-  </nav>
-
-
-  <main>
+  <main class="app-content">
     <router-outlet></router-outlet>
   </main>
 
-  <footer>
+  <footer class="site-footer">
     <p>&copy; 2025 Budapest Sporttelepek</p>
   </footer>
-</body>
+</div>

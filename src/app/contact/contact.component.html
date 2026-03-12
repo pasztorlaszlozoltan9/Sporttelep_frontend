@@ -1,22 +1,42 @@
-<head>
-  <meta charset="utf-8">
-  <title>Kapcsolat</title>
+<section class="contact-shell">
+  <header class="contact-header">
+    <h2>Kapcsolat</h2>
+    <p>Kérdésed van? Írj nekünk, és hamarosan válaszolunk.</p>
+  </header>
 
-</head>
-    <h1>Írj üzenetet!</h1>
-<!-- 
-      <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com">
-      <textarea class="form-control" id="messageInput" rows="6" placeholder="Írd meg az üzeneted..."></textarea>
-    <button id="contactBtn" class="btn btn-primary" type="submit">Küldés</button> -->
-    
-    <form [formGroup]="contactForm" (ngSubmit)="sendMessage()">
-      <div>
+  <div class="contact-card">
+    <h3>Írj üzenetet</h3>
+
+    <form [formGroup]="contactForm" (ngSubmit)="sendMessage()" class="contact-form">
+      <div class="form-row">
         <label for="email">Email cím</label>
-        <input type="email" id="email" formControlName="email" placeholder="name@example.com">
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="name@example.com"
+          [class.is-invalid]="contactForm.controls.email.invalid && contactForm.controls.email.touched"
+        >
+        @if (contactForm.controls.email.invalid && contactForm.controls.email.touched) {
+        <small class="error-msg">Adj meg egy érvényes email címet.</small>
+        }
       </div>
-      <div>
+
+      <div class="form-row">
         <label for="message">Üzenet</label>
-        <textarea id="message" formControlName="message" rows="6" placeholder="Írd meg az üzeneted..."></textarea>
+        <textarea
+          id="message"
+          formControlName="message"
+          rows="6"
+          placeholder="Írd meg az üzeneted..."
+          [class.is-invalid]="contactForm.controls.message.invalid && contactForm.controls.message.touched"
+        ></textarea>
+        @if (contactForm.controls.message.invalid && contactForm.controls.message.touched) {
+        <small class="error-msg">Az üzenet legalább 5 karakter legyen.</small>
+        }
       </div>
-      <button class="btn btn-primary" type="submit">Küldés</button>
+
+      <button class="send-btn" type="submit">Küldés</button>
     </form>
+  </div>
+</section>

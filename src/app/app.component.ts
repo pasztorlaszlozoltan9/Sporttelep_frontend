@@ -1,7 +1,6 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { ElementRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from './shared/auth.service';
 
@@ -18,7 +17,7 @@ export class AppComponent implements OnInit {
   isAdminLoggedIn: boolean = false;
   private readonly host = 'http://localhost:8000/api/';
 
-  constructor(private auth: AuthService, private http: HttpClient) {}
+  constructor(private auth: AuthService, private http: HttpClient, private router: Router) {}
 
   ngOnInit(): void {
     this.checkLoginStatus();
@@ -30,23 +29,48 @@ export class AppComponent implements OnInit {
      window.addEventListener('authStateChanged', () => {
     this.checkLoginStatus();
   });
+  }
 
+  toggleNavbar(): void {
+    const showNavbarBtn = document.getElementById('showNavbarBtn') as HTMLButtonElement | null;
+    const navUl = document.getElementById('navUl') as HTMLUListElement | null;
+    if (!showNavbarBtn || !navUl) {
+      return;
+    }
 
-    const showNavbarBtn = document.getElementById('showNavbarBtn') as HTMLButtonElement;
-    const navUl = document.getElementById('navUl') as HTMLUListElement;
+    const isOpen = navUl.classList.toggle('show-navbar');
+    showNavbarBtn.setAttribute('aria-expanded', String(isOpen));
+  }
 
-    // Add event listener to the showNavbarBtn
-    showNavbarBtn.addEventListener('click', () => {
-      navUl.classList.toggle('show-navbar');
-    });
+  closeNavbar(): void {
+    const showNavbarBtn = document.getElementById('showNavbarBtn') as HTMLButtonElement | null;
+    const navUl = document.getElementById('navUl') as HTMLUListElement | null;
+    if (!showNavbarBtn || !navUl) {
+      return;
+    }
 
-    // Add event listener to each navbar link
-    const navbarLinks = document.querySelectorAll('#navUl li a');
-    navbarLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        navUl.classList.remove('show-navbar');
-      });
-    });
+    navUl.classList.remove('show-navbar');
+    showNavbarBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  onNavLinkClick(targetRoute: string, event: MouseEvent): void {
+    this.closeNavbar();
+
+    const currentRoute = this.normalizeRoute(this.router.url);
+    const target = this.normalizeRoute(targetRoute);
+
+    if (currentRoute === target) {
+      event.preventDefault();
+      window.location.reload();
+    }
+  }
+
+  private normalizeRoute(route: string): string {
+    const clean = String(route ?? '').split('?')[0].split('#')[0].trim();
+    if (!clean || clean === '/') {
+      return '/main';
+    }
+    return clean.endsWith('/') && clean.length > 1 ? clean.slice(0, -1) : clean;
   }
 
   checkLoginStatus(): void {

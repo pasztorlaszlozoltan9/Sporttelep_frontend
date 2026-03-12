@@ -7,6 +7,8 @@ Levi:
 admin@admin.com
 titok
 
+npm install flatpickr
+
 Frontend feladat:
 	Alertek helyett sweetalert2 használata 
 	https://szit.hu/doku.php?id=oktatas:web:angular:angular_sweetalert2

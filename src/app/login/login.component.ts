@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, HostBinding, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../shared/auth.service';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AdminGuard } from '../shared/admin.guard';
 import  Swal from  'sweetalert2';
@@ -15,11 +15,30 @@ import  Swal from  'sweetalert2';
 })
 export class LoginComponent {
   private readonly googleClientId = '201182991102-dc6nvg3uf9dvf30dp4bs6igmcrjcq4vh.apps.googleusercontent.com';
+  private googleResizeTimeout: any = null;
+  private readonly onResizeHandler = () => {
+    this.scheduleGoogleButtonRender();
+    this.syncBrandingCardHeight();
+  };
+  private cardResizeObserver: ResizeObserver | null = null;
+
+  @ViewChild('brandingCard')
+  brandingCardRef?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('authCard')
+  authCardRef?: ElementRef<HTMLDivElement>;
+  title = "Bejelentkezés";
 
   loginForm !: any;
   registerForm !: any;
+  showRegisterForm: boolean = false;
   user: any = null;
   host = 'http://localhost:8000/api/'
+
+  @HostBinding('class.register-open-host')
+  get registerOpenHostClass(): boolean {
+    return this.showRegisterForm;
+  }
 
 
   constructor(
@@ -37,15 +56,59 @@ export class LoginComponent {
       password: [''],
     });
     this.registerForm = this.builder.group({
-      email: [''],
-      phone: [''],
-      fullname: [''],
-      password: [''],
-      password_confirmation: ['']
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required, Validators.pattern(/^\+[0-9]{8,15}$/)]],
+      fullname: ['', Validators.required],
+      password: ['', [Validators.required]],
+      password_confirmation: ['', [Validators.required]]
     })
 
     this.loadUserData();
     this.initializeGoogleSignIn();
+    window.addEventListener('resize', this.onResizeHandler);
+  }
+
+  ngAfterViewInit(): void {
+    this.syncBrandingCardHeight();
+
+    if (typeof ResizeObserver !== 'undefined' && this.authCardRef?.nativeElement) {
+      this.cardResizeObserver = new ResizeObserver(() => this.syncBrandingCardHeight());
+      this.cardResizeObserver.observe(this.authCardRef.nativeElement);
+    }
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.onResizeHandler);
+    this.cardResizeObserver?.disconnect();
+    this.cardResizeObserver = null;
+    if (this.googleResizeTimeout) {
+      clearTimeout(this.googleResizeTimeout);
+      this.googleResizeTimeout = null;
+    }
+  }
+
+  private syncBrandingCardHeight(): void {
+    const brandingCard = this.brandingCardRef?.nativeElement;
+    const authCard = this.authCardRef?.nativeElement;
+    if (!brandingCard || !authCard) {
+      return;
+    }
+
+    if (window.innerWidth <= 900) {
+      brandingCard.style.height = '';
+      return;
+    }
+
+    const authCardHeight = Math.ceil(authCard.getBoundingClientRect().height);
+    if (authCardHeight <= 0) {
+      return;
+    }
+
+    brandingCard.style.height = `${authCardHeight}px`;
+  }
+
+  toggleRegisterForm(): void {
+    this.showRegisterForm = !this.showRegisterForm;
   }
 
   loadUserData(): void {
@@ -109,15 +172,35 @@ export class LoginComponent {
     const googleButtonContainer = document.getElementById('googleSignInButton');
     if (googleButtonContainer) {
       googleButtonContainer.innerHTML = '';
+      const containerWidth =
+        googleButtonContainer.clientWidth ||
+        googleButtonContainer.parentElement?.clientWidth ||
+        320;
+      const responsiveWidth = Math.min(
+        Math.max(containerWidth - 8, 180),
+        420
+      );
+
       win.google.accounts.id.renderButton(googleButtonContainer, {
         type: 'standard',
         theme: 'outline',
         size: 'large',
-        text: 'signin_with',
+        text: 'continue_with',
         shape: 'rectangular',
-        width: 260
+        width: responsiveWidth,
+        logo_alignment: 'left'
       });
     }
+  }
+
+  private scheduleGoogleButtonRender(): void {
+    if (this.googleResizeTimeout) {
+      clearTimeout(this.googleResizeTimeout);
+    }
+
+    this.googleResizeTimeout = setTimeout(() => {
+      this.initializeGoogleSignIn();
+    }, 120);
   }
 
   private handleGoogleCredential(response: any): void {
@@ -242,7 +325,7 @@ export class LoginComponent {
         if (!phone) {
           return 'A telefonszám megadása kötelező.';
         }
-        if (!/^\+?[0-9]{8,15}$/.test(phone)) {
+        if (!/^\+[0-9]{8,15}$/.test(phone)) {
           return 'Érvénytelen telefonszám formátum.';
         }
         return null;
@@ -348,6 +431,31 @@ export class LoginComponent {
       return;
     }
 
+    const password = String(this.registerForm.value.password ?? '');
+    const passwordConfirmation = String(this.registerForm.value.password_confirmation ?? '');
+
+    if (!this.isPasswordValid(password)) {
+      Swal.fire({
+        title: 'Gyenge jelszó',
+        text: 'A jelszónak legalább 8 karakterből kell állnia, és tartalmaznia kell kisbetűt, nagybetűt, valamint speciális karaktert.',
+        icon: 'warning'
+      });
+      return;
+    }
+
+    if (password !== passwordConfirmation) {
+      Swal.fire({
+        title: 'A két jelszó nem egyezik',
+        icon: 'warning'
+      });
+      return;
+    }
+
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
+
     this.auth.register(this.registerForm.value).subscribe({
       next: (response: any) => {
         localStorage.removeItem('token');
@@ -375,6 +483,50 @@ export class LoginComponent {
         }
       }
     });
+  }
+
+  protected isPasswordLongEnough(): boolean {
+    const password = String(this.registerForm?.value?.password ?? '');
+    return password.length >= 8;
+  }
+
+  protected hasLowercaseInPassword(): boolean {
+    const password = String(this.registerForm?.value?.password ?? '');
+    return /[a-z]/.test(password);
+  }
+
+  protected hasUppercaseInPassword(): boolean {
+    const password = String(this.registerForm?.value?.password ?? '');
+    return /[A-Z]/.test(password);
+  }
+
+  protected hasSpecialCharInPassword(): boolean {
+    const password = String(this.registerForm?.value?.password ?? '');
+    return /[^A-Za-z0-9]/.test(password);
+  }
+
+  protected isPasswordValid(password: string): boolean {
+    const minLengthOk = password.length >= 8;
+    const lowercaseOk = /[a-z]/.test(password);
+    const uppercaseOk = /[A-Z]/.test(password);
+    const specialOk = /[^A-Za-z0-9]/.test(password);
+
+    return minLengthOk && lowercaseOk && uppercaseOk && specialOk;
+  }
+
+  protected isHungarianPhoneValid(): boolean {
+    const phone = String(this.registerForm?.value?.phone ?? '').trim();
+    return /^\+[0-9]{8,15}$/.test(phone);
+  }
+
+  protected shouldShowPhoneWarning(): boolean {
+    const phoneControl = this.registerForm?.get('phone');
+    const phone = String(this.registerForm?.value?.phone ?? '').trim();
+    if (!phone) {
+      return false;
+    }
+
+    return Boolean(phoneControl?.touched || phoneControl?.dirty) && !this.isHungarianPhoneValid();
   }
 
 }

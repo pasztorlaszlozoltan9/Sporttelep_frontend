@@ -1,73 +1,107 @@
-<head>
-  <meta charset="utf-8">
-  <title>Budapest Sporttelepek</title>
+<section class="finder-shell">
+  <header class="finder-header">
+    <div>
+      <h2>Sportág választó</h2>
+      <p>Válaszd ki a sportot, majd válogass az elérhető helyszínek közül.</p>
+    </div>
+    <div class="header-tools">
+      <label for="header-date" class="date-filter-label">Dátum szűrés</label>
+      <div class="date-filter-row">
+        <input
+          id="header-date"
+          #headerDatePicker
+          type="text"
+          class="date-filter-input"
+          placeholder="Válassz dátumot"
+          autocomplete="off"
+        >
+        <button *ngIf="selectedFilterDate" type="button" class="clear-filter-btn" (click)="clearDateFilter()">
+          Törlés
+        </button>
+      </div>
+    </div>
+  </header>
 
-</head>
+  <div class="main-container">
+    <section class="step-panel">
+      <h3><span class="step-index">1</span>Sportágak</h3>
+      <div class="sports-row" [class.has-selection]="selectedSportId !== null">
+        <button
+          class="sport-card"
+          *ngFor="let sport of sportList"
+          (click)="selectSport(sport)"
+          [class.active]="selectedSportId === sport.id"
+          [style.background-image]="'linear-gradient(180deg, rgba(8, 16, 30, 0.18) 15%, rgba(8, 16, 30, 0.82) 100%), url(\'' + getSportCardImage(sport) + '\')'"
+        >
+          <span class="sport-name">{{ sport.name }}</span>
+        </button>
+      </div>
+    </section>
 
-<h2> Sportágak</h2>
-<div class="main-container">
+    <section *ngIf="selectedSportId" class="step-panel locations-section">
+      <h3><span class="step-index">2</span>Helyszínek</h3>
+      <div class="locations-row" [class.has-selection]="selectedLocationId !== null">
+        <button
+          class="location-card"
+          *ngFor="let loc of filteredLocations"
+          (click)="selectLocation(loc)"
+          [class.active]="selectedLocationId === loc.id"
+          [style.background-image]="'linear-gradient(180deg, rgba(8, 16, 30, 0.18) 15%, rgba(8, 16, 30, 0.82) 100%), url(\'' + getLocationCardImage(loc) + '\')'"
+        >
+          <span class="location-name">{{ loc.name }}</span>
+          <span class="location-address">{{ loc.address || 'Foglalható sportközpont' }}</span>
+        </button>
+      </div>
+      <div *ngIf="filteredLocations.length === 0" class="text-muted">
+        A választott sporthoz nincs szabad helyszín a megadott dátumon.
+      </div>
+    </section>
 
-  <div class="sports-row">
-    <button class="chip" *ngFor="let sport of sportList" (click)="selectSport(sport)"
-      [class.active]="selectedSportId === sport.id">
-      {{ sport.name }}
-    </button>
-  </div>
+    <section *ngIf="selectedLocationId" class="step-panel fields-section">
+      <h3><span class="step-index">3</span>Pályák</h3>
+      <div class="fields-row" [class.has-selection]="selectedFieldId !== null">
+        <button
+          class="field-card"
+          *ngFor="let field of filteredFields"
+          (click)="selectField(field)"
+          [class.active]="selectedFieldId === field.id"
+          [style.background-image]="getFieldCardBackgroundImage(field)"
+        >
+          <span class="field-name">{{ field.name }}</span>
+          <span class="field-sub">Foglalható pálya</span>
+        </button>
+      </div>
+    </section>
 
-  <div *ngIf="selectedSportId" class="locations-section">
-    <h3>Helyszínek</h3>
-    <div class="locations-row">
-      <button class="chip" *ngFor="let loc of filteredLocations" (click)="selectLocation(loc)"
-        [class.active]="selectedLocationId === loc.id">
-        {{ loc.name }}
+    <section *ngIf="selectedFieldId" class="step-panel price-section">
+      <h4>Választott ár: <span class="price-value">{{ selectedPrice || 'N/A' }} Ft</span></h4>
+    </section>
+
+    <section *ngIf="selectedFieldId" class="step-panel dates-section">
+      <h4>Elérhető dátumok</h4>
+      <div class="dates-row" [class.has-selection]="selectedDate !== null">
+        <button class="chip" *ngFor="let d of availableDates" (click)="selectDate(d)" [class.active]="selectedDate === d">
+          {{ d }}
+        </button>
+      </div>
+      <div *ngIf="availableDates.length === 0" class="text-muted">
+        Nincs szabad időpont ehhez a pályához.
+      </div>
+    </section>
+
+    <section *ngIf="selectedDate" class="step-panel times-section">
+      <h4>Elérhető időpontok ({{ selectedDate }})</h4>
+      <div class="times-row" [class.has-selection]="selectedSlot !== null">
+        <button class="chip" *ngFor="let slot of timesForSelectedDate" (click)="selectSlot(slot)" [class.active]="selectedSlot === slot">
+          {{ slot.startTime || slot.time || '—' }}
+        </button>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button (click)="goToBooking()" class="btn btn-primary" [class.disabled]="!selectedSlot">
+        Foglalás
       </button>
     </div>
   </div>
- 
-
-
-  <div *ngIf="selectedLocationId" class="fields-section">
-    <h3>Pályák</h3>
-    <div class="fields-row">
-      <button class="chip" *ngFor="let field of filteredFields" (click)="selectField(field)"
-        [class.active]="selectedFieldId === field.id">
-        {{ field.name }}
-      </button>
-    </div>
-  </div>
-
-    <div *ngIf="selectedFieldId" class="price-section">
-    <h4>Ár: <span class="price-value">{{ selectedPrice || 'N/A' }} Ft</span></h4>
-  </div>
-
-  <div *ngIf="selectedFieldId" class="dates-section">
-    <h4>Elérhető dátumok</h4>
-    <div class="dates-row">
-      <button class="chip" *ngFor="let d of availableDates" (click)="selectDate(d)" [class.active]="selectedDate === d">
-        {{ d }}
-      </button>
-    </div>
-    <div *ngIf="availableDates.length === 0" class="text-muted mt-1">
-      Nincs szabad időpont ehhez a pályához.
-    </div>
-  </div>
-
-  <div *ngIf="selectedDate" class="times-section">
-    <h4>Elérhető időpontok ({{ selectedDate }})</h4>
-    <div class="times-row">
-      <button class="chip" *ngFor="let slot of timesForSelectedDate" (click)="selectSlot(slot)"
-        [class.active]="selectedSlot === slot">
-        {{ slot.startTime || slot.time || '—' }}
-      </button>
-    </div>
-  </div>
-
-
-
-
-  <div class="actions">
-    <button (click)="goToBooking()" class="btn btn-primary" [class.disabled]="!selectedSlot">
-      Foglalás
-    </button>
-  </div>
-</div>
+</section>

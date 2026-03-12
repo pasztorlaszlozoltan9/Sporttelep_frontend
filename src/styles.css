@@ -1,1 +1,71 @@
 @import "bootstrap";
+@import "flatpickr/dist/flatpickr.min.css";
+
+.flatpickr-calendar {
+	border: 1px solid rgba(128, 147, 170, 0.3);
+	border-radius: 0.9rem;
+	box-shadow: 0 22px 44px rgba(14, 20, 34, 0.22);
+	overflow: hidden;
+	font-family: "Lexend", "Segoe UI", sans-serif;
+}
+
+.flatpickr-months {
+	background: linear-gradient(180deg, #f5fff8 0%, #ecf8f1 100%);
+}
+
+.flatpickr-current-month {
+	color: #17314d;
+	font-weight: 700;
+}
+
+.flatpickr-monthDropdown-months,
+.numInputWrapper input {
+	font-weight: 700;
+}
+
+.flatpickr-weekdays {
+	background: #f4faf6;
+}
+
+.flatpickr-weekday {
+	color: #33506e;
+	font-weight: 700;
+}
+
+.flatpickr-day {
+	border-radius: 0.52rem;
+	color: #1e3551;
+	font-weight: 600;
+}
+
+.flatpickr-day:hover {
+	background: #e9f8ef;
+	border-color: #cce8d7;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+	background: #0df259;
+	border-color: #0df259;
+	color: #052312;
+	box-shadow: 0 8px 20px rgba(13, 242, 89, 0.35);
+}
+
+.flatpickr-day.today {
+	border-color: #87dca8;
+}
+
+.flatpickr-day.today:hover {
+	border-color: #0df259;
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+	border-radius: 0.55rem;
+}
+
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+	background: rgba(13, 242, 89, 0.16);
+}

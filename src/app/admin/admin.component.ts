@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { AdminService } from '../shared/admin.service';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../shared/auth.service';
@@ -12,6 +12,8 @@ import { AvailabledateService } from '../shared/availabledate.service';
 import { PriceService } from '../shared/price.service';
 import { BookingService } from '../shared/booking.service';
 import Swal from 'sweetalert2';
+import flatpickr from 'flatpickr';
+import { Hungarian } from 'flatpickr/dist/l10n/hu.js';
 
 @Component({
   selector: 'app-admin',
@@ -20,7 +22,7 @@ import Swal from 'sweetalert2';
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.css'
 })
-export class AdminComponent {
+export class AdminComponent implements AfterViewInit, OnDestroy {
   protected readonly api = inject(AdminService);
   protected readonly builder = inject(FormBuilder)
   protected readonly auth: AuthService = inject(AuthService)
@@ -32,6 +34,90 @@ export class AdminComponent {
   protected readonly availableDateService = inject(AvailabledateService);
   protected readonly priceService = inject(PriceService);
   protected readonly bookingService = inject(BookingService);
+
+  private datePickerInstance: any = null;
+  private timePickerInstance: any = null;
+
+  @ViewChild('availableDatePicker')
+  availableDatePicker?: ElementRef<HTMLInputElement>;
+
+  @ViewChild('availableTimePicker')
+  availableTimePicker?: ElementRef<HTMLInputElement>;
+
+  ngAfterViewInit(): void {
+    this.initializeAvailableDatePicker();
+    this.initializeAvailableTimePicker();
+  }
+
+  ngOnDestroy(): void {
+    this.datePickerInstance?.destroy();
+    this.timePickerInstance?.destroy();
+  }
+
+  private initializeAvailableDatePicker(): void {
+    const input = this.availableDatePicker?.nativeElement;
+    if (!input) {
+      return;
+    }
+
+    this.datePickerInstance?.destroy();
+
+    this.datePickerInstance = flatpickr(input, {
+      locale: Hungarian,
+      dateFormat: 'Y-m-d',
+      disableMobile: true,
+      static: true,
+      defaultDate: this.availableDateForm.value.date || undefined,
+      onChange: (_selectedDates, dateStr) => {
+        this.availableDateForm.patchValue({ date: dateStr });
+      }
+
+    });
+  }
+
+  private initializeAvailableTimePicker(): void {
+    const input = this.availableTimePicker?.nativeElement;
+    if (!input) {
+      return;
+    }
+
+    this.timePickerInstance?.destroy();
+
+    this.timePickerInstance = flatpickr(input, {
+      locale: Hungarian,
+      enableTime: true,
+      noCalendar: true,
+      time_24hr: true,
+      dateFormat: 'H:i',
+      disableMobile: true,
+      static: true,
+      defaultDate: this.normalizeTimeForPicker(this.availableDateForm.value.startTime),
+      onChange: (_selectedDates, timeStr) => {
+        this.availableDateForm.patchValue({ startTime: timeStr });
+      }
+    });
+  }
+
+  private normalizeTimeForPicker(value: string | null | undefined): string {
+    const v = String(value ?? '').trim();
+    if (!v) {
+      return '';
+    }
+
+    const parts = v.split(':');
+    if (parts.length >= 2) {
+      return `${parts[0]}:${parts[1]}`;
+    }
+
+    return v;
+  }
+
+  private openAvailableDatePickerWhenReady(): void {
+    setTimeout(() => {
+      this.initializeAvailableDatePicker();
+      this.initializeAvailableTimePicker();
+    });
+  }
 
   host = 'http://localhost:8000/api/'
 
@@ -241,8 +327,19 @@ export class AdminComponent {
       this.bookingForm.reset();
     }
     this.showModal = true
+
+    if (this.activeView === 'availableDates') {
+      this.openAvailableDatePickerWhenReady();
+    }
   }
   startCloseModal() {
+    if (this.activeView === 'availableDates') {
+      this.datePickerInstance?.destroy();
+      this.datePickerInstance = null;
+      this.timePickerInstance?.destroy();
+      this.timePickerInstance = null;
+    }
+
     this.showModal = false;
     if (this.activeView === 'users') {
       this.editingUserId = null;
@@ -304,20 +401,38 @@ export class AdminComponent {
 
   //Új felhasználó létrehozása vagy módosítása
 
-  async startSave() {
-    const confirmation = await Swal.fire({
-      title: 'Biztosan mented a változtatásokat?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Mentés',
-      cancelButtonText: 'Mégsem'
-    });
+  private isPhoneValid(phone: string): boolean {
+    return /^\+[0-9]{8,15}$/.test(String(phone ?? '').trim());
+  }
 
-    if (!confirmation.isConfirmed) {
-      return;
-    }
+  private showPhoneValidationError(): void {
+    Swal.fire({
+      title: 'Érvénytelen telefonszám',
+      text: 'A telefonszámnak + jellel kell kezdődnie (pl. +36301234567).',
+      icon: 'warning'
+    });
+  }
+
+  async startSave() {
+    // const confirmation = await Swal.fire({
+    //   title: 'Biztosan mented a változtatásokat?',
+    //   icon: 'question',
+    //   showCancelButton: true,
+    //   confirmButtonText: 'Mentés',
+    //   cancelButtonText: 'Mégsem'
+    // });
+
+    // if (!confirmation.isConfirmed) {
+    //   return;
+    // }
 
     if (this.editingUserId) {
+      const phone = String(this.userForm.value.phone ?? '').trim();
+      if (!this.isPhoneValid(phone)) {
+        this.showPhoneValidationError();
+        return;
+      }
+
       if (!this.editingUserPassword) {
         Swal.fire({
           title: 'Nem található a felhasználó aktuális jelszava a mentéshez!',
@@ -331,12 +446,12 @@ export class AdminComponent {
       const userData: any = {
         email: this.userForm.value.email,
         password: this.editingUserPassword,
-        phone: this.userForm.value.phone,
+        phone,
         fullname: this.userForm.value.fullname,
         roleId: Number(this.userForm.value.roleId),
         verified: this.editingUserVerified
       };
-      
+
       this.api.updateUser(this.editingUserId, userData).subscribe({
         next: (result: any) => {
           this.showModal = false;
@@ -363,15 +478,21 @@ export class AdminComponent {
         }
       });
     } else {
+      const phone = String(this.userForm.value.phone ?? '').trim();
+      if (!this.isPhoneValid(phone)) {
+        this.showPhoneValidationError();
+        return;
+      }
+
       // Create new user - don't include roleId
       const userData: any = {
         email: this.userForm.value.email,
         password: this.userForm.value.password,
         password_confirmation: this.userForm.value.password_confirmation,
-        phone: this.userForm.value.phone,
+        phone,
         fullname: this.userForm.value.fullname
       };
-      
+
       this.api.addUser(userData).subscribe({
         next: (result: any) => {
           this.showModal = false;
@@ -413,17 +534,17 @@ export class AdminComponent {
   }
 
   async startDeleteUser(userId: number) {
-    const confirmation = await Swal.fire({
-      title: 'Biztosan törölni szeretnéd ezt a felhasználót?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Törlés',
-      cancelButtonText: 'Mégsem'
-    });
+    // const confirmation = await Swal.fire({
+    //   title: 'Biztosan törölni szeretnéd ezt a felhasználót?',
+    //   icon: 'warning',
+    //   showCancelButton: true,
+    //   confirmButtonText: 'Törlés',
+    //   cancelButtonText: 'Mégsem'
+    // });
 
-    if (!confirmation.isConfirmed) {
-      return;
-    }
+    // if (!confirmation.isConfirmed) {
+    //   return;
+    // }
 
     this.deletingUserId = userId;
     this.deleteForm.reset();
@@ -495,16 +616,16 @@ export class AdminComponent {
   //Új sport létrehozása vagy módosítása vagy törlése
 
   async startSaveSport() {
-    const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
-    if (!confirmed) {
-      return;
-    }
+    // const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
+    // if (!confirmed) {
+    //   return;
+    // }
 
     const sportData = {
       name: this.sportForm.value.name,
       duration: this.sportForm.value.duration,
     };
-    
+
     if (this.editingSportId) {
       // Update existing sport
       this.sportService.updateSport(this.editingSportId, sportData).subscribe({
@@ -597,17 +718,17 @@ export class AdminComponent {
   // Új helyszín létrehozása vagy módosítása vagy törlése
 
   async startSaveLocation() {
-    const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
-    if (!confirmed) {
-      return;
-    }
+    // const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
+    // if (!confirmed) {
+    //   return;
+    // }
 
     const locationData = {
       name: this.locationForm.value.name,
       address: this.locationForm.value.address,
       email: this.locationForm.value.email
     };
-    
+
     if (this.editingLocationId) {
       // Update existing location
       this.locService.updateLocation(this.editingLocationId, locationData).subscribe({
@@ -698,22 +819,22 @@ export class AdminComponent {
     });
   }
 
-  
+
 
   //Új pályák létrehozása vagy módosítása vagy törlése
 
-   async startSaveField() {
-    const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
-    if (!confirmed) {
-      return;
-    }
+  async startSaveField() {
+    // const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
+    // if (!confirmed) {
+    //   return;
+    // }
 
     const fieldData = {
       name: this.fieldForm.value.name,
       locationId: this.fieldForm.value.locationId,
       sportId: this.fieldForm.value.sportId
     };
-    
+
     if (this.editingFieldId) {
       // Update existing field
       this.fieldService.updateField(this.editingFieldId, fieldData).subscribe({
@@ -807,21 +928,21 @@ export class AdminComponent {
     });
   }
 
-  
+
 
   //Új szabad időpont létrehozása vagy módosítása vagy törlése
   async startSaveAvailableDate() {
-    const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
-    if (!confirmed) {
-      return;
-    }
+    // const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
+    // if (!confirmed) {
+    //   return;
+    // }
 
     const availableDateData = {
       date: this.availableDateForm.value.date,
       startTime: this.availableDateForm.value.startTime,
       fieldId: this.availableDateForm.value.fieldId
     };
-    
+
     if (this.editingAvailableDateId) {
       // Update existing date
       this.availableDateService.updateAvailableDate(this.editingAvailableDateId, availableDateData).subscribe({
@@ -885,6 +1006,7 @@ export class AdminComponent {
     });
     // Open the modal
     this.showModal = true;
+    this.openAvailableDatePickerWhenReady();
   }
 
   async startDeleteAvailableDate(availableDateId: number) {
@@ -917,17 +1039,17 @@ export class AdminComponent {
 
   //Új ár létrehozása vagy módosítása vagy törlése
 
-   async startSavePrice() {
-    const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
-    if (!confirmed) {
-      return;
-    }
+  async startSavePrice() {
+    // const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
+    // if (!confirmed) {
+    //   return;
+    // }
 
     const priceData = {
       price: this.priceForm.value.price,
       fieldId: this.priceForm.value.fieldId
     };
-    
+
     if (this.editingPriceId) {
       // Update existing price
       this.priceService.updatePrice(this.editingPriceId, priceData).subscribe({
@@ -1018,11 +1140,11 @@ export class AdminComponent {
   }
 
   //Új foglalás létrehozása vagy módosítása vagy törlése
-   async startSaveBooking() {
-    const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
-    if (!confirmed) {
-      return;
-    }
+  async startSaveBooking() {
+    // const confirmed = await this.confirmAction('Biztosan mented a változtatásokat?', 'question', 'Mentés');
+    // if (!confirmed) {
+    //   return;
+    // }
 
     const bookingData = {
       sportId: this.bookingForm.value.sportId,
@@ -1034,7 +1156,7 @@ export class AdminComponent {
       date: this.bookingForm.value.date,
       startTime: this.bookingForm.value.startTime
     };
-    
+
     if (this.editingBookingId) {
       // Update existing booking
       this.bookingService.updateBooking(this.editingBookingId, bookingData).subscribe({
