@@ -1,23 +1,21 @@
-<head>
-    <title>Bejelentkezés</title>
-</head>
-
-<section class="auth-layout">
+<section class="auth-layout" [class.register-open]="showRegisterForm">
     <aside class="auth-branding">
-        <div class="branding-overlay"></div>
-        <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsC0MfUm22xEpzWedwsa8R0EO6h0Kowv_Y7S2WbsZdb33hWEgX2tXSmKFLg7Cfc9diJzipxVNDtT2_ToI5rpFEWyEGLygyTKcalG8l31jSnAkmVXrCeoztCQTO8FzHZYgpw4XE3R7-oQWH9gUxNuWePb7ZbzLrFS0JZqx0KIqNKbADVOFq9J0tzIVI04P0LxuSgCsqQL8ch8LBbEqrivj85bVvempIKXfRaHEVitN1fiIN3_-fATGytee2d-2-V8UwlTRxDmPhUFM"
-            alt="Sport arena"
-            class="branding-image"
-        >
-        <div class="branding-content">
-            <h1>Budapest Sporttelepek</h1>
-            <p>Találd meg a tökéletes pályát, és foglald le másodpercek alatt.</p>
+        <div class="branding-card" #brandingCard>
+            <div class="branding-overlay"></div>
+            <img
+                src="/pics/branding-image.jpg"
+                alt="Sport arena"
+                class="branding-image"
+            >
+            <div class="branding-content">
+                <h1>Budapest Sporttelepek</h1>
+                <p>Találd meg a tökéletes pályát, és foglald le másodpercek alatt.</p>
+            </div>
         </div>
     </aside>
 
     <main class="auth-panel">
-        <div class="auth-card">
+        <div class="auth-card" #authCard>
             <header class="auth-header">
                 <h2>Bejelentkezés</h2>
                 <p>Üdvözlünk a legnépszerűbb sportfoglaló platformon.</p>
@@ -60,6 +58,9 @@
 
                         <label for="reg-phone">Telefonszám</label>
                         <input type="text" id="reg-phone" formControlName="phone" placeholder="+36301234567">
+                        @if (shouldShowPhoneWarning()) {
+                        <p class="password-warning">A telefonszámnak + jellel kell kezdődnie (pl. +36301234567).</p>
+                        }
 
                         <label for="reg-fullname">Teljes név</label>
                         <input type="text" id="reg-fullname" formControlName="fullname" placeholder="Teljes neved">

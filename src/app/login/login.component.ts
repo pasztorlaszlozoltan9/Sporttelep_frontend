@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, HostBinding, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../shared/auth.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -16,7 +16,17 @@ import  Swal from  'sweetalert2';
 export class LoginComponent {
   private readonly googleClientId = '201182991102-dc6nvg3uf9dvf30dp4bs6igmcrjcq4vh.apps.googleusercontent.com';
   private googleResizeTimeout: any = null;
-  private readonly onResizeHandler = () => this.scheduleGoogleButtonRender();
+  private readonly onResizeHandler = () => {
+    this.scheduleGoogleButtonRender();
+    this.syncBrandingCardHeight();
+  };
+  private cardResizeObserver: ResizeObserver | null = null;
+
+  @ViewChild('brandingCard')
+  brandingCardRef?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('authCard')
+  authCardRef?: ElementRef<HTMLDivElement>;
   title = "Bejelentkezés";
 
   loginForm !: any;
@@ -24,6 +34,11 @@ export class LoginComponent {
   showRegisterForm: boolean = false;
   user: any = null;
   host = 'http://localhost:8000/api/'
+
+  @HostBinding('class.register-open-host')
+  get registerOpenHostClass(): boolean {
+    return this.showRegisterForm;
+  }
 
 
   constructor(
@@ -42,7 +57,7 @@ export class LoginComponent {
     });
     this.registerForm = this.builder.group({
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', Validators.required],
+      phone: ['', [Validators.required, Validators.pattern(/^\+[0-9]{8,15}$/)]],
       fullname: ['', Validators.required],
       password: ['', [Validators.required]],
       password_confirmation: ['', [Validators.required]]
@@ -53,12 +68,43 @@ export class LoginComponent {
     window.addEventListener('resize', this.onResizeHandler);
   }
 
+  ngAfterViewInit(): void {
+    this.syncBrandingCardHeight();
+
+    if (typeof ResizeObserver !== 'undefined' && this.authCardRef?.nativeElement) {
+      this.cardResizeObserver = new ResizeObserver(() => this.syncBrandingCardHeight());
+      this.cardResizeObserver.observe(this.authCardRef.nativeElement);
+    }
+  }
+
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.onResizeHandler);
+    this.cardResizeObserver?.disconnect();
+    this.cardResizeObserver = null;
     if (this.googleResizeTimeout) {
       clearTimeout(this.googleResizeTimeout);
       this.googleResizeTimeout = null;
     }
+  }
+
+  private syncBrandingCardHeight(): void {
+    const brandingCard = this.brandingCardRef?.nativeElement;
+    const authCard = this.authCardRef?.nativeElement;
+    if (!brandingCard || !authCard) {
+      return;
+    }
+
+    if (window.innerWidth <= 900) {
+      brandingCard.style.height = '';
+      return;
+    }
+
+    const authCardHeight = Math.ceil(authCard.getBoundingClientRect().height);
+    if (authCardHeight <= 0) {
+      return;
+    }
+
+    brandingCard.style.height = `${authCardHeight}px`;
   }
 
   toggleRegisterForm(): void {
@@ -279,7 +325,7 @@ export class LoginComponent {
         if (!phone) {
           return 'A telefonszám megadása kötelező.';
         }
-        if (!/^\+?[0-9]{8,15}$/.test(phone)) {
+        if (!/^\+[0-9]{8,15}$/.test(phone)) {
           return 'Érvénytelen telefonszám formátum.';
         }
         return null;
@@ -406,11 +452,7 @@ export class LoginComponent {
     }
 
     if (this.registerForm.invalid) {
-      Swal.fire({
-        title: 'Hiányzó adatok',
-        text: 'Tölts ki minden kötelező mezőt helyesen.',
-        icon: 'warning'
-      });
+      this.registerForm.markAllAsTouched();
       return;
     }
 
@@ -470,6 +512,21 @@ export class LoginComponent {
     const specialOk = /[^A-Za-z0-9]/.test(password);
 
     return minLengthOk && lowercaseOk && uppercaseOk && specialOk;
+  }
+
+  protected isHungarianPhoneValid(): boolean {
+    const phone = String(this.registerForm?.value?.phone ?? '').trim();
+    return /^\+[0-9]{8,15}$/.test(phone);
+  }
+
+  protected shouldShowPhoneWarning(): boolean {
+    const phoneControl = this.registerForm?.get('phone');
+    const phone = String(this.registerForm?.value?.phone ?? '').trim();
+    if (!phone) {
+      return false;
+    }
+
+    return Boolean(phoneControl?.touched || phoneControl?.dirty) && !this.isHungarianPhoneValid();
   }
 
 }

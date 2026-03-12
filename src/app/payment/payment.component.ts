@@ -33,6 +33,7 @@ export class PaymentComponent implements OnInit {
   cvc: string = '';
   billingEmail: string = '';
   amountLabel: string = 'N/A';
+  isPaymentProcessing: boolean = false;
   private bookingData: any = null;
 
   constructor(
@@ -95,6 +96,10 @@ export class PaymentComponent implements OnInit {
   }
 
   async submitPayment(): Promise<void> {
+    if (this.isPaymentProcessing) {
+      return;
+    }
+
     const cardNumberDigits = this.cardNumber.replace(/\D+/g, '');
     const monthNumber = Number(this.expiryMonth);
 
@@ -148,31 +153,49 @@ export class PaymentComponent implements OnInit {
       email: await this.resolveBookingEmailForBackend()
     };
 
+    this.isPaymentProcessing = true;
+    this.showProcessingAlert('Fizetés és foglalás feldolgozása...');
+
     this.bookingService.addBooking(bookingPayload).subscribe({
       next: async (result: any) => {
-        await this.sendBookingEmailNotification();
+        try {
+          const adminEmailError = await this.sendBookingEmailNotification();
 
-        const emailWarning = result?.emailWarning ?? result?.data?.emailWarning ?? null;
-        if (emailWarning) {
-          await Swal.fire({
-            title: 'Foglalás sikeres, de email figyelmeztetés',
-            text: String(emailWarning),
-            icon: 'warning',
-            confirmButtonText: 'Tovább'
-          });
-        } else {
-          await Swal.fire({
-            title: 'Sikeres fizetés',
-            text: 'A fizetésed feldolgozásra került, a foglalásod elmentettük.',
-            icon: 'success',
-            confirmButtonText: 'Tovább'
-          });
+          Swal.close();
+
+          const emailWarning = result?.emailWarning ?? result?.data?.emailWarning ?? null;
+          if (emailWarning) {
+            await Swal.fire({
+              title: 'Foglalás sikeres, de email figyelmeztetés',
+              text: String(emailWarning),
+              icon: 'warning',
+              confirmButtonText: 'Tovább'
+            });
+          } else if (adminEmailError) {
+            await Swal.fire({
+              title: 'Foglalás mentve, de admin email nem ment ki',
+              text: adminEmailError,
+              icon: 'warning',
+              confirmButtonText: 'Tovább'
+            });
+          } else {
+            await Swal.fire({
+              title: 'Sikeres fizetés',
+              text: 'A fizetésed feldolgozásra került, a foglalásod elmentettük.',
+              icon: 'success',
+              confirmButtonText: 'Tovább'
+            });
+          }
+
+          this.bookingService.clearBookingData();
+          this.router.navigate(['/profil']);
+        } finally {
+          this.isPaymentProcessing = false;
         }
-
-        this.bookingService.clearBookingData();
-        this.router.navigate(['/profil']);
       },
       error: async () => {
+        this.isPaymentProcessing = false;
+        Swal.close();
         await Swal.fire({
           title: 'Fizetés sikeres, de a foglalás sikertelen',
           text: 'Hiba történt a foglalás mentése közben.',
@@ -186,10 +209,26 @@ export class PaymentComponent implements OnInit {
     this.router.navigate(['/booking']);
   }
 
-  private async sendBookingEmailNotification(): Promise<void> {
+  private showProcessingAlert(message: string): void {
+    void Swal.fire({
+      title: 'Folyamatban',
+      text: message,
+      icon: 'info',
+      timer: 12000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+  }
+
+  private async sendBookingEmailNotification(): Promise<string | null> {
     if (this.emailJsTemplateId === this.missingBookingTemplatePlaceholder) {
       console.warn('EmailJS booking template id is not configured.');
-      return;
+      return 'A booking EmailJS template nincs beállítva.';
     }
 
     const details = await this.resolveBookingDetailsForEmail();
@@ -228,13 +267,12 @@ export class PaymentComponent implements OnInit {
         templateParams,
         { publicKey: this.emailJsPublicKey }
       );
+      return null;
     } catch (error: any) {
       console.error('EmailJS admin booking notification error:', error);
-      await Swal.fire({
-        title: 'Foglalás mentve, de admin email nem ment ki',
-        text: 'Kérlek ellenőrizd az EmailJS admin template beállításait.',
-        icon: 'warning'
-      });
+      const status = error?.status ? `status: ${error.status}` : 'status: unknown';
+      const details = error?.text || error?.message || 'unknown error';
+      return `EmailJS hiba (${status}): ${details}`;
     }
   }
 

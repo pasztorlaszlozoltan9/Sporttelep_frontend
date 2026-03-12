@@ -82,8 +82,10 @@
       </div>
 
       <div class="actions">
-        <button type="submit" class="btn btn-primary">Fizetés</button>
-        <button type="button" class="btn btn-secondary" (click)="cancel()">Mégse</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isPaymentProcessing">
+          {{ isPaymentProcessing ? 'Feldolgozás...' : 'Fizetés' }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="isPaymentProcessing">Mégse</button>
       </div>
     </form>
   </div>

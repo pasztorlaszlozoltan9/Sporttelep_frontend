@@ -80,15 +80,6 @@
   box-shadow: 0 10px 20px rgba(14, 223, 89, 0.24);
 }
 
-.admin-content > div {
-  margin-top: 0.9rem;
-  border: 1px solid rgba(134, 149, 173, 0.24);
-  border-radius: 1rem;
-  background: linear-gradient(180deg, #ffffff 0%, var(--admin-bg) 100%);
-  box-shadow: 0 20px 44px rgba(15, 24, 40, 0.07);
-  padding: 0.88rem;
-}
-
 .admin-content h2 {
   margin: 0;
   color: var(--admin-ink);
@@ -312,10 +303,14 @@
 .modal {
   position: fixed;
   inset: 0;
-  z-index: 1100;
+  z-index: 1040;
   background: rgba(8, 14, 24, 0.46);
   padding: 1rem;
   overflow-y: auto;
+}
+
+:host ::ng-deep .swal2-container {
+  z-index: 2000 !important;
 }
 
 .modal-dialog {
@@ -356,6 +351,28 @@
 .modal-body form {
   display: grid;
   gap: 0.62rem;
+}
+
+.date-picker-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
+.date-picker-wrap .form-label {
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.date-picker-wrap .flatpickr-wrapper {
+  display: block;
+  width: 100%;
+}
+
+.date-picker-wrap .flatpickr-calendar {
+  z-index: 1200;
 }
 
 .form-label {

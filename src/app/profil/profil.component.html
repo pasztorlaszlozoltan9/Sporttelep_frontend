@@ -92,9 +92,6 @@
                             <label for="confirmPassword" class="form-label">Jelszó megerősítés</label>
                             <input type="password" class="form-control" formControlName="password_confirmation" id="confirmPassword">
                         </div>
-                        @if (passwordForm.value.password && passwordForm.value.password_confirmation && passwordForm.value.password !== passwordForm.value.password_confirmation) {
-                        <p class="password-warning">A két jelszó nem egyezik.</p>
-                        }
                         <div class="password-rules" aria-live="polite">
                             <p class="rules-title">Jelszó követelmények:</p>
                             <p [class.ok]="isPasswordLongEnough()">Legalább 8 karakter</p>
@@ -118,24 +115,24 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Felhasznalo torlese</h5>
+            <h5 class="modal-title">Felhasználó törlése</h5>
             <button type="button" class="btn-close" (click)="startCloseDeleteModal()" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <form [formGroup]="deleteForm" (ngSubmit)="confirmDeleteUser()" id="deleteForm">
               <div>
-                <label for="deletePassword" class="form-label">Jelszo</label>
+                <label for="deletePassword" class="form-label">Jelszó</label>
                 <input type="password" class="form-control" formControlName="password" id="deletePassword">
               </div>
               <div>
-                <label for="deleteConfirmPassword" class="form-label">Jelszo megerositese</label>
+                <label for="deleteConfirmPassword" class="form-label">Jelszó megerősítése</label>
                 <input type="password" class="form-control" formControlName="password_confirmation" id="deleteConfirmPassword">
               </div>
             </form>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" (click)="startCloseDeleteModal()">Bezárás</button>
-            <button type="submit" class="btn btn-danger" form="deleteForm">Torles vegrehajtasa</button>
+            <button type="submit" class="btn btn-danger" form="deleteForm">Törlés végrehajtása</button>
           </div>
         </div>
       </div>
@@ -145,7 +142,7 @@
   <section class="bookings-section" *ngIf="user">
     <h2>Foglalások</h2>
     <div class="bookings-grid">
-      @for(booking of getUserBookings(); track trackBooking($index, booking)) {
+      @for(booking of getUserBookings(); track booking.id) {
       <article class="booking-card" [style.background-image]="'url(' + getLocationCardImage(booking.locationId) + ')'">
         <div class="booking-card-content">
           <div class="booking-grid">
@@ -157,8 +154,8 @@
             <div class="info-item"><span class="info-label">Kezdés</span><span class="info-value">{{ booking.startTime }}</span></div>
           </div>
           <div class="actions booking-actions">
-            <button class="btn btn-warning btn-sm" type="button" (click)="startUpdateBooking(booking)">Módosítás</button>
-            <button class="btn btn-danger btn-sm" type="button" (click)="startDeleteBooking(booking)">Foglalás törlése</button>
+            <button class="btn btn-warning btn-sm" type="button" (click)="startUpdateBooking(booking)" [disabled]="isBookingActionInProgress">Módosítás</button>
+            <button class="btn btn-danger btn-sm" type="button" (click)="startDeleteBooking(booking.id)" [disabled]="isBookingActionInProgress">Foglalás törlése</button>
           </div>
         </div>
       </article>
@@ -241,8 +238,10 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="startCloseBookingModal()">Bezárás</button>
-          <button type="submit" class="btn btn-primary" form="bookingForm">Mentés</button>
+          <button type="button" class="btn btn-secondary" (click)="startCloseBookingModal()" [disabled]="isBookingActionInProgress">Bezárás</button>
+          <button type="submit" class="btn btn-primary" form="bookingForm" [disabled]="isBookingActionInProgress">
+            {{ isBookingActionInProgress ? 'Feldolgozás...' : 'Mentés' }}
+          </button>
         </div>
       </div>
     </div>

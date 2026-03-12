@@ -225,6 +225,50 @@
   gap: 0.6rem;
 }
 
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  background: rgba(8, 14, 24, 0.46);
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.password-rules {
+  border: 1px solid #dbe3ee;
+  border-radius: 0.72rem;
+  background: #f8fbff;
+  padding: 0.62rem 0.72rem;
+  margin-top: 1rem;
+  margin-bottom: 0.15rem;
+}
+
+.password-rules .rules-title {
+  margin: 0 0 0.28rem;
+  color: #37485f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.password-rules p {
+  margin: 0;
+  color: #8a1f1f;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.password-rules p.ok {
+  color: #117a3f;
+}
+
+.password-warning {
+  margin: 0;
+  color: #b12828;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 @media (max-width: 760px) {
   .profil-info-grid,
   .booking-grid {

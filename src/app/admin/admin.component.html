@@ -318,11 +318,11 @@
                     <form [formGroup]="sportForm" (ngSubmit)="startSaveSport()" id="sportForm">
                         <div>
                             <label for="name" class="form-label">Név</label>
-                            <input type="text" class="form-control" formControlName="name" id="name">
+                            <input type="text" class="form-control" formControlName="name" id="name" placeholder="Adj meg egy nevet!">
                         </div>
                         <div>
                             <label for="duration" class="form-label">Időtartam</label>
-                            <input type="text" class="form-control" formControlName="duration" id="duration">
+                            <input type="text" class="form-control" formControlName="duration" id="duration" placeholder="Adj meg egy időtartamot!">
                         </div>
                     </form>
 
@@ -353,15 +353,15 @@
                     <form [formGroup]="locationForm" (ngSubmit)="startSaveLocation()" id="locationForm">
                         <div>
                             <label for="name" class="form-label">Név</label>
-                            <input type="text" class="form-control" formControlName="name" id="name">
+                            <input type="text" class="form-control" formControlName="name" id="name" placeholder="Adj meg egy nevet!">
                         </div>
                         <div>
                             <label for="address" class="form-label">Cím</label>
-                            <input type="text" class="form-control" formControlName="address" id="address">
+                            <input type="text" class="form-control" formControlName="address" id="address" placeholder="Adj meg egy címet!">
                         </div>
                         <div>
                             <label for="email" class="form-label">Email</label>
-                            <input type="text" class="form-control" formControlName="email" id="email">
+                            <input type="text" class="form-control" formControlName="email" id="email"  placeholder="Adj meg egy email címet!">
                         </div>
                     </form>
 
@@ -391,23 +391,23 @@
                     <form [formGroup]="fieldForm" (ngSubmit)="startSaveField()" id="fieldForm">
                         <div>
                             <label for="name" class="form-label">Név</label>
-                            <input type="text" class="form-control" formControlName="name" id="name">
+                            <input type="text" class="form-control" formControlName="name" id="name" placeholder="Adj meg egy nevet!">
                         </div>
                         <div>
                             <label for="locationId" class="form-label">Helyszín</label>
                             <select class="form-control" formControlName="locationId" id="locationId">
-                                <option value="">-- Válassz helyszínt --</option>
+                                <option [ngValue]="null" disabled>-- Válassz helyszínt --</option>
                                 @for(location of locations; track location.id) {
-                                    <option [value]="location.id">{{location.name}}</option>
+                                    <option [ngValue]="location.id">{{location.name}}</option>
                                 }
                             </select>
                         </div>
                         <div>
                             <label for="sportId" class="form-label">Sport</label>
                             <select class="form-control" formControlName="sportId" id="sportId">
-                                <option value="">-- Válassz sportot --</option>
+                                <option [ngValue]="null" disabled>-- Válassz sportot --</option>
                                 @for(sport of sports; track sport.id) {
-                                    <option [value]="sport.id">{{sport.name}}</option>
+                                    <option [ngValue]="sport.id">{{sport.name}}</option>
                                 }
                             </select>
                         </div>
@@ -439,20 +439,20 @@
                 <div class="modal-body">
 
                     <form [formGroup]="availableDateForm" (ngSubmit)="startSaveAvailableDate()" id="availableDateForm">
-                        <div>
-                            <label for="date" class="form-label">Dátum</label>
-                            <input type="date" class="form-control" formControlName="date" id="date">
+                        <div class="date-picker-wrap">
+                            <label for="available-date" class="form-label">Dátum</label>
+                            <input #availableDatePicker type="text" class="form-control" id="available-date" formControlName="date" placeholder="Válassz dátumot" autocomplete="off">
                         </div>
-                        <div>
+                        <div class="date-picker-wrap">
                             <label for="startTime" class="form-label">Kezdési idő</label>
-                            <input type="time" class="form-control" formControlName="startTime" id="startTime">
+                            <input #availableTimePicker type="text" class="form-control" formControlName="startTime" id="startTime" placeholder="Válassz időpontot" autocomplete="off">
                         </div>
                         <div>
                             <label for="fieldId" class="form-label">Pálya</label>
-                            <select class="form-control" formControlName="fieldId" id="fieldId">
-                                <option value="">-- Válassz pályát --</option>
+                            <select class="form-control" formControlName="fieldId" id="fieldId" >
+                                <option [ngValue]="null" disabled>-- Válassz pályát --</option>
                                 @for(field of fields; track field.id) {
-                                    <option [value]="field.id">{{field.name}}</option>
+                                    <option [ngValue]="field.id">{{field.name}}</option>
                                 }
                             </select>
                         </div>
@@ -483,14 +483,14 @@
                     <form [formGroup]="priceForm" (ngSubmit)="startSavePrice()" id="priceForm">
                         <div>
                             <label for="price" class="form-label">Ár</label>
-                            <input type="number" class="form-control" formControlName="price" id="price">
+                            <input type="number" class="form-control" formControlName="price" id="price" placeholder="Adj meg egy árat!">
                         </div>
                         <div>
                             <label for="fieldId" class="form-label">Pálya</label>
                             <select class="form-control" formControlName="fieldId" id="fieldId">
-                                <option value="">-- Válassz pályát --</option>
+                                <option [ngValue]="null" disabled>-- Válassz pályát --</option>
                                 @for(field of fields; track field.id) {
-                                    <option [value]="field.id">{{field.name}}</option>
+                                    <option [ngValue]="field.id">{{field.name}}</option>
                                 }
                             </select>
                         </div>
@@ -522,45 +522,45 @@
                         <div>
                             <label for="sportId" class="form-label">Sport</label>
                             <select class="form-control" formControlName="sportId" id="sportId" (change)="onBookingSportChange()">
-                                <option value="">-- Válassz sportot --</option>
+                                <option [ngValue]="null" disabled>-- Válassz sportot --</option>
                                 @for(sport of sports; track sport.id) {
-                                    <option [value]="sport.id">{{sport.name}}</option>
+                                    <option [ngValue]="sport.id">{{sport.name}}</option>
                                 }
                             </select>
                         </div>
                         <div>
                             <label for="locationId" class="form-label">Helyszín</label>
                             <select class="form-control" formControlName="locationId" id="locationId" (change)="onBookingLocationChange()">
-                                <option value="">-- Válassz helyszínt --</option>
+                                <option [ngValue]="null" disabled>-- Válassz helyszínt --</option>
                                 @for(location of locations; track location.id) {
-                                    <option [value]="location.id">{{location.name}}</option>
+                                    <option [ngValue]="location.id">{{location.name}}</option>
                                 }
                             </select>
                         </div>
                         <div>
                             <label for="fieldId" class="form-label">Pálya</label>
                             <select class="form-control" formControlName="fieldId" id="fieldId" (change)="onBookingFieldChange()">
-                                <option value="">-- Válassz pályát --</option>
+                                <option [ngValue]="null" disabled>-- Válassz pályát --</option>
                                 @for(field of getFilteredFields(); track field.id) {
-                                    <option [value]="field.id">{{field.name}}</option>
+                                    <option [ngValue]="field.id">{{field.name}}</option>
                                 }
                             </select>
                         </div>
                         <div>
                             <label for="userId" class="form-label">Felhasználó</label>
                             <select class="form-control" formControlName="userId" id="userId">
-                                <option value="">-- Válassz felhasználót --</option>
+                                <option [ngValue]="null" disabled>-- Válassz felhasználót --</option>
                                 @for(user of users; track user.id) {
-                                    <option [value]="user.id">{{user.email}}</option>
+                                    <option [ngValue]="user.id">{{user.email}}</option>
                                 }
                             </select>
                         </div>
                         <div>
                             <label for="availableDateId" class="form-label">Szabad időpont</label>
                             <select class="form-control" formControlName="availableDateId" id="availableDateId" (change)="onBookingAvailableDateChange()">
-                                <option value="">-- Válassz szabad időpontot --</option>
+                                <option [ngValue]="null" disabled>-- Válassz szabad időpontot --</option>
                                 @for(availableDate of getFilteredAvailableDates(); track availableDate.id) {
-                                    <option [value]="availableDate.id">{{availableDate.date}} {{availableDate.startTime}}</option>
+                                    <option [ngValue]="availableDate.id">{{availableDate.date}} {{availableDate.startTime}}</option>
                                 }
                             </select>
                             @if (bookingForm.value.fieldId && getFilteredAvailableDates().length === 0) {
@@ -570,9 +570,9 @@
                         <div>
                             <label for="priceId" class="form-label">Ár</label>
                             <select class="form-control" formControlName="priceId" id="priceId">
-                                <option value="">-- Válassz árat --</option>
+                                <option [ngValue]="null" disabled>-- Válassz árat --</option>
                                 @for(price of getFilteredPrices(); track price.id) {
-                                    <option [value]="price.id">{{price.price}} Ft</option>
+                                    <option [ngValue]="price.id">{{price.price}} Ft</option>
                                 }
                             </select>
                         </div>

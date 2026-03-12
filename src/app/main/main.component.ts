@@ -20,6 +20,7 @@ import { Hungarian } from 'flatpickr/dist/l10n/hu.js';
 })
 export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly defaultCardImage = 'pics/index_background.jpg';
+  private readonly welcomeSessionKey = 'main_welcome_popup_shown';
 
   private readonly sportImageByKey: Record<string, string> = {
     labdarugas: 'labdarúgás.jpg',
@@ -73,6 +74,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.loadAllData();
     this.loadUserIdFromToken();
+    this.showWelcomePopupIfNeeded();
   }
 
   ngAfterViewInit(): void {
@@ -243,6 +245,15 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       .join('/');
   }
 
+  private normalizeFieldImageKey(value: string): string {
+    return String(value ?? '')
+      .trim()
+      .replace(/[\s_]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toUpperCase();
+  }
+
   private mapImagePath(
     folder: 'sports' | 'locations' | 'fields',
     rawName: string,
@@ -326,7 +337,40 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getFieldCardImage(field: any): string {
-    return this.mapImagePath('fields', String(field?.name ?? ''));
+    const rawFieldName = String(field?.name ?? '').trim();
+    if (!rawFieldName) {
+      return this.defaultCardImage;
+    }
+
+    const normalizedFieldKey = this.normalizeFieldImageKey(rawFieldName);
+    if (!normalizedFieldKey) {
+      return this.defaultCardImage;
+    }
+
+    return this.encodePathSegments(`pics/fields/${normalizedFieldKey}.jpg`);
+  }
+
+  private getLocationCardImageById(locationId: unknown): string {
+    const numericLocationId = Number(locationId);
+    if (!Number.isFinite(numericLocationId)) {
+      return this.defaultCardImage;
+    }
+
+    const location = this.locList.find((loc: any) => Number(loc?.id) === numericLocationId);
+    if (!location) {
+      return this.defaultCardImage;
+    }
+
+    return this.getLocationCardImage(location);
+  }
+
+  getFieldCardBackgroundImage(field: any): string {
+    const gradient = 'linear-gradient(180deg, rgba(8, 16, 30, 0.18) 15%, rgba(8, 16, 30, 0.82) 100%)';
+    const fieldImage = this.getFieldCardImage(field);
+    const locationImage = this.getLocationCardImageById(field?.locationId);
+    const fallbackImage = this.defaultCardImage;
+
+    return `${gradient}, url('${fieldImage}'), url('${locationImage}'), url('${fallbackImage}')`;
   }
 
   get availableDates(): string[] {
@@ -380,6 +424,44 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       startTime: this.selectedSlot?.startTime
     });
     this.router.navigate(['/booking']);
+  }
+
+  private showWelcomePopupIfNeeded(): void {
+    try {
+      if (sessionStorage.getItem(this.welcomeSessionKey) === '1') {
+        return;
+      }
+
+      sessionStorage.setItem(this.welcomeSessionKey, '1');
+    } catch {
+      // If sessionStorage is unavailable, still show once for the current render.
+    }
+
+    setTimeout(() => {
+      void Swal.fire({
+        title: 'Üdvözlünk a Budapest Sporttelepek oldalán!',
+        html: `
+          <div style="display:grid; gap:0.5rem; text-align:center;">
+            <p style="margin:0; font-size:0.95rem; color:#3f4d63;">
+             Ezen az oldalon egy helyen találhatod Budapest és környékének összes elérhető pályáját, legyen szó bármilyen sportágról. </p>
+              <p style="margin:0; font-size:0.95rem; color:#3f4d63;">
+             Válassz sportágat, helyszínt, pályát és időpontot néhány kattintással.
+            </p>
+            <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.15rem; text-align:center; justify-content:center;">
+              <span style="background:#e8fff1; color:#0f8c41; border:1px solid #b9efcf; border-radius:999px; padding:0.22rem 0.55rem; font-size:0.76rem; font-weight:700;">Gyors foglalás</span>
+              <span style="background:#eef7ff; color:#2b5c8e; border:1px solid #c8ddf3; border-radius:999px; padding:0.22rem 0.55rem; font-size:0.76rem; font-weight:700;">Valós elérhetőség</span>
+              <span style="background:#fff6e8; color:#9a6421; border:1px solid #f0d9b0; border-radius:999px; padding:0.22rem 0.55rem; font-size:0.76rem; font-weight:700;">Azonnali visszaigazolás</span>
+            </div>
+          </div>
+        `,
+        confirmButtonText: 'Kezdjük',
+        confirmButtonColor: '#0fca4a',
+        background: '#ffffff',
+        showClass: {
+          popup: 'animate__animated animate__fadeInDown'
+        }
+      });
+    }, 220);
   }
 }
 

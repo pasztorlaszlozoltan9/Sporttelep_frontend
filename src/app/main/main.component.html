@@ -65,7 +65,7 @@
           *ngFor="let field of filteredFields"
           (click)="selectField(field)"
           [class.active]="selectedFieldId === field.id"
-          [style.background-image]="'linear-gradient(180deg, rgba(8, 16, 30, 0.18) 15%, rgba(8, 16, 30, 0.82) 100%), url(\'' + getFieldCardImage(field) + '\')'"
+          [style.background-image]="getFieldCardBackgroundImage(field)"
         >
           <span class="field-name">{{ field.name }}</span>
           <span class="field-sub">Foglalható pálya</span>

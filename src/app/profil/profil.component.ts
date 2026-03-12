@@ -51,6 +51,7 @@ export class ProfilComponent implements OnInit {
   protected showDeleteModal = false;
   protected showBookingModal = false;
   protected showBookingDeleteModal = false;
+  protected isBookingActionInProgress = false;
   protected deletingUserId: number | null = null;
   protected editingBookingId: number | null = null;
   protected deletingBookingId: number | null = null;
@@ -208,6 +209,16 @@ export class ProfilComponent implements OnInit {
       return;
     }
 
+    const phone = String(this.userForm.value.phone ?? '').trim();
+    if (!this.isPhoneValid(phone)) {
+      Swal.fire({
+        title: 'Érvénytelen telefonszám',
+        text: 'A telefonszámnak + jellel kell kezdődnie (pl. +36301234567).',
+        icon: 'warning'
+      });
+      return;
+    }
+
     if (this.editingUserId) {
 
       const currentPassword = this.userForm.value.currentPassword?.trim();
@@ -233,7 +244,7 @@ export class ProfilComponent implements OnInit {
       const userData: any = {
         email: this.userForm.value.email,
         password: this.userForm.value.password,
-        phone: this.userForm.value.phone,
+        phone,
         fullname: this.userForm.value.fullname,
         roleId: this.userForm.value.roleId,
         verified: this.userForm.value.verified
@@ -279,7 +290,7 @@ export class ProfilComponent implements OnInit {
         email: this.userForm.value.email,
         password: this.userForm.value.password,
         // password_confirmation: this.userForm.value.password_confirmation,
-        phone: this.userForm.value.phone,
+        phone,
         fullname: this.userForm.value.fullname
       };
 
@@ -414,23 +425,16 @@ export class ProfilComponent implements OnInit {
       return;
     }
 
-    const password = String(this.passwordForm.value.password ?? '').trim();
-    const passwordConfirmation = String(this.passwordForm.value.password_confirmation ?? '').trim();
+    const password = this.passwordForm.value.password?.trim();
+    const passwordConfirmation = this.passwordForm.value.password_confirmation?.trim();
 
-    if (!this.isPasswordValid(password)) {
-      Swal.fire({
-        title: 'Gyenge jelszó',
-        text: 'A jelszónak legalább 8 karakterből kell állnia, és tartalmaznia kell kisbetűt, nagybetűt, valamint speciális karaktert.',
-        icon: 'warning'
-      });
+    if (!password || !passwordConfirmation) {
+      console.error('Password and confirmation are required');
       return;
     }
 
     if (password !== passwordConfirmation) {
-      Swal.fire({
-        title: 'A két jelszó nem egyezik',
-        icon: 'warning'
-      });
+      console.error('Passwords do not match');
       return;
     }
 
@@ -471,7 +475,7 @@ export class ProfilComponent implements OnInit {
   getUserBookings(): any[] {
     if (!this.user?.id || !this.bookings) return [];
     return (this.bookings as any[])
-      .filter((b: any) => Number(b?.userId) === Number(this.user.id))
+      .filter((b: any) => b.userId === this.user.id)
       .sort((a: any, b: any) => {
         const firstDate = String(a?.date ?? '');
         const secondDate = String(b?.date ?? '');
@@ -484,27 +488,6 @@ export class ProfilComponent implements OnInit {
         const secondStart = String(b?.startTime ?? '');
         return firstStart.localeCompare(secondStart);
       });
-  }
-
-  private getBookingId(booking: any): number | null {
-    const rawId = booking?.id ?? booking?.bookingId ?? booking?.booking_id ?? null;
-    return this.parseId(rawId);
-  }
-
-  trackBooking(index: number, booking: any): string | number {
-    const bookingId = this.getBookingId(booking);
-    if (bookingId !== null) {
-      return bookingId;
-    }
-
-    // Fallback keeps UI stable even if backend returns malformed booking IDs.
-    return [
-      booking?.availableDateId ?? '',
-      booking?.userId ?? '',
-      booking?.date ?? '',
-      booking?.startTime ?? '',
-      index
-    ].join('-');
   }
 
   getSportName(sportId: number): string {
@@ -649,21 +632,12 @@ export class ProfilComponent implements OnInit {
 
   private isEditingThisAvailableDate(availableDateId: number): boolean {
     if (!this.editingBookingId || !this.bookings) return false;
-    const currentBooking = (this.bookings as any[]).find((b: any) => this.getBookingId(b) === this.editingBookingId);
+    const currentBooking = (this.bookings as any[]).find((b: any) => b.id === this.editingBookingId);
     return currentBooking?.availableDateId === availableDateId;
   }
 
   startUpdateBooking(booking: any) {
-    const bookingId = this.getBookingId(booking);
-    if (bookingId === null) {
-      Swal.fire({
-        title: 'A foglalás azonosítója hiányzik, ezért nem módosítható!',
-        icon: 'error'
-      });
-      return;
-    }
-
-    this.editingBookingId = bookingId;
+    this.editingBookingId = booking.id;
     this.bookingForm.patchValue({
       sportId: booking.sportId,
       locationId: booking.locationId,
@@ -740,6 +714,10 @@ export class ProfilComponent implements OnInit {
   }
 
   async startSaveBooking() {
+    if (this.isBookingActionInProgress) {
+      return;
+    }
+
     if (!this.editingBookingId || !this.user?.id) {
       return;
     }
@@ -768,39 +746,49 @@ export class ProfilComponent implements OnInit {
       email: this.user?.email || null
     };
 
+    this.isBookingActionInProgress = true;
+    this.showProcessingAlert('Foglalás módosítása folyamatban...');
+
     this.http.put(`${this.host}bookings/${this.editingBookingId}`, bookingData).subscribe({
       next: async (response: any) => {
-        const adminEmailError = await this.sendAdminBookingActionEmail('update', bookingData);
+        try {
+          const adminEmailError = await this.sendAdminBookingActionEmail('update', bookingData);
 
-        this.startCloseBookingModal();
-        this.loadAllData();
+          this.startCloseBookingModal();
+          this.loadAllData();
+          Swal.close();
 
-        const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
-        if (emailWarning) {
+          const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
+          if (emailWarning) {
+            await Swal.fire({
+              title: 'Foglalás módosítva, de email figyelmeztetés',
+              text: String(emailWarning),
+              icon: 'warning'
+            });
+            return;
+          }
+
+          if (adminEmailError) {
+            await Swal.fire({
+              title: 'Foglalás módosítva, de admin email nem ment ki',
+              text: `EmailJS hiba: ${adminEmailError}`,
+              icon: 'warning'
+            });
+            return;
+          }
+
           await Swal.fire({
-            title: 'Foglalás módosítva, de email figyelmeztetés',
-            text: String(emailWarning),
-            icon: 'warning'
+            title: 'Sikeres módosítás!',
+            icon: 'success'
           });
-          return;
+        } finally {
+          this.isBookingActionInProgress = false;
         }
-
-        if (adminEmailError) {
-          await Swal.fire({
-            title: 'Foglalás módosítva, de admin email nem ment ki',
-            text: `EmailJS hiba: ${adminEmailError}`,
-            icon: 'warning'
-          });
-          return;
-        }
-
-        await Swal.fire({
-          title: 'Sikeres módosítás!',
-          icon: 'success'
-        });
       },
       error: async (err: any) => {
         console.error('Error updating booking:', err);
+        this.isBookingActionInProgress = false;
+        Swal.close();
         await Swal.fire({
           title: 'Hiba történt a módosítás során!',
           icon: 'error'
@@ -809,13 +797,8 @@ export class ProfilComponent implements OnInit {
     });
   }
 
-  async startDeleteBooking(booking: any) {
-    const bookingId = this.getBookingId(booking);
-    if (bookingId === null) {
-      await Swal.fire({
-        title: 'A foglalás azonosítója hiányzik, ezért nem törölhető!',
-        icon: 'error'
-      });
+  async startDeleteBooking(bookingId: number) {
+    if (this.isBookingActionInProgress) {
       return;
     }
 
@@ -833,42 +816,51 @@ export class ProfilComponent implements OnInit {
 
     this.deletingBookingId = bookingId;
     this.bookingDeleteForm.reset();
+    this.isBookingActionInProgress = true;
+    this.showProcessingAlert('Foglalás törlése folyamatban...');
 
-    const bookingToDelete = (this.bookings as any[])?.find((b: any) => this.getBookingId(b) === this.deletingBookingId);
+    const bookingToDelete = (this.bookings as any[])?.find((b: any) => b.id === this.deletingBookingId);
 
     this.http.delete(`${this.host}bookings/${this.deletingBookingId}`).subscribe({
       next: async (response: any) => {
-        const adminEmailError = await this.sendAdminBookingActionEmail('delete', bookingToDelete);
+        try {
+          const adminEmailError = await this.sendAdminBookingActionEmail('delete', bookingToDelete);
 
-        this.startCloseBookingDeleteModal();
-        this.loadAllData();
+          this.startCloseBookingDeleteModal();
+          this.loadAllData();
+          Swal.close();
 
-        const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
-        if (emailWarning) {
+          const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
+          if (emailWarning) {
+            await Swal.fire({
+              title: 'Foglalás törölve, de email figyelmeztetés',
+              text: String(emailWarning),
+              icon: 'warning'
+            });
+            return;
+          }
+
+          if (adminEmailError) {
+            await Swal.fire({
+              title: 'Foglalás törölve, de admin email nem ment ki',
+              text: `EmailJS hiba: ${adminEmailError}`,
+              icon: 'warning'
+            });
+            return;
+          }
+
           await Swal.fire({
-            title: 'Foglalás törölve, de email figyelmeztetés',
-            text: String(emailWarning),
-            icon: 'warning'
+            title: 'Sikeres törlés!',
+            icon: 'success'
           });
-          return;
+        } finally {
+          this.isBookingActionInProgress = false;
         }
-
-        if (adminEmailError) {
-          await Swal.fire({
-            title: 'Foglalás törölve, de admin email nem ment ki',
-            text: `EmailJS hiba: ${adminEmailError}`,
-            icon: 'warning'
-          });
-          return;
-        }
-
-        await Swal.fire({
-          title: 'Sikeres törlés!',
-          icon: 'success'
-        });
       },
       error: async (err: any) => {
         console.error('Error deleting booking:', err);
+        this.isBookingActionInProgress = false;
+        Swal.close();
         await Swal.fire({
           title: 'Hiba történt a törlés során!',
           icon: 'error'
@@ -877,24 +869,40 @@ export class ProfilComponent implements OnInit {
     });
   }
 
-  // Jelszo ellenorzes
-  protected isPasswordLongEnough(): boolean {
-    const password = String(this.passwordForm.value.password ?? '');
+  private showProcessingAlert(message: string): void {
+    void Swal.fire({
+      title: 'Folyamatban',
+      text: message,
+      icon: 'info',
+      timer: 12000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+  }
+
+ //Jelszó ellenörzés
+   protected isPasswordLongEnough(): boolean {
+    const password = String(this.passwordForm?.value?.password ?? '');
     return password.length >= 8;
   }
 
-  protected hasLowercaseInPassword(): boolean {
-    const password = String(this.passwordForm.value.password ?? '');
+   protected hasLowercaseInPassword(): boolean {
+    const password = String(this.passwordForm?.value?.password ?? '');
     return /[a-z]/.test(password);
   }
 
-  protected hasUppercaseInPassword(): boolean {
-    const password = String(this.passwordForm.value.password ?? '');
+   protected hasUppercaseInPassword(): boolean {
+    const password = String(this.passwordForm?.value?.password ?? '');
     return /[A-Z]/.test(password);
   }
 
-  protected hasSpecialCharInPassword(): boolean {
-    const password = String(this.passwordForm.value.password ?? '');
+   protected hasSpecialCharInPassword(): boolean {
+    const password = String(this.passwordForm?.value?.password ?? '');
     return /[^A-Za-z0-9]/.test(password);
   }
 
@@ -906,5 +914,11 @@ export class ProfilComponent implements OnInit {
 
     return minLengthOk && lowercaseOk && uppercaseOk && specialOk;
   }
+
+  private isPhoneValid(phone: string): boolean {
+    return /^\+[0-9]{8,15}$/.test(String(phone ?? '').trim());
+  }
+
+  
 }
 

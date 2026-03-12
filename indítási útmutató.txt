@@ -14,3 +14,17 @@ git clone https://github.com/pasztorlaszlozoltan9/Sporttelep_frontend.git
 npm install -g @angular/cli@20.3.10
 npm install
 ng serve --open
+
+használt npm parancsok
+2026-03-07 13:36:13 - npm run dev - unknown
+2026-03-07 13:37:20 - npm install sweetalert2 - frontend
+2026-03-07 13:45:23 - npm install crypto - backend
+2026-03-07 13:48:32 - npm i baseline-browser-mapping@latest - frontend
+2026-03-07 16:11:19 - npm run dev - backend
+2026-03-07 16:11:23 - npm run dev - unknown
+2026-03-07 17:01:27 - npm install google-auth-library - backend
+2026-03-07 17:04:05 - npm run dev - unknown
+2026-03-07 17:58:58 - npm run start - unknown
+2026-03-07 21:25:12 - npm install @emailjs/browser - frontend
+2026-03-08 19:07:18 - npm install flatpickr - frontend
+2026-03-08 22:20:50 - npm config get cache - backend
