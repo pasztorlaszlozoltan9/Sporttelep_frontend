@@ -92,6 +92,16 @@
                             <label for="confirmPassword" class="form-label">Jelszó megerősítés</label>
                             <input type="password" class="form-control" formControlName="password_confirmation" id="confirmPassword">
                         </div>
+                        @if (passwordForm.value.password && passwordForm.value.password_confirmation && passwordForm.value.password !== passwordForm.value.password_confirmation) {
+                        <p class="password-warning">A két jelszó nem egyezik.</p>
+                        }
+                        <div class="password-rules" aria-live="polite">
+                            <p class="rules-title">Jelszó követelmények:</p>
+                            <p [class.ok]="isPasswordLongEnough()">Legalább 8 karakter</p>
+                            <p [class.ok]="hasLowercaseInPassword()">Legalább 1 kisbetű</p>
+                            <p [class.ok]="hasUppercaseInPassword()">Legalább 1 nagybetű</p>
+                            <p [class.ok]="hasSpecialCharInPassword()">Legalább 1 speciális karakter</p>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -135,7 +145,7 @@
   <section class="bookings-section" *ngIf="user">
     <h2>Foglalások</h2>
     <div class="bookings-grid">
-      @for(booking of getUserBookings(); track booking.id) {
+      @for(booking of getUserBookings(); track trackBooking($index, booking)) {
       <article class="booking-card" [style.background-image]="'url(' + getLocationCardImage(booking.locationId) + ')'">
         <div class="booking-card-content">
           <div class="booking-grid">
@@ -148,7 +158,7 @@
           </div>
           <div class="actions booking-actions">
             <button class="btn btn-warning btn-sm" type="button" (click)="startUpdateBooking(booking)">Módosítás</button>
-            <button class="btn btn-danger btn-sm" type="button" (click)="startDeleteBooking(booking.id)">Foglalás törlése</button>
+            <button class="btn btn-danger btn-sm" type="button" (click)="startDeleteBooking(booking)">Foglalás törlése</button>
           </div>
         </div>
       </article>
@@ -247,14 +257,14 @@
           <h5 class="modal-title">Foglalás törlése</h5>
           <button type="button" class="btn-close" (click)="startCloseBookingDeleteModal()" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <!-- <div class="modal-body">
           <form [formGroup]="bookingDeleteForm" (ngSubmit)="confirmDeleteBooking()" id="bookingDeleteForm">
             <div>
               <label for="bookingDeletePassword" class="form-label">Jelszó</label>
               <input type="password" class="form-control" formControlName="password" id="bookingDeletePassword">
             </div>
           </form>
-        </div>
+        </div> -->
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="startCloseBookingDeleteModal()">Bezárás</button>
           <button type="submit" class="btn btn-danger" form="bookingDeleteForm">Törlés végrehajtása</button>
