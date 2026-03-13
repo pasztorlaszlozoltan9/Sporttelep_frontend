@@ -159,6 +159,7 @@ export class PaymentComponent implements OnInit {
     this.bookingService.addBooking(bookingPayload).subscribe({
       next: async (result: any) => {
         try {
+          this.updateProcessingAlert('Foglalás mentve, email küldése...');
           const adminEmailError = await this.sendBookingEmailNotification();
 
           Swal.close();
@@ -214,8 +215,6 @@ export class PaymentComponent implements OnInit {
       title: 'Folyamatban',
       text: message,
       icon: 'info',
-      timer: 12000,
-      timerProgressBar: true,
       showConfirmButton: false,
       allowOutsideClick: false,
       allowEscapeKey: false,
@@ -223,6 +222,16 @@ export class PaymentComponent implements OnInit {
         Swal.showLoading();
       }
     });
+  }
+
+  private updateProcessingAlert(message: string): void {
+    if (!Swal.isVisible()) {
+      this.showProcessingAlert(message);
+      return;
+    }
+
+    Swal.update({ text: message });
+    Swal.showLoading();
   }
 
   private async sendBookingEmailNotification(): Promise<string | null> {

@@ -36,7 +36,9 @@
         }
       </div>
 
-      <button class="send-btn" type="submit">Küldés</button>
+      <button class="send-btn" type="submit" [disabled]="isSending">
+        {{ isSending ? 'Küldés folyamatban...' : 'Küldés' }}
+      </button>
     </form>
   </div>
 </section>

@@ -262,6 +262,12 @@
   filter: brightness(1.03);
 }
 
+.primary-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+  filter: none;
+}
+
 .register-hint {
   margin: 0.5rem 0 0;
   font-size: 0.9rem;

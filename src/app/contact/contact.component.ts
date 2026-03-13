@@ -16,6 +16,7 @@ export class ContactComponent {
   private readonly emailJsServiceId = 'sporttelepek_0825';
   private readonly emailJsTemplateId = 'template_fhn9jml';
   private readonly emailJsPublicKey = '__s7hNRM8XTSCfrSd';
+  protected isSending = false;
   protected contactForm;
 
   constructor(private builder: FormBuilder) {
@@ -26,6 +27,10 @@ export class ContactComponent {
   }
 
   async sendMessage() {
+    if (this.isSending) {
+      return;
+    }
+
     if (this.contactForm.invalid) {
       this.contactForm.markAllAsTouched();
       return;
@@ -40,6 +45,9 @@ export class ContactComponent {
       reply_to: email
     };
 
+    this.isSending = true;
+    this.showProcessingAlert('Üzenet küldése folyamatban...');
+
     try {
       await emailjs.send(
         this.emailJsServiceId,
@@ -48,7 +56,8 @@ export class ContactComponent {
         { publicKey: this.emailJsPublicKey }
       );
 
-      Swal.fire({
+      Swal.close();
+      await Swal.fire({
         title: 'Üzenet elküldve!',
         icon: 'success'
       });
@@ -57,12 +66,29 @@ export class ContactComponent {
       const status = error?.status ?? 'unknown';
       const details = error?.text ?? error?.message ?? 'Ismeretlen hiba';
 
-      Swal.fire({
+      Swal.close();
+      await Swal.fire({
         title: 'Küldés sikertelen',
         text: `EmailJS hiba (${status}): ${details}`,
         icon: 'error'
       });
       console.error('EmailJS send error:', error);
+    } finally {
+      this.isSending = false;
     }
+  }
+
+  private showProcessingAlert(message: string): void {
+    void Swal.fire({
+      title: 'Folyamatban',
+      text: message,
+      icon: 'info',
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
   }
 }

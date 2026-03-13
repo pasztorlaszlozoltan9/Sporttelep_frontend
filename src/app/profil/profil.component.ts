@@ -752,6 +752,7 @@ export class ProfilComponent implements OnInit {
     this.http.put(`${this.host}bookings/${this.editingBookingId}`, bookingData).subscribe({
       next: async (response: any) => {
         try {
+          this.updateProcessingAlert('Foglalás módosítva, email küldése...');
           const adminEmailError = await this.sendAdminBookingActionEmail('update', bookingData);
 
           this.startCloseBookingModal();
@@ -824,6 +825,7 @@ export class ProfilComponent implements OnInit {
     this.http.delete(`${this.host}bookings/${this.deletingBookingId}`).subscribe({
       next: async (response: any) => {
         try {
+          this.updateProcessingAlert('Foglalás törölve, email küldése...');
           const adminEmailError = await this.sendAdminBookingActionEmail('delete', bookingToDelete);
 
           this.startCloseBookingDeleteModal();
@@ -874,8 +876,6 @@ export class ProfilComponent implements OnInit {
       title: 'Folyamatban',
       text: message,
       icon: 'info',
-      timer: 12000,
-      timerProgressBar: true,
       showConfirmButton: false,
       allowOutsideClick: false,
       allowEscapeKey: false,
@@ -883,6 +883,16 @@ export class ProfilComponent implements OnInit {
         Swal.showLoading();
       }
     });
+  }
+
+  private updateProcessingAlert(message: string): void {
+    if (!Swal.isVisible()) {
+      this.showProcessingAlert(message);
+      return;
+    }
+
+    Swal.update({ text: message });
+    Swal.showLoading();
   }
 
  //Jelszó ellenörzés

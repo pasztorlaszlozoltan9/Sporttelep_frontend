@@ -265,8 +265,10 @@
           </form>
         </div> -->
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="startCloseBookingDeleteModal()">Bezárás</button>
-          <button type="submit" class="btn btn-danger" form="bookingDeleteForm">Törlés végrehajtása</button>
+          <button type="button" class="btn btn-secondary" (click)="startCloseBookingDeleteModal()" [disabled]="isBookingActionInProgress">Bezárás</button>
+          <button type="submit" class="btn btn-danger" form="bookingDeleteForm" [disabled]="isBookingActionInProgress">
+            {{ isBookingActionInProgress ? 'Feldolgozás...' : 'Törlés végrehajtása' }}
+          </button>
         </div>
       </div>
     </div>

@@ -83,7 +83,9 @@
                         <p class="password-warning">A két jelszó nem egyezik.</p>
                         }
 
-                        <button class="primary-btn" type="submit">Regisztráció</button>
+                        <button class="primary-btn" type="submit" [disabled]="isRegisterProcessing">
+                            {{ isRegisterProcessing ? 'Feldolgozás...' : 'Regisztráció' }}
+                        </button>
 
                         <p class="register-hint">
                             Ha már regisztráltál, <button type="button" class="inline-link" (click)="toggleRegisterForm()">lépj vissza a belépéshez.</button>

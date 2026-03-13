@@ -120,6 +120,13 @@
   filter: brightness(1.03);
 }
 
+.send-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+  transform: none;
+  filter: none;
+}
+
 @media (max-width: 600px) {
   .contact-shell {
     padding: 0.78rem 0.45rem 1rem;

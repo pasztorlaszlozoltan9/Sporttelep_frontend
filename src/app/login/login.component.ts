@@ -32,6 +32,7 @@ export class LoginComponent {
   loginForm !: any;
   registerForm !: any;
   showRegisterForm: boolean = false;
+  isRegisterProcessing: boolean = false;
   user: any = null;
   host = 'http://localhost:8000/api/'
 
@@ -426,6 +427,10 @@ export class LoginComponent {
   }
 
   register() {
+    if (this.isRegisterProcessing) {
+      return;
+    }
+
     if (!this.registerForm) {
       console.error('registerForm not initialized');
       return;
@@ -456,31 +461,51 @@ export class LoginComponent {
       return;
     }
 
+    this.isRegisterProcessing = true;
+    this.showProcessingAlert('Regisztráció folyamatban...');
+
     this.auth.register(this.registerForm.value).subscribe({
-      next: (response: any) => {
+      next: async (_response: any) => {
+        Swal.close();
         localStorage.removeItem('token');
         window.dispatchEvent(new Event('authStateChanged'));
         this.registerForm.reset();
-        Swal.fire({
+        await Swal.fire({
           title: "Sikeres regisztráció, megerősítő email kiküldve!",
           icon: "success",
           draggable: true
         });
         this.router.navigate(['/login']);
+        this.isRegisterProcessing = false;
       },
-      error: (error: any) => {
-        const emailControl = this.registerForm.get('email');
+      error: async (error: any) => {
+        Swal.close();
         if (error.error.message.includes('User already exists')) {
-          Swal.fire({
+          await Swal.fire({
             title: "Felhasználó már létezik!",
             icon: "error"
           });
         } else {
-          Swal.fire({
+          await Swal.fire({
             title:"Hiba a regisztráció során!",
             icon: "error"
-          })
+          });
         }
+        this.isRegisterProcessing = false;
+      }
+    });
+  }
+
+  private showProcessingAlert(message: string): void {
+    void Swal.fire({
+      title: 'Folyamatban',
+      text: message,
+      icon: 'info',
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
       }
     });
   }
