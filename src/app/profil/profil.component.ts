@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminService } from '../shared/admin.service';
 import { AuthService } from '../shared/auth.service';
 import emailjs from '@emailjs/browser';
@@ -28,6 +28,7 @@ export class ProfilComponent implements OnInit {
   private readonly emailJsServiceId: string = 'sporttelepek_0825';
   private readonly emailJsBookingUpdateTemplateId: string = 'template_pz3d5z8';
   private readonly emailJsBookingDeleteTemplateId: string = 'template_9cdc5ki';
+  private readonly emailJsUserDeleteTemplateId: string = 'template_os8a0gg';
   private readonly emailJsPublicKey: string = '__s7hNRM8XTSCfrSd';
   private readonly mainAdminEmail: string = 'admin@admin.com';
 
@@ -52,6 +53,7 @@ export class ProfilComponent implements OnInit {
   protected showBookingModal = false;
   protected showBookingDeleteModal = false;
   protected isBookingActionInProgress = false;
+  protected isUserDeleteInProgress = false;
   protected deletingUserId: number | null = null;
   protected editingBookingId: number | null = null;
   protected deletingBookingId: number | null = null;
@@ -72,8 +74,8 @@ export class ProfilComponent implements OnInit {
   })
 
   protected deleteForm = this.builder.group({
-    password: '',
-    password_confirmation: ''
+    password: ['', Validators.required],
+    password_confirmation: ['', Validators.required]
   })
 
   protected bookingForm = this.builder.group({
@@ -121,6 +123,7 @@ export class ProfilComponent implements OnInit {
 
   startCloseDeleteModal() {
     this.showDeleteModal = false;
+    this.isUserDeleteInProgress = false;
     this.deletingUserId = null;
     this.deleteForm.reset();
   }
@@ -350,6 +353,10 @@ export class ProfilComponent implements OnInit {
   }
 
   confirmDeleteUser() {
+    if (this.isUserDeleteInProgress) {
+      return;
+    }
+
     const password = this.deleteForm.value.password?.trim();
     const passwordConfirmation = this.deleteForm.value.password_confirmation?.trim();
     const loginEmail = this.user?.email?.trim();
@@ -380,22 +387,57 @@ export class ProfilComponent implements OnInit {
 
     this.auth.login({ email: loginEmail, password }).subscribe({
       next: () => {
+        this.isUserDeleteInProgress = true;
+        this.showProcessingAlert('Felhasználó törlése folyamatban...');
+
         this.api.deleteUser(this.deletingUserId!).subscribe({
-          next: () => {
-            this.startCloseDeleteModal();
-            Swal.fire({
-              title: 'Sikeres törlés!',
-              icon: 'success',
-              draggable: true
-            });
-            this.auth.logout();
-            window.dispatchEvent(new Event('authStateChanged'));
-            // this.checkLoginStatus();
+          next: async (response: any) => {
+            try {
+              this.updateProcessingAlert('Törlés sikeres, email küldése...');
+              const userDeleteEmailError = await this.sendUserDeletionEmailNotification(
+                loginEmail,
+                String(this.user?.fullname ?? '').trim() || 'Felhasználó',
+                String(this.user?.phone ?? '').trim() || 'N/A'
+              );
+
+              this.updateProcessingAlert('Törlés sikeres, kijelentkeztetés...');
+              const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
+
+              this.startCloseDeleteModal();
+              Swal.close();
+
+              if (emailWarning) {
+                await Swal.fire({
+                  title: 'Sikeres törlés, de email figyelmeztetés',
+                  text: String(emailWarning),
+                  icon: 'warning'
+                });
+              } else if (userDeleteEmailError) {
+                await Swal.fire({
+                  title: 'Sikeres törlés, de a felhasználói email nem ment ki',
+                  text: `EmailJS hiba: ${userDeleteEmailError}`,
+                  icon: 'warning'
+                });
+              } else {
+                await Swal.fire({
+                  title: 'Sikeres törlés! Email elküldve.',
+                  icon: 'success',
+                  draggable: true
+                });
+              }
+
+              this.auth.logout();
+              window.dispatchEvent(new Event('authStateChanged'));
+            } finally {
+              this.isUserDeleteInProgress = false;
+            }
           },
           error: (err: any) => {
             console.error('Error deleting user:', err);
             console.error('Status:', err.status);
             console.error('Error message:', err.message);
+            this.isUserDeleteInProgress = false;
+            Swal.close();
             Swal.fire({
               title: 'Hiba történt a törlés során!',
               icon: 'error'
@@ -671,14 +713,14 @@ export class ProfilComponent implements OnInit {
 
     const data = this.buildBookingNotificationData(booking);
     const bookingSummary = [
-      `Muvelet: Foglalas ${actionLabel}`,
-      `Foglalo email: ${data.userEmail}`,
+      `Művelet: Foglalás ${actionLabel}`,
+      `Foglaló email: ${data.userEmail}`,
       `Sport: ${data.sportName}`,
-      `Helyszin: ${data.locationName}`,
-      `Palya: ${data.fieldName}`,
-      `Datum: ${data.bookingDate}`,
-      `Kezdesi ido: ${data.bookingStartTime}`,
-      `Ar: ${data.bookingPrice}`
+      `Helyszín: ${data.locationName}`,
+      `Pálya: ${data.fieldName}`,
+      `Dátum: ${data.bookingDate}`,
+      `Kezdés: ${data.bookingStartTime}`,
+      `Ár: ${data.bookingPrice}`
     ].join('\n');
 
     const templateParams = {
@@ -707,6 +749,41 @@ export class ProfilComponent implements OnInit {
       return null;
     } catch (error: any) {
       console.error(`EmailJS admin booking ${actionLabel} notification error:`, error);
+      const status = error?.status ? `status: ${error.status}` : 'status: unknown';
+      const details = error?.text || error?.message || 'unknown error';
+      return `${status}, details: ${details}`;
+    }
+  }
+
+  private async sendUserDeletionEmailNotification(userEmail: string, fullName: string, phone: string): Promise<string | null> {
+    const deletedAt = new Date().toLocaleString('hu-HU');
+    const message = [
+      `Kedves ${fullName}!`,
+      'A fiókod törlése sikeresen megtörtént.',
+      `Törlés ideje: ${deletedAt}`
+    ].join('\n');
+
+    const templateParams = {
+      to_email: userEmail,
+      email: userEmail,
+      user_email: userEmail,
+      user_name: fullName,
+      user_fullname: fullName,
+      user_phone: phone,
+      deleted_at: deletedAt,
+      message
+    };
+
+    try {
+      await emailjs.send(
+        this.emailJsServiceId,
+        this.emailJsUserDeleteTemplateId,
+        templateParams,
+        { publicKey: this.emailJsPublicKey }
+      );
+      return null;
+    } catch (error: any) {
+      console.error('EmailJS user deletion notification error:', error);
       const status = error?.status ? `status: ${error.status}` : 'status: unknown';
       const details = error?.text || error?.message || 'unknown error';
       return `${status}, details: ${details}`;
