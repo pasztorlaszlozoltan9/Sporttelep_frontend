@@ -60,6 +60,8 @@ export class ProfilComponent implements OnInit {
 
   protected userForm = this.builder.group({
     email: '',
+
+    //jelszó kérés megszüntetése módosításnál és törlésnél
     password: '',
     currentPassword: '',
     phone: '',
