@@ -71,12 +71,157 @@ export class AdminComponent implements OnDestroy {
   protected editingUserVerified: boolean = false;
   protected editingUserActive: number = 1;
   protected userActiveFilter: 'all' | 'active' | 'inactive' = 'all';
+  protected fieldLocationFilterId: string = 'all';
+  protected fieldSportFilterId: string = 'all';
+  protected fieldBookingWindowFieldFilterId: string = 'all';
+  protected fieldBookingWindowLocationFilterId: string = 'all';
+  protected fieldBookingWindowSportFilterId: string = 'all';
+  protected priceSportFilterId: string = 'all';
+  protected priceLocationFilterId: string = 'all';
+  protected bookingListLocationFilterId: string = 'all';
+  protected bookingListSportFilterId: string = 'all';
+  protected bookingListFieldFilterId: string = 'all';
 
   get filteredUsers(): any[] {
     if (!this.users) return [];
     if (this.userActiveFilter === 'active') return (this.users as any[]).filter((u: any) => Number(u.active) === 1);
     if (this.userActiveFilter === 'inactive') return (this.users as any[]).filter((u: any) => Number(u.active) !== 1);
     return this.users;
+  }
+
+  get usersCountAll(): number {
+    return (this.users as any[] | null | undefined)?.length ?? 0;
+  }
+
+  get usersCountActive(): number {
+    if (!this.users) return 0;
+    return (this.users as any[]).filter((u: any) => Number(u?.active) === 1).length;
+  }
+
+  get usersCountInactive(): number {
+    if (!this.users) return 0;
+    return (this.users as any[]).filter((u: any) => Number(u?.active) !== 1).length;
+  }
+
+  get filteredFieldsList(): any[] {
+    if (!this.fields) return [];
+    const locationId = this.parseId(this.fieldLocationFilterId);
+    const sportId = this.parseId(this.fieldSportFilterId);
+    if (!locationId && !sportId) {
+      return this.fields;
+    }
+    return (this.fields as any[]).filter((field: any) => {
+      const locationOk = !locationId || Number(field?.locationId) === locationId;
+      const sportOk = !sportId || Number(field?.sportId) === sportId;
+      return locationOk && sportOk;
+    });
+  }
+
+  get filteredFieldBookingWindows(): any[] {
+    if (!this.fieldBookingWindows) return [];
+    const fieldId = this.parseId(this.fieldBookingWindowFieldFilterId);
+    const locationId = this.parseId(this.fieldBookingWindowLocationFilterId);
+    const sportId = this.parseId(this.fieldBookingWindowSportFilterId);
+    if (!fieldId && !locationId && !sportId) {
+      return this.fieldBookingWindows;
+    }
+    return (this.fieldBookingWindows as any[]).filter((windowData: any) => {
+      const windowFieldId = Number(windowData?.fieldId);
+      const field = (this.fields as any[] | null | undefined)?.find((item: any) => Number(item?.id) === windowFieldId);
+      if (!field) return false;
+
+      const fieldOk = !fieldId || windowFieldId === fieldId;
+      const locationOk = !locationId || Number(field?.locationId) === locationId;
+      const sportOk = !sportId || Number(field?.sportId) === sportId;
+      return fieldOk && locationOk && sportOk;
+    });
+  }
+
+  get filteredPricesList(): any[] {
+    if (!this.prices) return [];
+    const sportId = this.parseId(this.priceSportFilterId);
+    const locationId = this.parseId(this.priceLocationFilterId);
+
+    if (!sportId && !locationId) {
+      return this.prices;
+    }
+
+    return (this.prices as any[]).filter((price: any) => {
+      const field = (this.fields as any[] | null | undefined)?.find((item: any) => Number(item?.id) === Number(price?.fieldId));
+      if (!field) return false;
+
+      const sportOk = !sportId || Number(field?.sportId) === sportId;
+      const locationOk = !locationId || Number(field?.locationId) === locationId;
+      return sportOk && locationOk;
+    });
+  }
+
+  get filteredBookingsList(): any[] {
+    if (!this.bookings) return [];
+    const locationId = this.parseId(this.bookingListLocationFilterId);
+    const sportId = this.parseId(this.bookingListSportFilterId);
+    const fieldId = this.parseId(this.bookingListFieldFilterId);
+
+    if (!locationId && !sportId && !fieldId) {
+      return this.bookings;
+    }
+
+    return (this.bookings as any[]).filter((booking: any) => {
+      const locationOk = !locationId || Number(booking?.locationId) === locationId;
+      const sportOk = !sportId || Number(booking?.sportId) === sportId;
+      const fieldOk = !fieldId || Number(booking?.fieldId) === fieldId;
+      return locationOk && sportOk && fieldOk;
+    });
+  }
+
+  get hasActiveUsersFilter(): boolean {
+    return this.userActiveFilter !== 'all';
+  }
+
+  get hasActiveFieldsFilter(): boolean {
+    return this.fieldLocationFilterId !== 'all' || this.fieldSportFilterId !== 'all';
+  }
+
+  get hasActiveFieldBookingWindowFilter(): boolean {
+    return this.fieldBookingWindowLocationFilterId !== 'all'
+      || this.fieldBookingWindowSportFilterId !== 'all'
+      || this.fieldBookingWindowFieldFilterId !== 'all';
+  }
+
+  get hasActivePricesFilter(): boolean {
+    return this.priceLocationFilterId !== 'all' || this.priceSportFilterId !== 'all';
+  }
+
+  get hasActiveBookingsFilter(): boolean {
+    return this.bookingListLocationFilterId !== 'all'
+      || this.bookingListSportFilterId !== 'all'
+      || this.bookingListFieldFilterId !== 'all';
+  }
+
+  clearUsersFilter(): void {
+    this.userActiveFilter = 'all';
+  }
+
+  clearFieldsFilter(): void {
+    this.fieldLocationFilterId = 'all';
+    this.fieldSportFilterId = 'all';
+  }
+
+  clearFieldBookingWindowFilter(): void {
+    this.fieldBookingWindowLocationFilterId = 'all';
+    this.fieldBookingWindowSportFilterId = 'all';
+    this.fieldBookingWindowFieldFilterId = 'all';
+  }
+
+  clearPricesFilter(): void {
+    this.priceLocationFilterId = 'all';
+    this.priceSportFilterId = 'all';
+  }
+
+  clearBookingsFilter(): void {
+    this.bookingListLocationFilterId = 'all';
+    this.bookingListSportFilterId = 'all';
+    this.bookingListFieldFilterId = 'all';
   }
 
   toggleUserActiveFilter(): void {
@@ -95,6 +240,19 @@ export class AdminComponent implements OnDestroy {
   protected editingBookingId: number | null = null;
   protected openBookingDropdown: 'sport' | 'location' | 'field' | 'user' | 'price' | null = null;
   protected openAdminDropdown: 'fieldLocation' | 'fieldSport' | 'windowWeekday' | 'windowField' | 'windowActive' | 'priceField' | null = null;
+  protected openListFilterDropdown:
+    | 'userStatus'
+    | 'fieldsLocation'
+    | 'fieldsSport'
+    | 'windowLocation'
+    | 'windowSport'
+    | 'windowField'
+    | 'priceLocation'
+    | 'priceSport'
+    | 'bookingLocation'
+    | 'bookingSport'
+    | 'bookingField'
+    | null = null;
   protected activeView: 'users' | 'sports' | 'locations' | 'fields' | 'fieldBookingWindows' | 'prices' | 'bookings' = 'users';
 
   protected userForm = this.builder.group({
@@ -173,6 +331,7 @@ export class AdminComponent implements OnDestroy {
     if (!target?.closest('.fp-select-shell')) {
       this.openBookingDropdown = null;
       this.openAdminDropdown = null;
+      this.openListFilterDropdown = null;
     }
   }
 
@@ -180,6 +339,7 @@ export class AdminComponent implements OnDestroy {
   handleWindowResize(): void {
     this.closeBookingDropdown();
     this.closeAdminDropdown();
+    this.closeListFilterDropdown();
   }
 
   toggleBookingDropdown(dropdown: 'sport' | 'location' | 'field' | 'user' | 'price', event: Event): void {
@@ -201,6 +361,217 @@ export class AdminComponent implements OnDestroy {
 
   closeAdminDropdown(): void {
     this.openAdminDropdown = null;
+  }
+
+  toggleListFilterDropdown(
+    dropdown:
+      | 'userStatus'
+      | 'fieldsLocation'
+      | 'fieldsSport'
+      | 'windowLocation'
+      | 'windowSport'
+      | 'windowField'
+      | 'priceLocation'
+      | 'priceSport'
+      | 'bookingLocation'
+      | 'bookingSport'
+      | 'bookingField',
+    event: Event
+  ): void {
+    event.stopPropagation();
+    this.openListFilterDropdown = this.openListFilterDropdown === dropdown ? null : dropdown;
+  }
+
+  closeListFilterDropdown(): void {
+    this.openListFilterDropdown = null;
+  }
+
+  selectUserActiveFilter(value: 'all' | 'active' | 'inactive', event?: Event): void {
+    event?.stopPropagation();
+    this.userActiveFilter = value;
+    this.closeListFilterDropdown();
+  }
+
+  selectFieldLocationFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.fieldLocationFilterId = value;
+    this.closeListFilterDropdown();
+  }
+
+  selectFieldSportFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.fieldSportFilterId = value;
+    this.closeListFilterDropdown();
+  }
+
+  selectFieldBookingWindowLocationFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.fieldBookingWindowLocationFilterId = value;
+    this.closeListFilterDropdown();
+  }
+
+  selectFieldBookingWindowSportFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.fieldBookingWindowSportFilterId = value;
+    this.closeListFilterDropdown();
+  }
+
+  selectFieldBookingWindowFieldFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.fieldBookingWindowFieldFilterId = value;
+    this.closeListFilterDropdown();
+  }
+
+  selectPriceLocationFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.priceLocationFilterId = value;
+    this.closeListFilterDropdown();
+  }
+
+  selectPriceSportFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.priceSportFilterId = value;
+    this.closeListFilterDropdown();
+  }
+
+  selectBookingListLocationFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.bookingListLocationFilterId = value;
+    this.resetBookingListFieldFilterIfInvalid();
+    this.closeListFilterDropdown();
+  }
+
+  selectBookingListSportFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.bookingListSportFilterId = value;
+    this.resetBookingListFieldFilterIfInvalid();
+    this.closeListFilterDropdown();
+  }
+
+  selectBookingListFieldFilter(value: string, event?: Event): void {
+    event?.stopPropagation();
+    this.bookingListFieldFilterId = value;
+    this.closeListFilterDropdown();
+  }
+
+  private resetBookingListFieldFilterIfInvalid(): void {
+    const selectedFieldId = this.parseId(this.bookingListFieldFilterId);
+    if (!selectedFieldId) return;
+    const stillVisible = this.getBookingListFieldOptions().some((field: any) => Number(field?.id) === selectedFieldId);
+    if (!stillVisible) {
+      this.bookingListFieldFilterId = 'all';
+    }
+  }
+
+  getUserActiveFilterLabel(): string {
+    if (this.userActiveFilter === 'active') {
+      return `Aktív (${this.usersCountActive})`;
+    }
+    if (this.userActiveFilter === 'inactive') {
+      return `Inaktív (${this.usersCountInactive})`;
+    }
+    return `Mind (${this.usersCountAll})`;
+  }
+
+  getFieldLocationFilterLabel(): string {
+    const locationId = this.parseId(this.fieldLocationFilterId);
+    if (!locationId || !this.locations) {
+      return 'Minden helyszín';
+    }
+    const location = (this.locations as any[]).find((item: any) => Number(item?.id) === locationId);
+    return location?.name || 'Minden helyszín';
+  }
+
+  getFieldSportFilterLabel(): string {
+    const sportId = this.parseId(this.fieldSportFilterId);
+    if (!sportId || !this.sports) {
+      return 'Minden sport';
+    }
+    const sport = (this.sports as any[]).find((item: any) => Number(item?.id) === sportId);
+    return sport?.name || 'Minden sport';
+  }
+
+  getFieldBookingWindowLocationFilterLabel(): string {
+    const locationId = this.parseId(this.fieldBookingWindowLocationFilterId);
+    if (!locationId || !this.locations) {
+      return 'Minden helyszín';
+    }
+    const location = (this.locations as any[]).find((item: any) => Number(item?.id) === locationId);
+    return location?.name || 'Minden helyszín';
+  }
+
+  getFieldBookingWindowSportFilterLabel(): string {
+    const sportId = this.parseId(this.fieldBookingWindowSportFilterId);
+    if (!sportId || !this.sports) {
+      return 'Minden sport';
+    }
+    const sport = (this.sports as any[]).find((item: any) => Number(item?.id) === sportId);
+    return sport?.name || 'Minden sport';
+  }
+
+  getFieldBookingWindowFieldFilterLabel(): string {
+    const fieldId = this.parseId(this.fieldBookingWindowFieldFilterId);
+    if (!fieldId || !this.fields) {
+      return 'Minden pálya';
+    }
+    const field = (this.fields as any[]).find((item: any) => Number(item?.id) === fieldId);
+    return field?.name || 'Minden pálya';
+  }
+
+  getPriceLocationFilterLabel(): string {
+    const locationId = this.parseId(this.priceLocationFilterId);
+    if (!locationId || !this.locations) {
+      return 'Minden helyszín';
+    }
+    const location = (this.locations as any[]).find((item: any) => Number(item?.id) === locationId);
+    return location?.name || 'Minden helyszín';
+  }
+
+  getPriceSportFilterLabel(): string {
+    const sportId = this.parseId(this.priceSportFilterId);
+    if (!sportId || !this.sports) {
+      return 'Minden sport';
+    }
+    const sport = (this.sports as any[]).find((item: any) => Number(item?.id) === sportId);
+    return sport?.name || 'Minden sport';
+  }
+
+  getBookingListLocationFilterLabel(): string {
+    const locationId = this.parseId(this.bookingListLocationFilterId);
+    if (!locationId || !this.locations) {
+      return 'Minden helyszín';
+    }
+    const location = (this.locations as any[]).find((item: any) => Number(item?.id) === locationId);
+    return location?.name || 'Minden helyszín';
+  }
+
+  getBookingListSportFilterLabel(): string {
+    const sportId = this.parseId(this.bookingListSportFilterId);
+    if (!sportId || !this.sports) {
+      return 'Minden sport';
+    }
+    const sport = (this.sports as any[]).find((item: any) => Number(item?.id) === sportId);
+    return sport?.name || 'Minden sport';
+  }
+
+  getBookingListFieldFilterLabel(): string {
+    const fieldId = this.parseId(this.bookingListFieldFilterId);
+    if (!fieldId || !this.fields) {
+      return 'Minden pálya';
+    }
+    const field = (this.fields as any[]).find((item: any) => Number(item?.id) === fieldId);
+    return field?.name || 'Minden pálya';
+  }
+
+  getBookingListFieldOptions(): any[] {
+    if (!this.fields) return [];
+    const locationId = this.parseId(this.bookingListLocationFilterId);
+    const sportId = this.parseId(this.bookingListSportFilterId);
+    return (this.fields as any[]).filter((field: any) => {
+      const locationOk = !locationId || Number(field?.locationId) === locationId;
+      const sportOk = !sportId || Number(field?.sportId) === sportId;
+      return locationOk && sportOk;
+    });
   }
 
   selectFieldFormLocation(locationId: unknown, event?: Event): void {

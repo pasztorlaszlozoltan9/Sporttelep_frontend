@@ -411,6 +411,52 @@ export class LoginComponent {
     });
   }
 
+  forgotPassword() {
+    Swal.fire({
+      title: 'Elfelejtett jelszó',
+      text: 'Add meg az email címedet, és küldünk egy visszaállító linket.',
+      input: 'email',
+      inputPlaceholder: 'pelda@email.hu',
+      showCancelButton: true,
+      confirmButtonText: 'Küldés',
+      cancelButtonText: 'Mégsem',
+      inputValidator: (value) => {
+        if (!value || !value.includes('@')) {
+          return 'Adj meg egy érvényes email címet!';
+        }
+        return null;
+      }
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      const email = String(result.value).trim();
+      Swal.fire({
+        title: 'Folyamatban',
+        text: 'Email küldése...',
+        icon: 'info',
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+      this.auth.forgotPassword(email).subscribe({
+        next: () => {
+          Swal.fire({
+            title: 'Email elküldve!',
+            text: 'Ha az email cím regisztrált, küldtünk egy visszaállító linket.',
+            icon: 'success'
+          });
+        },
+        error: () => {
+          Swal.fire({
+            title: 'Hiba történt!',
+            text: 'Nem sikerült elküldeni az emailt. Próbáld újra.',
+            icon: 'error'
+          });
+        }
+      });
+    });
+  }
+
   login() {
     //console.log('belépés...')
     if (!this.loginForm) { console.error('loginForm not initialized'); return }

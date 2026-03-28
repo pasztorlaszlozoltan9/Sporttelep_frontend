@@ -40,4 +40,14 @@ export class AuthService {
     const url = this.host + '/verify-email/' + token
     return this.http.get(url)
   }
+
+  resetPassword(token: string, password: string, password_confirmation: string) {
+    const url = this.host + 'reset-password/' + token;
+    return this.http.post(url, { password, password_confirmation });
+  }
+
+  forgotPassword(email: string) {
+    const url = this.host + 'forgot-password';
+    return this.http.post(url, { email });
+  }
 }

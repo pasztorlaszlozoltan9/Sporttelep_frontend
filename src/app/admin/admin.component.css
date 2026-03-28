@@ -105,6 +105,54 @@
   justify-content: center;
 }
 
+.admin-filter-select {
+  min-width: 190px;
+  max-width: min(100%, 320px);
+  width: 100%;
+  border: 1px solid #d3deea;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f1f6fc 100%);
+  color: #223752;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  min-height: 2.18rem;
+  padding: 0.38rem 2rem 0.38rem 0.9rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.admin-filter-select:hover {
+  transform: translateY(-1px);
+  border-color: #b6c7da;
+}
+
+.admin-filter-select:focus {
+  outline: none;
+  border-color: #86c5ff;
+  box-shadow: 0 0 0 3px rgba(85, 170, 250, 0.16);
+}
+
+.admin-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.list-filter-shell {
+  width: auto;
+  min-width: 190px;
+  max-width: min(100%, 320px);
+}
+
+.list-filter-shell .fp-select-menu {
+  min-width: 100%;
+}
+
 .records-grid {
   margin-top: 0.7rem;
   display: grid;

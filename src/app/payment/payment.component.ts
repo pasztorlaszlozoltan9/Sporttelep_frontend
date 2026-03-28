@@ -23,6 +23,7 @@ export class PaymentComponent implements OnInit {
   private readonly missingBookingTemplatePlaceholder: string = 'YOUR_BOOKING_TEMPLATE_ID';
   private readonly emailJsServiceId: string = 'sporttelepek_0825';
   private readonly emailJsTemplateId: string = 'template_tmtoa2g';
+  private readonly emailJsBookingUpdateTemplateId: string = 'template_pz3d5z8';
   private readonly emailJsPublicKey: string = '__s7hNRM8XTSCfrSd';
   private readonly mainAdminEmail: string = 'admin@admin.com';
 
@@ -35,6 +36,40 @@ export class PaymentComponent implements OnInit {
   amountLabel: string = 'N/A';
   isPaymentProcessing: boolean = false;
   private bookingData: any = null;
+  private isUpdateDifferencePayment: boolean = false;
+
+  private parseTimeToMinutes(timeValue: unknown): number | null {
+    const text = String(timeValue ?? '').trim();
+    const parts = text.split(':');
+    if (parts.length < 2) {
+      return null;
+    }
+
+    const hour = Number(parts[0]);
+    const minute = Number(parts[1]);
+    if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+      return null;
+    }
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return null;
+    }
+
+    return (hour * 60) + minute;
+  }
+
+  private calculateTotalAmountFromPricePerHour(pricePerHour: unknown, startTime: unknown, endTime: unknown): number | null {
+    const priceNumber = Number(pricePerHour ?? NaN);
+    const startMinutes = this.parseTimeToMinutes(startTime);
+    const endMinutes = this.parseTimeToMinutes(endTime);
+
+    if (!Number.isFinite(priceNumber) || startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+      return null;
+    }
+
+    const durationMinutes = endMinutes - startMinutes;
+    return Number(((priceNumber * durationMinutes) / 60).toFixed(2));
+  }
 
   constructor(
     private router: Router,
@@ -48,6 +83,7 @@ export class PaymentComponent implements OnInit {
 
   ngOnInit(): void {
     this.bookingData = this.bookingService.getBookingData();
+    this.isUpdateDifferencePayment = this.bookingData?.mode === 'update-difference';
 
     if (!this.bookingData?.sportId || !this.bookingData?.locationId || !this.bookingData?.fieldId || !this.bookingData?.date || !this.bookingData?.startTime || !this.bookingData?.endTime) {
       Swal.fire({
@@ -59,12 +95,23 @@ export class PaymentComponent implements OnInit {
       return;
     }
 
+    const differenceAmount = Number(this.bookingData?.paymentAmount ?? NaN);
+    if (this.isUpdateDifferencePayment && Number.isFinite(differenceAmount) && differenceAmount > 0) {
+      this.amountLabel = `${Number(differenceAmount.toFixed(2))} Ft`;
+      return;
+    }
+
     if (this.bookingData?.priceId) {
       this.priceService.getPrices().subscribe({
         next: (res: any) => {
           const prices = res.data ?? res;
           const selectedPrice = (prices as any[]).find((p: any) => Number(p.id) === Number(this.bookingData.priceId));
-          this.amountLabel = selectedPrice?.price ? `${selectedPrice.price} Ft` : 'N/A';
+          const totalAmount = this.calculateTotalAmountFromPricePerHour(
+            selectedPrice?.price,
+            this.bookingData?.startTime,
+            this.bookingData?.endTime
+          );
+          this.amountLabel = totalAmount !== null ? `${totalAmount} Ft` : 'N/A';
         },
         error: () => {
           this.amountLabel = 'N/A';
@@ -148,19 +195,41 @@ export class PaymentComponent implements OnInit {
       return;
     }
 
-    const bookingPayload = {
-      ...this.bookingData,
+    const bookingPayload: any = {
+      sportId: this.bookingData?.sportId,
+      locationId: this.bookingData?.locationId,
+      fieldId: this.bookingData?.fieldId,
+      userId: this.bookingData?.userId,
+      priceId: this.bookingData?.priceId,
+      date: this.bookingData?.date,
+      startTime: this.bookingData?.startTime,
+      endTime: this.bookingData?.endTime,
+      note: this.bookingData?.note,
       email: await this.resolveBookingEmailForBackend()
     };
 
-    this.isPaymentProcessing = true;
-    this.showProcessingAlert('Fizetés és foglalás feldolgozása...');
+    const updateBookingId = Number(this.bookingData?.updateBookingId ?? NaN);
+    const isUpdateMode = this.isUpdateDifferencePayment && Number.isFinite(updateBookingId) && updateBookingId > 0;
+    const request$ = isUpdateMode
+      ? this.bookingService.updateBooking(updateBookingId, bookingPayload)
+      : this.bookingService.addBooking(bookingPayload);
 
-    this.bookingService.addBooking(bookingPayload).subscribe({
+    this.isPaymentProcessing = true;
+    this.showProcessingAlert(isUpdateMode
+      ? 'Fizetés és foglalásmódosítás feldolgozása...'
+      : 'Fizetés és foglalás feldolgozása...');
+
+    request$.subscribe({
       next: async (result: any) => {
         try {
-          this.updateProcessingAlert('Foglalás mentve, email küldése...');
-          const adminEmailError = await this.sendBookingEmailNotification();
+          let adminEmailError: string | null = null;
+          if (!isUpdateMode) {
+            this.updateProcessingAlert('Foglalás mentve, email küldése...');
+            adminEmailError = await this.sendBookingEmailNotification();
+          } else {
+            this.updateProcessingAlert('Foglalás módosítva, email küldése...');
+            adminEmailError = await this.sendBookingUpdateEmailNotification();
+          }
 
           Swal.close();
 
@@ -182,7 +251,9 @@ export class PaymentComponent implements OnInit {
           } else {
             await Swal.fire({
               title: 'Sikeres fizetés',
-              text: 'A fizetésed feldolgozásra került, a foglalásod elmentettük.',
+              text: isUpdateMode
+                ? 'A fizetésed feldolgozásra került, a foglalásod módosítottuk.'
+                : 'A fizetésed feldolgozásra került, a foglalásod elmentettük.',
               icon: 'success',
               confirmButtonText: 'Tovább'
             });
@@ -198,8 +269,12 @@ export class PaymentComponent implements OnInit {
         this.isPaymentProcessing = false;
         Swal.close();
         await Swal.fire({
-          title: 'Fizetés sikeres, de a foglalás sikertelen',
-          text: 'Hiba történt a foglalás mentése közben.',
+          title: isUpdateMode
+            ? 'Fizetés sikeres, de a foglalásmódosítás sikertelen'
+            : 'Fizetés sikeres, de a foglalás sikertelen',
+          text: isUpdateMode
+            ? 'Hiba történt a foglalás módosítása közben.'
+            : 'Hiba történt a foglalás mentése közben.',
           icon: 'error'
         });
       }
@@ -207,7 +282,7 @@ export class PaymentComponent implements OnInit {
   }
 
   cancel(): void {
-    this.router.navigate(['/booking']);
+    this.router.navigate([this.isUpdateDifferencePayment ? '/profil' : '/booking']);
   }
 
   private showProcessingAlert(message: string): void {
@@ -287,6 +362,55 @@ export class PaymentComponent implements OnInit {
     }
   }
 
+  private async sendBookingUpdateEmailNotification(): Promise<string | null> {
+    const details = await this.resolveBookingDetailsForEmail();
+
+    const bookingSummary = [
+      'Művelet: Foglalás módosítás',
+      `Foglaló email: ${details.userEmail}`,
+      `Sport: ${details.sportName}`,
+      `Helyszín: ${details.locationName}`,
+      `Pálya: ${details.fieldName}`,
+      `Dátum: ${details.bookingDate}`,
+      `Kezdés: ${details.bookingStartTime}`,
+      `Befejezés: ${details.bookingEndTime}`,
+      `Ár: ${details.bookingPrice}`
+    ].join('\n');
+
+    const templateParams = {
+      to_email: this.mainAdminEmail,
+      email: this.mainAdminEmail,
+      from_email: details.userEmail || 'noreply@budapestsporttelepek.local',
+      reply_to: details.userEmail || '',
+      message: bookingSummary,
+      action_type: 'módosítás',
+      user_email: details.userEmail,
+      sport_name: details.sportName,
+      location_name: details.locationName,
+      field_name: details.fieldName,
+      booking_date: details.bookingDate,
+      booking_start_time: details.bookingStartTime,
+      booking_end_time: details.bookingEndTime,
+      booking_price: details.bookingPrice,
+      booking_note: details.bookingNote
+    };
+
+    try {
+      await emailjs.send(
+        this.emailJsServiceId,
+        this.emailJsBookingUpdateTemplateId,
+        templateParams,
+        { publicKey: this.emailJsPublicKey }
+      );
+      return null;
+    } catch (error: any) {
+      console.error('EmailJS booking update notification error:', error);
+      const status = error?.status ? `status: ${error.status}` : 'status: unknown';
+      const details = error?.text || error?.message || 'unknown error';
+      return `EmailJS hiba (${status}): ${details}`;
+    }
+  }
+
   private async resolveBookingEmailForBackend(): Promise<string | null> {
     const fallbackEmail = this.billingEmail?.trim() || null;
 
@@ -343,6 +467,11 @@ export class PaymentComponent implements OnInit {
       const field = (fields as any[]).find((f: any) => Number(f.id) === Number(this.bookingData?.fieldId));
       const user = (users as any[]).find((u: any) => Number(u.id) === Number(this.bookingData?.userId));
       const price = (prices as any[]).find((p: any) => Number(p.id) === Number(this.bookingData?.priceId));
+      const totalAmount = this.calculateTotalAmountFromPricePerHour(
+        price?.price,
+        this.bookingData?.startTime,
+        this.bookingData?.endTime
+      );
 
       return {
         sportName: sport?.name || fallback.sportName,
@@ -352,7 +481,7 @@ export class PaymentComponent implements OnInit {
         bookingDate: fallback.bookingDate,
         bookingStartTime: fallback.bookingStartTime,
         bookingEndTime: fallback.bookingEndTime,
-        bookingPrice: price?.price ? `${price.price} Ft` : fallback.bookingPrice,
+        bookingPrice: totalAmount !== null ? `${totalAmount} Ft` : fallback.bookingPrice,
         bookingNote: fallback.bookingNote
       };
     } catch (error) {

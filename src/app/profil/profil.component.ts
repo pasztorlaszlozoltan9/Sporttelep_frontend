@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminService } from '../shared/admin.service';
 import { AuthService } from '../shared/auth.service';
+import { BookingService } from '../shared/booking.service';
 import emailjs from '@emailjs/browser';
 import Swal from 'sweetalert2';
 import flatpickr from 'flatpickr';
@@ -114,7 +115,8 @@ export class ProfilComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private http: HttpClient,
-    private auth: AuthService
+    private auth: AuthService,
+    private bookingService: BookingService
   ) { }
 
   startShowModal() {
@@ -770,6 +772,30 @@ export class ProfilComponent implements OnInit, OnDestroy {
     return price?.price ? `${price.price} Ft` : 'N/A';
   }
 
+  private getPriceAmountById(priceId: unknown): number | null {
+    const parsedPriceId = Number(priceId);
+    if (!Number.isFinite(parsedPriceId) || !this.prices) {
+      return null;
+    }
+    const price = (this.prices as any[]).find((p: any) => Number(p?.id) === parsedPriceId);
+    const amount = Number(price?.price ?? NaN);
+    return Number.isFinite(amount) ? amount : null;
+  }
+
+  private calculateBookingTotalAmount(priceId: unknown, startTime: unknown, endTime: unknown): number | null {
+    const pricePerHour = this.getPriceAmountById(priceId);
+    const startMinutes = this.parseTimeToMinutes(startTime);
+    const endMinutes = this.parseTimeToMinutes(endTime);
+
+    if (pricePerHour === null || startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+      return null;
+    }
+
+    const durationMinutes = endMinutes - startMinutes;
+    const total = (pricePerHour * durationMinutes) / 60;
+    return Number(total.toFixed(2));
+  }
+
   getTotalPriceValue(booking: any): string {
     const totalFromBooking = Number(booking?.totalPrice ?? NaN);
     if (Number.isFinite(totalFromBooking)) {
@@ -1045,7 +1071,7 @@ export class ProfilComponent implements OnInit, OnDestroy {
       fieldName: this.getFieldName(Number(booking?.fieldId)),
       bookingDate: booking?.date || 'N/A',
       bookingStartTime: booking?.startTime || 'N/A',
-      bookingPrice: this.getPriceValue(Number(booking?.priceId)),
+      bookingPrice: this.getTotalPriceValue(booking),
       userEmail: this.user?.email || 'N/A'
     };
   }
@@ -1146,18 +1172,6 @@ export class ProfilComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const confirmed = await Swal.fire({
-      title: 'Biztosan mented a módosítást?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Mentés',
-      cancelButtonText: 'Mégsem'
-    });
-
-    if (!confirmed.isConfirmed) {
-      return;
-    }
-
     if (!this.isBookingInsideWindow()) {
       await Swal.fire({
         title: 'Időpont nyitvatartáson kívül',
@@ -1178,6 +1192,70 @@ export class ProfilComponent implements OnInit, OnDestroy {
       endTime: this.bookingForm.value.endTime,
       email: this.user?.email || null
     };
+
+    const originalBooking = (this.bookings as any[]).find((booking: any) => Number(booking?.id) === Number(this.editingBookingId));
+    const originalTotalAmount = this.calculateBookingTotalAmount(
+      originalBooking?.priceId,
+      this.normalizeTimeForInput(originalBooking?.startTime),
+      this.normalizeTimeForInput(originalBooking?.endTime)
+    );
+    const newTotalAmount = this.calculateBookingTotalAmount(
+      this.bookingForm.value.priceId,
+      this.bookingForm.value.startTime,
+      this.bookingForm.value.endTime
+    );
+    const hasComparablePrices = originalTotalAmount !== null && newTotalAmount !== null;
+
+    if (hasComparablePrices && newTotalAmount! > originalTotalAmount!) {
+      const difference = Number((newTotalAmount! - originalTotalAmount!).toFixed(2));
+      const proceedToPayment = await Swal.fire({
+        title: 'Árkülönbözet fizetése szükséges',
+        text: `A módosított foglalás drágább lett. Fizetendő különbözet: ${difference} Ft. A folytatáshoz fizetned kell.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Tovább a fizetéshez',
+        cancelButtonText: 'Mégsem'
+      });
+
+      if (!proceedToPayment.isConfirmed) {
+        return;
+      }
+
+      this.bookingService.setBookingData({
+        ...bookingData,
+        mode: 'update-difference',
+        updateBookingId: this.editingBookingId,
+        paymentAmount: difference,
+        oldPriceAmount: originalTotalAmount,
+        newPriceAmount: newTotalAmount
+      });
+
+      this.startCloseBookingModal();
+      this.router.navigate(['/payment']);
+      return;
+    }
+
+    if (hasComparablePrices && newTotalAmount! < originalTotalAmount!) {
+      const refundDifference = Number((originalTotalAmount! - newTotalAmount!).toFixed(2));
+      await Swal.fire({
+        title: 'Árkülönbözet visszatérítés',
+        text: `A módosított foglalás olcsóbb lett (${refundDifference} Ft különbözet). A tulajdonosok felveszik veled a kapcsolatot, és 8-10 munkanapon belül visszautalják a különbözetet.`,
+        icon: 'info',
+        confirmButtonText: 'Rendben'
+      });
+    }
+
+    const confirmed = await Swal.fire({
+      title: 'Biztosan mented a módosítást?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Mentés',
+      cancelButtonText: 'Mégsem'
+    });
+
+    if (!confirmed.isConfirmed) {
+      return;
+    }
 
     this.isBookingActionInProgress = true;
     this.showProcessingAlert('Foglalás módosítása folyamatban...');

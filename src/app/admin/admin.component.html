@@ -21,7 +21,21 @@
         <div class="section-head">
             <h2>Felhasználók</h2>
             <button (click)="startShowModal()" class="btn btn-primary btn-inline" type="button">Hozzáadás</button>
-            <button (click)="toggleUserActiveFilter()" class="btn btn-outline-secondary btn-inline" type="button">{{ userActiveFilter === 'all' ? 'Mind' : userActiveFilter === 'active' ? 'Aktív' : 'Inaktív' }} ({{ filteredUsers.length }})</button>
+            <div class="admin-filter-row">
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'userStatus'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('userStatus', $event)">{{ getUserActiveFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'userStatus') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="userActiveFilter === 'all'" (click)="selectUserActiveFilter('all', $event)">Mind ({{ usersCountAll }})</button>
+                        <button type="button" class="fp-select-option" [class.selected]="userActiveFilter === 'active'" (click)="selectUserActiveFilter('active', $event)">Aktív ({{ usersCountActive }})</button>
+                        <button type="button" class="fp-select-option" [class.selected]="userActiveFilter === 'inactive'" (click)="selectUserActiveFilter('inactive', $event)">Inaktív ({{ usersCountInactive }})</button>
+                    </div>
+                    }
+                </div>
+                @if (hasActiveUsersFilter) {
+                <button (click)="clearUsersFilter()" class="btn btn-secondary btn-inline" type="button">Szűrők törlése</button>
+                }
+            </div>
         </div>
 
         <div class="records-grid">
@@ -109,10 +123,37 @@
         <div class="section-head">
             <h2>Pályák</h2>
             <button (click)="startShowModal()" class="btn btn-primary btn-inline" type="button">Hozzáadás</button>
+            <div class="admin-filter-row">
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'fieldsLocation'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('fieldsLocation', $event)">{{ getFieldLocationFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'fieldsLocation') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="fieldLocationFilterId === 'all'" (click)="selectFieldLocationFilter('all', $event)">Minden helyszín</button>
+                        @for(location of locations; track location.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(fieldLocationFilterId) === toNumber(location.id)" (click)="selectFieldLocationFilter('' + location.id, $event)">{{ location.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'fieldsSport'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('fieldsSport', $event)">{{ getFieldSportFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'fieldsSport') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="fieldSportFilterId === 'all'" (click)="selectFieldSportFilter('all', $event)">Minden sport</button>
+                        @for(sport of sports; track sport.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(fieldSportFilterId) === toNumber(sport.id)" (click)="selectFieldSportFilter('' + sport.id, $event)">{{ sport.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+                @if (hasActiveFieldsFilter) {
+                <button (click)="clearFieldsFilter()" class="btn btn-secondary btn-inline" type="button">Szűrők törlése</button>
+                }
+            </div>
         </div>
 
         <div class="records-grid">
-            @for(field of fields; track field.id) {
+            @for(field of filteredFieldsList; track field.id) {
             <article class="record-card">
                 <div class="record-grid">
                     <div class="record-item"><span class="record-label">Id</span><span class="record-value">{{ field.id }}</span></div>
@@ -126,7 +167,7 @@
                 </div>
             </article>
             }
-            @if (!fields || fields.length === 0) {
+            @if (filteredFieldsList.length === 0) {
             <div class="empty-records">Nincs megjeleníthető pálya.</div>
             }
         </div>
@@ -139,10 +180,48 @@
         <div class="section-head">
             <h2>Nyitvatartás</h2>
             <button (click)="startShowModal()" class="btn btn-primary btn-inline" type="button">Hozzáadás</button>
+            <div class="admin-filter-row">
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'windowLocation'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('windowLocation', $event)">{{ getFieldBookingWindowLocationFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'windowLocation') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="fieldBookingWindowLocationFilterId === 'all'" (click)="selectFieldBookingWindowLocationFilter('all', $event)">Minden helyszín</button>
+                        @for(location of locations; track location.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(fieldBookingWindowLocationFilterId) === toNumber(location.id)" (click)="selectFieldBookingWindowLocationFilter('' + location.id, $event)">{{ location.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'windowSport'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('windowSport', $event)">{{ getFieldBookingWindowSportFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'windowSport') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="fieldBookingWindowSportFilterId === 'all'" (click)="selectFieldBookingWindowSportFilter('all', $event)">Minden sport</button>
+                        @for(sport of sports; track sport.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(fieldBookingWindowSportFilterId) === toNumber(sport.id)" (click)="selectFieldBookingWindowSportFilter('' + sport.id, $event)">{{ sport.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'windowField'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('windowField', $event)">{{ getFieldBookingWindowFieldFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'windowField') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="fieldBookingWindowFieldFilterId === 'all'" (click)="selectFieldBookingWindowFieldFilter('all', $event)">Minden pálya</button>
+                        @for(field of fields; track field.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(fieldBookingWindowFieldFilterId) === toNumber(field.id)" (click)="selectFieldBookingWindowFieldFilter('' + field.id, $event)">{{ field.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+                @if (hasActiveFieldBookingWindowFilter) {
+                <button (click)="clearFieldBookingWindowFilter()" class="btn btn-secondary btn-inline" type="button">Szűrők törlése</button>
+                }
+            </div>
         </div>
 
         <div class="records-grid">
-            @for(windowData of fieldBookingWindows; track windowData.id) {
+            @for(windowData of filteredFieldBookingWindows; track windowData.id) {
             <article class="record-card">
                 <div class="record-grid">
                     <div class="record-item"><span class="record-label">Id</span><span class="record-value">{{ windowData.id }}</span></div>
@@ -158,7 +237,7 @@
                 </div>
             </article>
             }
-            @if (!fieldBookingWindows || fieldBookingWindows.length === 0) {
+            @if (filteredFieldBookingWindows.length === 0) {
             <div class="empty-records">Nincs megjeleníthető nyitvatartás.</div>
             }
         </div>
@@ -170,10 +249,37 @@
         <div class="section-head">
             <h2>Árak</h2>
             <button (click)="startShowModal()" class="btn btn-primary btn-inline" type="button">Hozzáadás</button>
+            <div class="admin-filter-row">
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'priceLocation'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('priceLocation', $event)">{{ getPriceLocationFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'priceLocation') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="priceLocationFilterId === 'all'" (click)="selectPriceLocationFilter('all', $event)">Minden helyszín</button>
+                        @for(location of locations; track location.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(priceLocationFilterId) === toNumber(location.id)" (click)="selectPriceLocationFilter('' + location.id, $event)">{{ location.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'priceSport'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('priceSport', $event)">{{ getPriceSportFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'priceSport') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="priceSportFilterId === 'all'" (click)="selectPriceSportFilter('all', $event)">Minden sport</button>
+                        @for(sport of sports; track sport.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(priceSportFilterId) === toNumber(sport.id)" (click)="selectPriceSportFilter('' + sport.id, $event)">{{ sport.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+                @if (hasActivePricesFilter) {
+                <button (click)="clearPricesFilter()" class="btn btn-secondary btn-inline" type="button">Szűrők törlése</button>
+                }
+            </div>
         </div>
 
         <div class="records-grid">
-            @for(price of prices; track price.id) {
+            @for(price of filteredPricesList; track price.id) {
             <article class="record-card">
                 <div class="record-grid">
                     <div class="record-item"><span class="record-label">Id</span><span class="record-value">{{ price.id }}</span></div>
@@ -186,7 +292,7 @@
                 </div>
             </article>
             }
-            @if (!prices || prices.length === 0) {
+            @if (filteredPricesList.length === 0) {
             <div class="empty-records">Nincs megjeleníthető ár.</div>
             }
         </div>
@@ -198,10 +304,50 @@
         <div class="section-head">
             <h2>Foglalások</h2>
             <button (click)="startShowModal()" class="btn btn-primary btn-inline" type="button">Hozzáadás</button>
+            <div class="admin-filter-row">
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'bookingLocation'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('bookingLocation', $event)">{{ getBookingListLocationFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'bookingLocation') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="bookingListLocationFilterId === 'all'" (click)="selectBookingListLocationFilter('all', $event)">Minden helyszín</button>
+                        @for(location of locations; track location.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(bookingListLocationFilterId) === toNumber(location.id)" (click)="selectBookingListLocationFilter('' + location.id, $event)">{{ location.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'bookingSport'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('bookingSport', $event)">{{ getBookingListSportFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'bookingSport') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="bookingListSportFilterId === 'all'" (click)="selectBookingListSportFilter('all', $event)">Minden sport</button>
+                        @for(sport of sports; track sport.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(bookingListSportFilterId) === toNumber(sport.id)" (click)="selectBookingListSportFilter('' + sport.id, $event)">{{ sport.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+
+                <div class="fp-select-shell list-filter-shell" [class.open]="openListFilterDropdown === 'bookingField'">
+                    <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('bookingField', $event)">{{ getBookingListFieldFilterLabel() }}</button>
+                    @if (openListFilterDropdown === 'bookingField') {
+                    <div class="fp-select-menu">
+                        <button type="button" class="fp-select-option" [class.selected]="bookingListFieldFilterId === 'all'" (click)="selectBookingListFieldFilter('all', $event)">Minden pálya</button>
+                        @for(field of getBookingListFieldOptions(); track field.id) {
+                        <button type="button" class="fp-select-option" [class.selected]="toNumber(bookingListFieldFilterId) === toNumber(field.id)" (click)="selectBookingListFieldFilter('' + field.id, $event)">{{ field.name }}</button>
+                        }
+                    </div>
+                    }
+                </div>
+                @if (hasActiveBookingsFilter) {
+                <button (click)="clearBookingsFilter()" class="btn btn-secondary btn-inline" type="button">Szűrők törlése</button>
+                }
+            </div>
         </div>
 
         <div class="records-grid">
-            @for(booking of bookings; track booking.id) {
+            @for(booking of filteredBookingsList; track booking.id) {
             <article class="record-card">
                 <div class="record-grid">
                     <div class="record-item"><span class="record-label">Id</span><span class="record-value">{{ booking.id }}</span></div>
@@ -218,7 +364,7 @@
                 </div>
             </article>
             }
-            @if (!bookings || bookings.length === 0) {
+            @if (filteredBookingsList.length === 0) {
             <div class="empty-records">Nincs megjeleníthető foglalás.</div>
             }
         </div>
