@@ -49,7 +49,7 @@ export class PaymentComponent implements OnInit {
   ngOnInit(): void {
     this.bookingData = this.bookingService.getBookingData();
 
-    if (!this.bookingData?.sportId || !this.bookingData?.locationId || !this.bookingData?.fieldId || !this.bookingData?.availableDateId) {
+    if (!this.bookingData?.sportId || !this.bookingData?.locationId || !this.bookingData?.fieldId || !this.bookingData?.date || !this.bookingData?.startTime || !this.bookingData?.endTime) {
       Swal.fire({
         title: 'Nincs fizetendő foglalás',
         text: 'Először válassz ki egy foglalási időpontot.',
@@ -249,6 +249,7 @@ export class PaymentComponent implements OnInit {
       `Foglalo email: ${details.userEmail}`,
       `Datum: ${details.bookingDate}`,
       `Kezdesi ido: ${details.bookingStartTime}`,
+      `Befejezesi ido: ${details.bookingEndTime}`,
       `Ar: ${details.bookingPrice}`,
       `Megjegyzes: ${details.bookingNote}`
     ].join('\n');
@@ -265,6 +266,7 @@ export class PaymentComponent implements OnInit {
       field_name: details.fieldName,
       booking_date: details.bookingDate,
       booking_start_time: details.bookingStartTime,
+      booking_end_time: details.bookingEndTime,
       booking_price: details.bookingPrice,
       booking_note: details.bookingNote
     };
@@ -305,6 +307,7 @@ export class PaymentComponent implements OnInit {
     userEmail: string;
     bookingDate: string;
     bookingStartTime: string;
+    bookingEndTime: string;
     bookingPrice: string;
     bookingNote: string;
   }> {
@@ -315,6 +318,7 @@ export class PaymentComponent implements OnInit {
       userEmail: this.billingEmail?.trim() || 'N/A',
       bookingDate: this.bookingData?.date || 'N/A',
       bookingStartTime: this.bookingData?.startTime || 'N/A',
+      bookingEndTime: this.bookingData?.endTime || 'N/A',
       bookingPrice: this.amountLabel || 'N/A',
       bookingNote: this.bookingData?.note?.trim() || 'Nincs megjegyzes'
     };
@@ -347,6 +351,7 @@ export class PaymentComponent implements OnInit {
         userEmail: user?.email || fallback.userEmail,
         bookingDate: fallback.bookingDate,
         bookingStartTime: fallback.bookingStartTime,
+        bookingEndTime: fallback.bookingEndTime,
         bookingPrice: price?.price ? `${price.price} Ft` : fallback.bookingPrice,
         bookingNote: fallback.bookingNote
       };

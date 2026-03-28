@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { SportService } from '../shared/sport.service';
 import { LocService } from '../shared/loc.service';
 import { FieldService } from '../shared/field.service';
-import { AvailabledateService } from '../shared/availabledate.service';
+import { FieldBookingWindowService } from '../shared/fieldbookingwindow.service';
 import { PriceService } from '../shared/price.service';
 import { BookingService } from '../shared/booking.service';
 import Swal from 'sweetalert2';
@@ -41,7 +41,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   sportList: any[] = [];
   locList: any[] = [];
   fieldsList: any[] = [];
-  datesList: any[] = [];
+  fieldBookingWindowsList: any[] = [];
   pricesList: any[] = [];
   bookingsList: any[] = [];
   userId: number | null = null;
@@ -51,19 +51,38 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedLocationId: number | null = null;
   selectedFieldId: number | null = null;
   selectedDate: string | null = null;
+  selectedStartTime: string = '';
+  selectedEndTime: string = '';
   selectedSlot: any = null;
+  selectedSlotKey: string | null = null;
+  selectedTimeValidationMessage: string = '';
   selectedPrice: any = null;
   selectedPriceId: number | null = null;
+  private readonly bookingDurationMinutes = 60;
+  private readonly bookingStepMinutes = 15;
+  readonly todayDate: string = new Date().toISOString().split('T')[0];
   private datePickerInstance: any = null;
+  private bookingDatePickerInstance: any = null;
+  private bookingStartTimePickerInstance: any = null;
+  private bookingEndTimePickerInstance: any = null;
 
   @ViewChild('headerDatePicker')
   headerDatePicker?: ElementRef<HTMLInputElement>;
+
+  @ViewChild('bookingDatePicker')
+  bookingDatePicker?: ElementRef<HTMLInputElement>;
+
+  @ViewChild('bookingStartTimePicker')
+  bookingStartTimePicker?: ElementRef<HTMLInputElement>;
+
+  @ViewChild('bookingEndTimePicker')
+  bookingEndTimePicker?: ElementRef<HTMLInputElement>;
 
   constructor(
     private sportService: SportService,
     private locService: LocService,
     private fieldService: FieldService,
-    private availableDateService: AvailabledateService,
+    private fieldBookingWindowService: FieldBookingWindowService,
     private priceService: PriceService,
     private bookingService: BookingService,
     private router: Router
@@ -79,10 +98,15 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.initializeHeaderDatePicker();
+    this.initializeBookingDatePicker();
+    this.initializeBookingTimePickers();
   }
 
   ngOnDestroy(): void {
     this.datePickerInstance?.destroy();
+    this.bookingDatePickerInstance?.destroy();
+    this.bookingStartTimePickerInstance?.destroy();
+    this.bookingEndTimePickerInstance?.destroy();
   }
 
   private initializeHeaderDatePicker(): void {
@@ -96,11 +120,189 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       dateFormat: 'Y-m-d',
       disableMobile: true,
       appendTo: input.parentElement ?? undefined,
+      defaultDate: this.selectedFilterDate || undefined,
       onChange: (_selectedDates, dateStr) => {
         this.selectedFilterDate = this.normalizeDateStr(dateStr);
         this.resetSelectionChain();
       }
     });
+  }
+
+  private initializeBookingDatePicker(): void {
+    const input = this.bookingDatePicker?.nativeElement;
+    if (!input) {
+      return;
+    }
+
+    this.bookingDatePickerInstance?.destroy();
+
+    this.bookingDatePickerInstance = flatpickr(input, {
+      locale: Hungarian,
+      dateFormat: 'Y-m-d',
+      minDate: this.todayDate,
+      disableMobile: true,
+      appendTo: input.parentElement ?? undefined,
+      defaultDate: this.selectedDate || undefined,
+      onChange: (_selectedDates, dateStr) => {
+        this.onSelectedDateInput(dateStr);
+      }
+    });
+  }
+
+  private initializeBookingTimePickers(): void {
+    const startInput = this.bookingStartTimePicker?.nativeElement;
+    const endInput = this.bookingEndTimePicker?.nativeElement;
+
+    if (startInput) {
+      const startPickerState = {
+        confirmed: false,
+        initialValue: this.selectedStartTime || '',
+        pendingValue: this.selectedStartTime || ''
+      };
+
+      this.bookingStartTimePickerInstance?.destroy();
+      this.bookingStartTimePickerInstance = flatpickr(startInput, {
+        locale: Hungarian,
+        enableTime: true,
+        noCalendar: true,
+        time_24hr: true,
+        dateFormat: 'H:i',
+        minuteIncrement: this.bookingStepMinutes,
+        disableMobile: true,
+        appendTo: startInput.parentElement ?? undefined,
+        defaultDate: this.selectedStartTime || undefined,
+        onReady: (_selectedDates, _timeStr, instance) => {
+          this.ensureTimePickerConfirmButton(instance, (value) => this.onSelectedStartTimeInput(value), startPickerState);
+        },
+        onOpen: (_selectedDates, _timeStr, instance) => {
+          startPickerState.confirmed = false;
+          startPickerState.initialValue = this.selectedStartTime || '';
+          startPickerState.pendingValue = startPickerState.initialValue;
+          this.ensureTimePickerConfirmButton(instance, (value) => this.onSelectedStartTimeInput(value), startPickerState);
+        },
+        onChange: (_selectedDates, timeStr) => {
+          startPickerState.pendingValue = timeStr;
+        },
+        onValueUpdate: (_selectedDates, timeStr) => {
+          startPickerState.pendingValue = timeStr;
+        },
+        onClose: (_selectedDates, _timeStr, instance) => {
+          if (startPickerState.confirmed) {
+            startPickerState.confirmed = false;
+            return;
+          }
+
+          this.onSelectedStartTimeInput(startPickerState.initialValue);
+
+          if (startPickerState.initialValue) {
+            instance.setDate(startPickerState.initialValue, false, 'H:i');
+          } else {
+            instance.clear(false);
+            (instance.input as HTMLInputElement).value = '';
+          }
+        }
+      });
+    }
+
+    if (endInput) {
+      const endPickerState = {
+        confirmed: false,
+        initialValue: this.selectedEndTime || '',
+        pendingValue: this.selectedEndTime || ''
+      };
+
+      this.bookingEndTimePickerInstance?.destroy();
+      this.bookingEndTimePickerInstance = flatpickr(endInput, {
+        locale: Hungarian,
+        enableTime: true,
+        noCalendar: true,
+        time_24hr: true,
+        dateFormat: 'H:i',
+        minuteIncrement: this.bookingStepMinutes,
+        disableMobile: true,
+        appendTo: endInput.parentElement ?? undefined,
+        defaultDate: this.selectedEndTime || undefined,
+        onReady: (_selectedDates, _timeStr, instance) => {
+          this.ensureTimePickerConfirmButton(instance, (value) => this.onSelectedEndTimeInput(value), endPickerState);
+        },
+        onOpen: (_selectedDates, _timeStr, instance) => {
+          endPickerState.confirmed = false;
+          endPickerState.initialValue = this.selectedEndTime || '';
+          endPickerState.pendingValue = endPickerState.initialValue;
+          this.ensureTimePickerConfirmButton(instance, (value) => this.onSelectedEndTimeInput(value), endPickerState);
+        },
+        onChange: (_selectedDates, timeStr) => {
+          endPickerState.pendingValue = timeStr;
+        },
+        onValueUpdate: (_selectedDates, timeStr) => {
+          endPickerState.pendingValue = timeStr;
+        },
+        onClose: (_selectedDates, _timeStr, instance) => {
+          if (endPickerState.confirmed) {
+            endPickerState.confirmed = false;
+            return;
+          }
+
+          this.onSelectedEndTimeInput(endPickerState.initialValue);
+
+          if (endPickerState.initialValue) {
+            instance.setDate(endPickerState.initialValue, false, 'H:i');
+          } else {
+            instance.clear(false);
+            (instance.input as HTMLInputElement).value = '';
+          }
+        }
+      });
+    }
+  }
+
+  private ensureTimePickerConfirmButton(
+    instance: any,
+    onConfirm: (value: string) => void,
+    pickerState: { confirmed: boolean; initialValue: string; pendingValue: string }
+  ): void {
+    const calendar = instance?.calendarContainer as HTMLElement | undefined;
+    if (!calendar || calendar.querySelector('.fp-confirm-btn')) {
+      return;
+    }
+
+    const timeContainer = calendar.querySelector('.flatpickr-time') as HTMLElement | null;
+    if (!timeContainer) {
+      return;
+    }
+
+    const confirmButton = document.createElement('button');
+    confirmButton.type = 'button';
+    confirmButton.className = 'fp-confirm-btn';
+    confirmButton.textContent = '✓';
+    confirmButton.setAttribute('aria-label', 'Idopont valasztas kesz');
+    confirmButton.addEventListener('click', () => {
+      const liveValue = String((instance?.input as HTMLInputElement | undefined)?.value ?? '').trim();
+      const committedValue = liveValue || pickerState.pendingValue || pickerState.initialValue || '';
+      pickerState.pendingValue = committedValue;
+      pickerState.initialValue = committedValue;
+      pickerState.confirmed = true;
+      onConfirm(committedValue);
+      instance.close();
+    });
+
+    timeContainer.appendChild(confirmButton);
+  }
+
+  private refreshBookingPickersWhenVisible(): void {
+    setTimeout(() => {
+      this.initializeBookingDatePicker();
+      this.initializeBookingTimePickers();
+    });
+  }
+
+  private destroyBookingPickers(): void {
+    this.bookingDatePickerInstance?.destroy();
+    this.bookingDatePickerInstance = null;
+    this.bookingStartTimePickerInstance?.destroy();
+    this.bookingStartTimePickerInstance = null;
+    this.bookingEndTimePickerInstance?.destroy();
+    this.bookingEndTimePickerInstance = null;
   }
 
   loadUserIdFromToken(): void {
@@ -126,7 +328,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sportService.getSport().subscribe({ next: (res: any) => this.sportList = res.data ?? res ?? [] });
     this.locService.getLocation().subscribe({ next: (res: any) => this.locList = res.data ?? res ?? [] });
     this.fieldService.getField().subscribe({ next: (res: any) => this.fieldsList = res.data ?? res ?? [] });
-    this.availableDateService.getAvailableDates().subscribe({ next: (res: any) => this.datesList = res.data ?? res ?? [] });
+    this.fieldBookingWindowService.getFieldBookingWindows().subscribe({ next: (res: any) => this.fieldBookingWindowsList = res.data ?? res ?? [] });
     this.priceService.getPrices().subscribe({ next: (res: any) => this.pricesList = res.data ?? res ?? [] });
     this.bookingService.getBookings().subscribe({ next: (res: any) => this.bookingsList = res.data ?? res ?? [] });
   }
@@ -149,11 +351,27 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.resetSelectionChain();
   }
 
+  clearBookingDateTimeSelection(): void {
+    this.selectedDate = null;
+    this.selectedStartTime = '';
+    this.selectedEndTime = '';
+    this.selectedSlot = null;
+    this.selectedSlotKey = null;
+    this.selectedTimeValidationMessage = '';
+    this.bookingDatePickerInstance?.clear();
+    this.bookingStartTimePickerInstance?.clear();
+    this.bookingEndTimePickerInstance?.clear();
+  }
+
   private resetSelectionChain(): void {
     this.selectedLocationId = null;
     this.selectedFieldId = null;
     this.selectedDate = null;
+    this.selectedStartTime = '';
+    this.selectedEndTime = '';
     this.selectedSlot = null;
+    this.selectedSlotKey = null;
+    this.selectedTimeValidationMessage = '';
     this.selectedPrice = null;
     this.selectedPriceId = null;
   }
@@ -165,7 +383,11 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       this.selectedLocationId = null;
       this.selectedFieldId = null;
       this.selectedDate = null;
+      this.selectedStartTime = '';
+      this.selectedEndTime = '';
       this.selectedSlot = null;
+      this.selectedSlotKey = null;
+      this.selectedTimeValidationMessage = '';
       this.selectedPrice = null;
       this.selectedPriceId = null;
       return;
@@ -174,7 +396,11 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedLocationId = clickedLocationId;
     this.selectedFieldId = null;
     this.selectedDate = null;
+    this.selectedStartTime = '';
+    this.selectedEndTime = '';
     this.selectedSlot = null;
+    this.selectedSlotKey = null;
+    this.selectedTimeValidationMessage = '';
     this.selectedPrice = null;
     this.selectedPriceId = null;
   }
@@ -185,9 +411,14 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.selectedFieldId === clickedFieldId) {
       this.selectedFieldId = null;
       this.selectedDate = null;
+      this.selectedStartTime = '';
+      this.selectedEndTime = '';
       this.selectedSlot = null;
+      this.selectedSlotKey = null;
+      this.selectedTimeValidationMessage = '';
       this.selectedPrice = null;
       this.selectedPriceId = null;
+      this.destroyBookingPickers();
       return;
     }
 
@@ -196,7 +427,93 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedPrice = price?.price ?? null;
     this.selectedPriceId = price?.id ?? null;
     this.selectedDate = null;
+    this.selectedStartTime = '';
+    this.selectedEndTime = '';
     this.selectedSlot = null;
+    this.selectedSlotKey = null;
+    this.selectedTimeValidationMessage = '';
+    this.refreshBookingPickersWhenVisible();
+  }
+
+  onSelectedDateInput(dateValue: string): void {
+    this.selectedDate = this.normalizeDateStr(dateValue);
+    this.selectedStartTime = '';
+    this.selectedEndTime = '';
+    this.selectedSlot = null;
+    this.selectedSlotKey = null;
+    this.selectedTimeValidationMessage = '';
+  }
+
+  onSelectedStartTimeInput(timeValue: string): void {
+    this.selectedStartTime = String(timeValue ?? '').trim();
+    this.validateManualTimeSelection();
+  }
+
+  onSelectedEndTimeInput(timeValue: string): void {
+    this.selectedEndTime = String(timeValue ?? '').trim();
+    this.validateManualTimeSelection();
+  }
+
+  private validateManualTimeSelection(): void {
+    this.selectedSlot = null;
+    this.selectedSlotKey = null;
+    this.selectedTimeValidationMessage = '';
+
+    if (!this.selectedFieldId || !this.selectedDate || !this.selectedStartTime || !this.selectedEndTime) {
+      return;
+    }
+
+    if (this.selectedDate < this.todayDate) {
+      this.selectedTimeValidationMessage = 'Csak mai vagy jövőbeli dátum választható.';
+      return;
+    }
+
+    const startMinutes = this.parseTimeToMinutes(this.selectedStartTime);
+    const endMinutes = this.parseTimeToMinutes(this.selectedEndTime);
+    if (startMinutes === null || endMinutes === null) {
+      this.selectedTimeValidationMessage = 'Érvénytelen időformátum.';
+      return;
+    }
+
+    if (startMinutes % this.bookingStepMinutes !== 0 || endMinutes % this.bookingStepMinutes !== 0) {
+      this.selectedTimeValidationMessage = 'A kezdés és befejezés csak 15 perces lépésekben adható meg.';
+      return;
+    }
+
+    if (endMinutes <= startMinutes) {
+      this.selectedTimeValidationMessage = 'A befejezés idejének később kell lennie, mint a kezdés.';
+      return;
+    }
+
+    const windows = this.getActiveWindowsForFieldAndDate(this.selectedFieldId, this.selectedDate);
+    if (windows.length === 0) {
+      this.selectedTimeValidationMessage = 'A kiválasztott pályához ezen a napon nincs aktív nyitvatartás.';
+      return;
+    }
+
+    const insideWindow = windows.some((windowData: any) => {
+      const openMinutes = this.parseTimeToMinutes(windowData?.openTime);
+      const closeMinutes = this.parseTimeToMinutes(windowData?.closeTime);
+      return openMinutes !== null && closeMinutes !== null && startMinutes >= openMinutes && endMinutes <= closeMinutes;
+    });
+
+    if (!insideWindow) {
+      this.selectedTimeValidationMessage = 'A megadott időintervallum kívül esik a nyitvatartáson.';
+      return;
+    }
+
+    if (this.isTimeRangeBooked(this.selectedFieldId, this.selectedDate, startMinutes, endMinutes)) {
+      this.selectedTimeValidationMessage = 'A megadott időintervallum már foglalt.';
+      return;
+    }
+
+    this.selectedSlot = {
+      slotKey: `${this.selectedDate}_${startMinutes}_${endMinutes}`,
+      date: this.selectedDate,
+      startTime: this.minutesToTime(startMinutes),
+      endTime: this.minutesToTime(endMinutes)
+    };
+    this.selectedSlotKey = this.selectedSlot.slotKey;
   }
 
   selectDate(dateStr: string): void {
@@ -205,23 +522,27 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.selectedDate === clickedDate) {
       this.selectedDate = null;
       this.selectedSlot = null;
+      this.selectedSlotKey = null;
       return;
     }
 
     this.selectedDate = clickedDate;
     this.selectedSlot = null;
+    this.selectedSlotKey = null;
   }
 
   selectSlot(time: any): void {
-    const clickedSlotId = Number(time?.id ?? NaN);
-    const selectedSlotId = Number(this.selectedSlot?.id ?? NaN);
+    const clickedKey = String(time?.slotKey ?? '');
+    const selectedKey = String(this.selectedSlot?.slotKey ?? '');
 
-    if (Number.isFinite(clickedSlotId) && Number.isFinite(selectedSlotId) && clickedSlotId === selectedSlotId) {
+    if (clickedKey && selectedKey && clickedKey === selectedKey) {
       this.selectedSlot = null;
+      this.selectedSlotKey = null;
       return;
     }
 
     this.selectedSlot = time;
+    this.selectedSlotKey = clickedKey || null;
   }
 
   private normalizeDateStr(d: string): string {
@@ -299,11 +620,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
         .map(f => f.id)
     );
 
-    return this.datesList.some(d =>
-      fieldIds.has(d.fieldId) &&
-      this.normalizeDateStr(d.date) === day &&
-      !this.isSlotBooked(d.id)
-    );
+    return Array.from(fieldIds).some((fieldId) => this.getSlotsForFieldAndDate(Number(fieldId), day).length > 0);
   }
 
   get filteredFields(): any[] {
@@ -317,13 +634,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const day = this.normalizeDateStr(this.selectedFilterDate);
-    candidates = candidates.filter(field =>
-      this.datesList.some(d =>
-        d.fieldId === field.id &&
-        this.normalizeDateStr(d.date) === day &&
-        !this.isSlotBooked(d.id)
-      )
-    );
+    candidates = candidates.filter(field => this.getSlotsForFieldAndDate(Number(field.id), day).length > 0);
 
     return candidates;
   }
@@ -375,25 +686,13 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get availableDates(): string[] {
     if (!this.selectedFieldId) return [];
-    let slots = this.datesList.filter(d => d.fieldId === this.selectedFieldId && !this.isSlotBooked(d.id));
-    if (this.selectedFilterDate) {
-      const day = this.normalizeDateStr(this.selectedFilterDate);
-      slots = slots.filter(s => this.normalizeDateStr(s.date) === day);
-    }
-    const uniq = Array.from(new Set(slots.map(s => this.normalizeDateStr(s.date))));
-    // sort ascending
-    return uniq.sort();
+    const dates = this.getCandidateDates();
+    return dates.filter((day) => this.getSlotsForFieldAndDate(this.selectedFieldId!, day).length > 0).sort();
   }
 
   get timesForSelectedDate(): any[] {
     if (!this.selectedFieldId || !this.selectedDate) return [];
-    return this.datesList
-      .filter(d =>
-        d.fieldId === this.selectedFieldId &&
-        this.normalizeDateStr(d.date) === this.selectedDate &&
-        !this.isSlotBooked(d.id)
-      )
-      .sort((a, b) => (a.startTime > b.startTime ? 1 : -1));
+    return this.getSlotsForFieldAndDate(this.selectedFieldId, this.selectedDate);
   }
 
   get pricesForSelectedField(): any[] {
@@ -401,9 +700,119 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.pricesList.filter(p => p.fieldId === this.selectedFieldId);
   }
 
-  private isSlotBooked(availableDateId: number): boolean {
-    if (!this.bookingsList) return false;
-    return this.bookingsList.some(b => b.availableDateId === availableDateId);
+  private parseTimeToMinutes(timeValue: unknown): number | null {
+    const text = String(timeValue ?? '').trim();
+    const parts = text.split(':');
+    if (parts.length < 2) {
+      return null;
+    }
+
+    const hour = Number(parts[0]);
+    const minute = Number(parts[1]);
+    if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+      return null;
+    }
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return null;
+    }
+
+    return (hour * 60) + minute;
+  }
+
+  private minutesToTime(value: number): string {
+    const hour = Math.floor(value / 60);
+    const minute = value % 60;
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  }
+
+  private getWeekdayFromDate(dateValue: string): number | null {
+    const parsed = new Date(`${dateValue}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed.getDay();
+  }
+
+  private getActiveWindowsForFieldAndDate(fieldId: number, date: string): any[] {
+    const weekday = this.getWeekdayFromDate(date);
+    if (weekday === null || !this.fieldBookingWindowsList) {
+      return [];
+    }
+
+    return this.fieldBookingWindowsList.filter((windowData: any) =>
+      Number(windowData?.fieldId) === Number(fieldId)
+      && Number(windowData?.weekday) === Number(weekday)
+      && Number(windowData?.isActive) === 1
+    );
+  }
+
+  private getCandidateDates(): string[] {
+    if (this.selectedFilterDate) {
+      return [this.normalizeDateStr(this.selectedFilterDate)];
+    }
+
+    const dates: string[] = [];
+    const today = new Date();
+    for (let i = 0; i < 21; i += 1) {
+      const day = new Date(today);
+      day.setDate(today.getDate() + i);
+      dates.push(day.toISOString().split('T')[0]);
+    }
+    return dates;
+  }
+
+  private isTimeRangeBooked(fieldId: number, date: string, startMinutes: number, endMinutes: number): boolean {
+    if (!this.bookingsList) {
+      return false;
+    }
+
+    return this.bookingsList.some((booking: any) => {
+      if (Number(booking?.fieldId) !== Number(fieldId)) {
+        return false;
+      }
+
+      if (this.normalizeDateStr(String(booking?.date ?? '')) !== date) {
+        return false;
+      }
+
+      const bookedStart = this.parseTimeToMinutes(booking?.startTime);
+      if (bookedStart === null) {
+        return false;
+      }
+
+      const bookedEnd = this.parseTimeToMinutes(booking?.endTime) ?? (bookedStart + this.bookingDurationMinutes);
+      return startMinutes < bookedEnd && endMinutes > bookedStart;
+    });
+  }
+
+  private getSlotsForFieldAndDate(fieldId: number, date: string): any[] {
+    const windows = this.getActiveWindowsForFieldAndDate(fieldId, date);
+
+    const slots: any[] = [];
+    windows.forEach((windowData: any) => {
+      const openMinutes = this.parseTimeToMinutes(windowData?.openTime);
+      const closeMinutes = this.parseTimeToMinutes(windowData?.closeTime);
+      if (openMinutes === null || closeMinutes === null) {
+        return;
+      }
+
+      for (let start = openMinutes; start + this.bookingDurationMinutes <= closeMinutes; start += this.bookingStepMinutes) {
+        const end = start + this.bookingDurationMinutes;
+        if (this.isTimeRangeBooked(fieldId, date, start, end)) {
+          continue;
+        }
+
+        slots.push({
+          slotKey: `${date}_${start}`,
+          date,
+          startTime: this.minutesToTime(start),
+          endTime: this.minutesToTime(end)
+        });
+      }
+    });
+
+    return slots.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
   }
 
   goToBooking(): void {
@@ -412,18 +821,51 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       Swal.fire("Foglaláshoz be kell jelentkezned! Kérjük, jelentkezz be vagy regisztrálj.");
       return;
     }
+
+    if (!this.selectedSlot) {
+      Swal.fire({
+        title: 'Hiányos időpont',
+        text: 'Válassz érvényes dátumot, kezdési és befejezési időt.',
+        icon: 'warning'
+      });
+      return;
+    }
     
     this.bookingService.setBookingData({
       sportId: this.selectedSportId,
       locationId: this.selectedLocationId,
       fieldId: this.selectedFieldId,
       userId: this.userId,
-      availableDateId: this.selectedSlot?.id,
       priceId: this.selectedPriceId,
-      date: this.selectedDate,
-      startTime: this.selectedSlot?.startTime
+      date: this.selectedSlot?.date ?? this.selectedDate,
+      startTime: this.selectedSlot?.startTime,
+      endTime: this.selectedSlot?.endTime
     });
     this.router.navigate(['/booking']);
+  }
+
+  getBookingButtonHint(): string {
+    if (this.selectedSlot) {
+      return '';
+    }
+
+    if (this.selectedTimeValidationMessage) {
+      return this.selectedTimeValidationMessage;
+    }
+
+    if (!this.selectedFieldId) {
+      return 'Válassz sportot, helyszínt és pályát a foglaláshoz.';
+    }
+
+    if (!this.selectedDate) {
+      return 'Válassz dátumot.';
+    }
+
+    if (!this.selectedStartTime || !this.selectedEndTime) {
+      return 'Válassz kezdést és befejezést, majd nyomd meg a ✓ gombot az időpont megerősítéséhez.';
+    }
+
+    return 'Válassz érvényes időpontot a továbblépéshez.';
   }
 
   private showWelcomePopupIfNeeded(): void {

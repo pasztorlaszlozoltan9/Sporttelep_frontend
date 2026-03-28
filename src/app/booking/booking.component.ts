@@ -23,14 +23,14 @@ export class BookingComponent implements OnInit {
   fieldId: number | null = null;
   date: string | null = null;
   startTime: string | null = null;
-  availableDateId: number | null = null;
+  endTime: string | null = null;
 
   sportName: string = '';
   locationName: string = '';
   fieldName: string = '';
   userEmail: string = '';
   priceId: number | null = null;
-  price: string = '';
+  totalPrice: string = '';
   userId: number | null = null;
   bookingNote: string = '';
 
@@ -53,7 +53,7 @@ export class BookingComponent implements OnInit {
     this.userId = bookingData.userId ? Number(bookingData.userId) : null;
     this.date = bookingData.date || null;
     this.startTime = bookingData.startTime || null;
-    this.availableDateId = bookingData.availableDateId || null;
+    this.endTime = bookingData.endTime || null;
     this.priceId = bookingData.priceId ? Number(bookingData.priceId) : null;
 
     if (this.sportId && this.locationId && this.fieldId && this.userId) {
@@ -96,14 +96,52 @@ export class BookingComponent implements OnInit {
       }
     });
 
-    // Resolve price id to a readable price value for UI and email.
+    // Resolve base price and calculate total based on selected duration.
     this.priceService.getPrices().subscribe({
       next: (res: any) => {
         const prices = res.data ?? res;
         const selectedPrice = (prices as any[]).find((p: any) => Number(p.id) === Number(this.priceId));
-        this.price = selectedPrice?.price ? `${selectedPrice.price} Ft` : 'N/A';
+        const hourlyPrice = Number(selectedPrice?.price ?? NaN);
+        const duration = this.getDurationMinutes();
+
+        if (!Number.isFinite(hourlyPrice)) {
+          this.totalPrice = 'N/A';
+          return;
+        }
+
+        const amount = (hourlyPrice * duration) / 60;
+        this.totalPrice = `${Number(amount.toFixed(2))} Ft`;
       }
     });
+  }
+
+  private parseTimeToMinutes(value: string | null): number | null {
+    const text = String(value ?? '').trim();
+    const parts = text.split(':');
+    if (parts.length < 2) {
+      return null;
+    }
+
+    const hour = Number(parts[0]);
+    const minute = Number(parts[1]);
+    if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+      return null;
+    }
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return null;
+    }
+
+    return (hour * 60) + minute;
+  }
+
+  private getDurationMinutes(): number {
+    const start = this.parseTimeToMinutes(this.startTime);
+    const end = this.parseTimeToMinutes(this.endTime);
+    if (start === null || end === null || end <= start) {
+      return 60;
+    }
+    return end - start;
   }
 
 
@@ -114,10 +152,10 @@ export class BookingComponent implements OnInit {
       locationId: this.locationId,
       fieldId: this.fieldId,
       userId: this.userId,
-      availableDateId: this.availableDateId,
       priceId: this.priceId,
       date: this.date,
       startTime: this.startTime,
+      endTime: this.endTime,
       note: this.bookingNote?.trim() || null
     });
 

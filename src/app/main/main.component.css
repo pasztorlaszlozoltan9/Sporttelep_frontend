@@ -380,10 +380,24 @@
   color: var(--muted);
 }
 
+.time-selection-actions {
+  margin-top: 0.55rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .actions {
   margin-top: 1.3rem;
   display: flex;
   justify-content: flex-end;
+}
+
+.booking-action-hint {
+  margin: 0.45rem 0 0;
+  text-align: right;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #5c6475;
 }
 
 .actions .btn {
@@ -512,6 +526,14 @@
 
   .actions {
     justify-content: center;
+  }
+
+  .time-selection-actions {
+    justify-content: center;
+  }
+
+  .booking-action-hint {
+    text-align: center;
   }
 }
 

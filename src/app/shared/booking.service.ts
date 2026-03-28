@@ -12,7 +12,7 @@ export class BookingService {
     userId: null,
     date: null,
     startTime: null,
-    availableDateId: null,
+    endTime: null,
     priceId: null,
     note: null
   };
@@ -59,7 +59,7 @@ export class BookingService {
       userId: null,
       date: null,
       startTime: null,
-      availableDateId: null,
+      endTime: null,
       priceId: null,
       note: null
     };

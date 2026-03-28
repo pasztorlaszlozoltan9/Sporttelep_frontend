@@ -4,7 +4,7 @@
     <p>Ellenőrizd az adatokat, majd folytasd a fizetéssel.</p>
   </header>
 
-  <div class="booking-card" *ngIf="sportId && locationId && fieldId && date && startTime; else noBookingData">
+  <div class="booking-card" *ngIf="sportId && locationId && fieldId && date && startTime && endTime; else noBookingData">
     <div class="booking-info-grid">
       <div class="info-item">
         <span class="info-label">Sport</span>
@@ -30,9 +30,13 @@
         <span class="info-label">Kezdés</span>
         <span class="info-value">{{ startTime || 'N/A' }}</span>
       </div>
+      <div class="info-item">
+        <span class="info-label">Befejezés</span>
+        <span class="info-value">{{ endTime || 'N/A' }}</span>
+      </div>
       <div class="info-item price-item">
-        <span class="info-label">Ár</span>
-        <span class="info-value">{{ price || 'N/A' }}</span>
+        <span class="info-label">Fizetendő</span>
+        <span class="info-value">{{ totalPrice || 'N/A' }}</span>
       </div>
     </div>
 

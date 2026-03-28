@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -7,6 +7,8 @@ import { AdminService } from '../shared/admin.service';
 import { AuthService } from '../shared/auth.service';
 import emailjs from '@emailjs/browser';
 import Swal from 'sweetalert2';
+import flatpickr from 'flatpickr';
+import { Hungarian } from 'flatpickr/dist/l10n/hu.js';
 
 @Component({
   selector: 'app-profil',
@@ -15,7 +17,7 @@ import Swal from 'sweetalert2';
   templateUrl: './profil.component.html',
   styleUrls: ['./profil.component.css']
 })
-export class ProfilComponent implements OnInit {
+export class ProfilComponent implements OnInit, OnDestroy {
   private readonly defaultCardImage: string = 'pics/index_background.jpg';
   private readonly locationImageByKey: Record<string, string> = {
     'bme sporttelep': 'bme sporttelep.jpg',
@@ -43,7 +45,7 @@ export class ProfilComponent implements OnInit {
   protected locations: any = []
   protected fields: any = []
   protected prices: any = []
-  protected availableDates: any = []
+  protected fieldBookingWindows: any = []
   
 
   protected editingUserId: number | null = null;
@@ -57,17 +59,31 @@ export class ProfilComponent implements OnInit {
   protected deletingUserId: number | null = null;
   protected editingBookingId: number | null = null;
   protected deletingBookingId: number | null = null;
+  protected openBookingDropdown: 'sport' | 'location' | 'field' | 'price' | null = null;
+
+  private bookingDatePickerInstance: any = null;
+  private bookingStartTimePickerInstance: any = null;
+  private bookingEndTimePickerInstance: any = null;
+
+  @ViewChild('bookingDatePicker')
+  bookingDatePicker?: ElementRef<HTMLInputElement>;
+
+  @ViewChild('bookingStartTimePicker')
+  bookingStartTimePicker?: ElementRef<HTMLInputElement>;
+
+  @ViewChild('bookingEndTimePicker')
+  bookingEndTimePicker?: ElementRef<HTMLInputElement>;
 
   protected userForm = this.builder.group({
     email: '',
 
     //jelszó kérés megszüntetése módosításnál és törlésnél
     password: '',
-    currentPassword: '',
     phone: '',
     fullname: '',
     roleId: '',
-    verified: ''
+    verified: '',
+    active: ''
   })
 
   protected passwordForm = this.builder.group({
@@ -87,7 +103,7 @@ export class ProfilComponent implements OnInit {
     userId: '',
     date: '',
     startTime: '',
-    availableDateId: '',
+    endTime: '',
     priceId: '',
   })
 
@@ -131,6 +147,8 @@ export class ProfilComponent implements OnInit {
   }
 
   startCloseBookingModal() {
+    this.destroyBookingModalPickers();
+    this.closeBookingDropdown();
     this.showBookingModal = false;
     this.editingBookingId = null;
     this.bookingForm.reset();
@@ -153,6 +171,190 @@ export class ProfilComponent implements OnInit {
     this.loadAllData();
   }
 
+  ngOnDestroy(): void {
+    this.destroyBookingModalPickers();
+  }
+
+  private initializeBookingModalPickersWhenReady(): void {
+    setTimeout(() => {
+      const dateInput = this.bookingDatePicker?.nativeElement;
+      const startInput = this.bookingStartTimePicker?.nativeElement;
+      const endInput = this.bookingEndTimePicker?.nativeElement;
+
+      if (dateInput) {
+        this.bookingDatePickerInstance?.destroy();
+        this.bookingDatePickerInstance = flatpickr(dateInput, {
+          locale: Hungarian,
+          dateFormat: 'Y-m-d',
+          disableMobile: true,
+          static: true,
+          defaultDate: String(this.bookingForm.value.date ?? '') || undefined,
+          onChange: (_selectedDates, dateStr) => this.bookingForm.patchValue({ date: dateStr })
+        });
+      }
+
+      if (startInput) {
+        const startPickerState = {
+          confirmed: false,
+          initialValue: this.normalizeTimeForInput(this.bookingForm.value.startTime),
+          pendingValue: this.normalizeTimeForInput(this.bookingForm.value.startTime)
+        };
+
+        this.bookingStartTimePickerInstance?.destroy();
+        this.bookingStartTimePickerInstance = flatpickr(startInput, {
+          locale: Hungarian,
+          enableTime: true,
+          noCalendar: true,
+          time_24hr: true,
+          dateFormat: 'H:i',
+          minuteIncrement: 15,
+          disableMobile: true,
+          static: true,
+          defaultDate: this.normalizeTimeForInput(this.bookingForm.value.startTime),
+          onReady: (_selectedDates, _timeStr, instance) => {
+            this.ensureTimePickerConfirmButton(
+              instance,
+              (value) => this.bookingForm.patchValue({ startTime: value }),
+              startPickerState
+            );
+          },
+          onOpen: (_selectedDates, _timeStr, instance) => {
+            startPickerState.confirmed = false;
+            startPickerState.initialValue = this.normalizeTimeForInput(this.bookingForm.value.startTime);
+            startPickerState.pendingValue = startPickerState.initialValue;
+            this.ensureTimePickerConfirmButton(
+              instance,
+              (value) => this.bookingForm.patchValue({ startTime: value }),
+              startPickerState
+            );
+          },
+          onChange: (_selectedDates, timeStr) => {
+            startPickerState.pendingValue = this.normalizeTimeForInput(timeStr);
+          },
+          onValueUpdate: (_selectedDates, timeStr) => {
+            startPickerState.pendingValue = this.normalizeTimeForInput(timeStr);
+          },
+          onClose: (_selectedDates, _timeStr, instance) => {
+            if (startPickerState.confirmed) {
+              startPickerState.confirmed = false;
+              return;
+            }
+
+            this.bookingForm.patchValue({ startTime: startPickerState.initialValue });
+
+            if (startPickerState.initialValue) {
+              instance.setDate(startPickerState.initialValue, false, 'H:i');
+            } else {
+              instance.clear(false);
+              (instance.input as HTMLInputElement).value = '';
+            }
+          }
+        });
+      }
+
+      if (endInput) {
+        const endPickerState = {
+          confirmed: false,
+          initialValue: this.normalizeTimeForInput(this.bookingForm.value.endTime),
+          pendingValue: this.normalizeTimeForInput(this.bookingForm.value.endTime)
+        };
+
+        this.bookingEndTimePickerInstance?.destroy();
+        this.bookingEndTimePickerInstance = flatpickr(endInput, {
+          locale: Hungarian,
+          enableTime: true,
+          noCalendar: true,
+          time_24hr: true,
+          dateFormat: 'H:i',
+          minuteIncrement: 15,
+          disableMobile: true,
+          static: true,
+          defaultDate: this.normalizeTimeForInput(this.bookingForm.value.endTime),
+          onReady: (_selectedDates, _timeStr, instance) => {
+            this.ensureTimePickerConfirmButton(
+              instance,
+              (value) => this.bookingForm.patchValue({ endTime: value }),
+              endPickerState
+            );
+          },
+          onOpen: (_selectedDates, _timeStr, instance) => {
+            endPickerState.confirmed = false;
+            endPickerState.initialValue = this.normalizeTimeForInput(this.bookingForm.value.endTime);
+            endPickerState.pendingValue = endPickerState.initialValue;
+            this.ensureTimePickerConfirmButton(
+              instance,
+              (value) => this.bookingForm.patchValue({ endTime: value }),
+              endPickerState
+            );
+          },
+          onChange: (_selectedDates, timeStr) => {
+            endPickerState.pendingValue = this.normalizeTimeForInput(timeStr);
+          },
+          onValueUpdate: (_selectedDates, timeStr) => {
+            endPickerState.pendingValue = this.normalizeTimeForInput(timeStr);
+          },
+          onClose: (_selectedDates, _timeStr, instance) => {
+            if (endPickerState.confirmed) {
+              endPickerState.confirmed = false;
+              return;
+            }
+
+            this.bookingForm.patchValue({ endTime: endPickerState.initialValue });
+
+            if (endPickerState.initialValue) {
+              instance.setDate(endPickerState.initialValue, false, 'H:i');
+            } else {
+              instance.clear(false);
+              (instance.input as HTMLInputElement).value = '';
+            }
+          }
+        });
+      }
+    });
+  }
+
+  private ensureTimePickerConfirmButton(
+    instance: any,
+    onConfirm: (value: string) => void,
+    pickerState: { confirmed: boolean; initialValue: string; pendingValue: string }
+  ): void {
+    const calendar = instance?.calendarContainer as HTMLElement | undefined;
+    if (!calendar || calendar.querySelector('.fp-confirm-btn')) {
+      return;
+    }
+
+    const timeContainer = calendar.querySelector('.flatpickr-time') as HTMLElement | null;
+    if (!timeContainer) {
+      return;
+    }
+
+    const confirmButton = document.createElement('button');
+    confirmButton.type = 'button';
+    confirmButton.className = 'fp-confirm-btn';
+    confirmButton.textContent = '✓';
+    confirmButton.setAttribute('aria-label', 'Idopont valasztas kesz');
+    confirmButton.addEventListener('click', () => {
+      const liveValue = this.normalizeTimeForInput((instance?.input as HTMLInputElement | undefined)?.value);
+      const committedValue = liveValue || pickerState.pendingValue || pickerState.initialValue || '';
+      pickerState.pendingValue = committedValue;
+      pickerState.initialValue = committedValue;
+      pickerState.confirmed = true;
+      onConfirm(committedValue);
+      instance.close();
+    });
+
+    timeContainer.appendChild(confirmButton);
+  }
+
+  private destroyBookingModalPickers(): void {
+    this.bookingDatePickerInstance?.destroy();
+    this.bookingDatePickerInstance = null;
+    this.bookingStartTimePickerInstance?.destroy();
+    this.bookingStartTimePickerInstance = null;
+    this.bookingEndTimePickerInstance?.destroy();
+    this.bookingEndTimePickerInstance = null;
+  }
+
   loadAllData(): void {
     this.http.get(`${this.host}bookings`).subscribe({
       next: (res: any) => this.bookings = res.data ?? res ?? []
@@ -169,8 +371,8 @@ export class ProfilComponent implements OnInit {
     this.http.get(`${this.host}prices`).subscribe({
       next: (res: any) => this.prices = res.data ?? res ?? []
     });
-    this.http.get(`${this.host}availableDates`).subscribe({
-      next: (res: any) => this.availableDates = res.data ?? res ?? []
+    this.http.get(`${this.host}field-booking-windows`).subscribe({
+      next: (res: any) => this.fieldBookingWindows = res.data ?? res ?? []
     });
   }
 
@@ -226,67 +428,37 @@ export class ProfilComponent implements OnInit {
 
     if (this.editingUserId) {
 
-      const currentPassword = this.userForm.value.currentPassword?.trim();
-      const loginEmail = this.user?.email?.trim();
-
-      if (!currentPassword) {
-        Swal.fire({
-          title: 'Add meg a jelenlegi jelszavad!',
-          icon: 'error'
-        });
-        return;
-      }
-
-      if (!loginEmail) {
-        Swal.fire({
-          title: 'A felhasználói email nem elérhető a hitelesítéshez!',
-          icon: 'error'
-        });
-        return;
-      }
-
       // Update existing user - include roleId
       const userData: any = {
         email: this.userForm.value.email,
-        password: this.userForm.value.password,
         phone,
         fullname: this.userForm.value.fullname,
         roleId: this.userForm.value.roleId,
-        verified: this.userForm.value.verified
+        verified: this.userForm.value.verified,
+        active: this.userForm.value.active
       };
 
-
-      this.auth.login({ email: loginEmail, password: currentPassword }).subscribe({
-        next: () => {
-          this.api.updateUser(this.editingUserId!, userData).subscribe({
-            next: (result: any) => {
-              this.showModal = false;
-              this.editingUserId = null;
-              this.userForm.reset();
-              Swal.fire({
-                title: "Sikeres módosítás!",
-                icon: "success",
-                draggable: true
-              });
-              this.loadUserData();
-            },
-            error: (err: any) => {
-              Swal.fire({
-                title: "Hiba történt a módosítás során!",
-                icon: "error",
-                draggable: true
-              });
-              console.error('Error updating user:', err);
-              console.error('Status:', err.status);
-              console.error('Error message:', err.message);
-            }
-          });
-        },
-        error: () => {
+      this.api.updateUser(this.editingUserId!, userData).subscribe({
+        next: (result: any) => {
+          this.showModal = false;
+          this.editingUserId = null;
+          this.userForm.reset();
           Swal.fire({
-            title: 'Hibás jelszó! A mentés megszakítva.',
-            icon: 'error'
+            title: "Sikeres módosítás!",
+            icon: "success",
+            draggable: true
           });
+          this.loadUserData();
+        },
+        error: (err: any) => {
+          Swal.fire({
+            title: "Hiba történt a módosítás során!",
+            icon: "error",
+            draggable: true
+          });
+          console.error('Error updating user:', err);
+          console.error('Status:', err.status);
+          console.error('Error message:', err.message);
         }
       });
     } else {
@@ -327,21 +499,21 @@ export class ProfilComponent implements OnInit {
     this.editingUserId = user.id;
     this.userForm.patchValue({
       email: user.email,
-      currentPassword: '',
       phone: user.phone,
       fullname: user.fullname,
       roleId: user.roleId,
-      verified: user.verified
+      verified: user.verified,
+      active: user.active
     });
     this.showModal = true;
   }
 
   async startDeleteUser(userId: number) {
     const confirmation = await Swal.fire({
-      title: 'Biztosan törölni szeretnéd ezt a felhasználót?',
+      title: 'Biztosan inaktiválni szeretnéd a profilodat?',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Törlés',
+      confirmButtonText: 'Inaktiválás',
       cancelButtonText: 'Mégsem'
     });
 
@@ -390,19 +562,19 @@ export class ProfilComponent implements OnInit {
     this.auth.login({ email: loginEmail, password }).subscribe({
       next: () => {
         this.isUserDeleteInProgress = true;
-        this.showProcessingAlert('Felhasználó törlése folyamatban...');
+        this.showProcessingAlert('Fiók inaktiválása folyamatban...');
 
         this.api.deleteUser(this.deletingUserId!).subscribe({
           next: async (response: any) => {
             try {
-              this.updateProcessingAlert('Törlés sikeres, email küldése...');
+              this.updateProcessingAlert('Inaktiválás sikeres, email küldése...');
               const userDeleteEmailError = await this.sendUserDeletionEmailNotification(
                 loginEmail,
                 String(this.user?.fullname ?? '').trim() || 'Felhasználó',
                 String(this.user?.phone ?? '').trim() || 'N/A'
               );
 
-              this.updateProcessingAlert('Törlés sikeres, kijelentkeztetés...');
+              this.updateProcessingAlert('Inaktiválás sikeres, kijelentkeztetés...');
               const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
 
               this.startCloseDeleteModal();
@@ -410,19 +582,19 @@ export class ProfilComponent implements OnInit {
 
               if (emailWarning) {
                 await Swal.fire({
-                  title: 'Sikeres törlés, de email figyelmeztetés',
+                  title: 'Sikeres inaktiválás, de email figyelmeztetés',
                   text: String(emailWarning),
                   icon: 'warning'
                 });
               } else if (userDeleteEmailError) {
                 await Swal.fire({
-                  title: 'Sikeres törlés, de a felhasználói email nem ment ki',
+                  title: 'Sikeres inaktiválás, de a felhasználói email nem ment ki',
                   text: `EmailJS hiba: ${userDeleteEmailError}`,
                   icon: 'warning'
                 });
               } else {
                 await Swal.fire({
-                  title: 'Sikeres törlés! Email elküldve.',
+                  title: 'Sikeres inaktiválás! Email elküldve.',
                   icon: 'success',
                   draggable: true
                 });
@@ -435,13 +607,13 @@ export class ProfilComponent implements OnInit {
             }
           },
           error: (err: any) => {
-            console.error('Error deleting user:', err);
+            console.error('Error deactivating user:', err);
             console.error('Status:', err.status);
             console.error('Error message:', err.message);
             this.isUserDeleteInProgress = false;
             Swal.close();
             Swal.fire({
-              title: 'Hiba történt a törlés során!',
+              title: 'Hiba történt az inaktiválás során!',
               icon: 'error'
             });
           }
@@ -584,10 +756,12 @@ export class ProfilComponent implements OnInit {
     return field?.name || 'N/A';
   }
 
-  getAvailableDateInfo(availableDateId: number): string {
-    if (!this.availableDates) return 'N/A';
-    const availableDate = (this.availableDates as any[]).find(d => d.id === availableDateId);
-    return availableDate ? `${availableDate.date} ${availableDate.startTime}` : 'N/A';
+  getBookingTimeInfo(booking: any): string {
+    if (!booking) return 'N/A';
+    const date = booking?.date || '-';
+    const start = this.normalizeTimeForInput(booking?.startTime) || '-';
+    const end = this.normalizeTimeForInput(booking?.endTime) || '-';
+    return `${date} ${start} - ${end}`;
   }
 
   getPriceValue(priceId: number): string {
@@ -596,51 +770,146 @@ export class ProfilComponent implements OnInit {
     return price?.price ? `${price.price} Ft` : 'N/A';
   }
 
+  getTotalPriceValue(booking: any): string {
+    const totalFromBooking = Number(booking?.totalPrice ?? NaN);
+    if (Number.isFinite(totalFromBooking)) {
+      return `${Number(totalFromBooking.toFixed(2))} Ft`;
+    }
+
+    const pricePerHour = Number((this.prices as any[] | undefined)?.find((p: any) => p.id === booking?.priceId)?.price ?? NaN);
+    if (!Number.isFinite(pricePerHour)) {
+      return 'N/A';
+    }
+
+    const start = this.parseTimeToMinutes(booking?.startTime);
+    const end = this.parseTimeToMinutes(booking?.endTime);
+    const durationMinutes = (start !== null && end !== null && end > start) ? (end - start) : 60;
+
+    const amount = (pricePerHour * durationMinutes) / 60;
+    return `${Number(amount.toFixed(2))} Ft`;
+  }
+
+  @HostListener('document:click', ['$event'])
+  handleDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('.fp-select-shell')) {
+      this.openBookingDropdown = null;
+    }
+  }
+
+  @HostListener('window:resize')
+  handleWindowResize(): void {
+    this.closeBookingDropdown();
+  }
+
+  toggleBookingDropdown(dropdown: 'sport' | 'location' | 'field' | 'price', event: Event): void {
+    event.stopPropagation();
+    this.openBookingDropdown = this.openBookingDropdown === dropdown ? null : dropdown;
+  }
+
+  closeBookingDropdown(): void {
+    this.openBookingDropdown = null;
+  }
+
+  selectBookingSport(sportId: unknown, event?: Event): void {
+    event?.stopPropagation();
+    this.bookingForm.patchValue({ sportId: sportId === null ? '' : String(sportId ?? '') });
+    this.onBookingSportChange();
+    this.closeBookingDropdown();
+  }
+
+  selectBookingLocation(locationId: unknown, event?: Event): void {
+    event?.stopPropagation();
+    this.bookingForm.patchValue({ locationId: locationId === null ? '' : String(locationId ?? '') });
+    this.onBookingLocationChange();
+    this.closeBookingDropdown();
+  }
+
+  selectBookingField(fieldId: unknown, event?: Event): void {
+    event?.stopPropagation();
+    this.bookingForm.patchValue({ fieldId: fieldId === null ? '' : String(fieldId ?? '') });
+    this.onBookingFieldChange();
+    this.closeBookingDropdown();
+  }
+
+  selectBookingPrice(priceId: unknown, event?: Event): void {
+    event?.stopPropagation();
+    this.bookingForm.patchValue({ priceId: priceId === null ? '' : String(priceId ?? '') });
+    this.closeBookingDropdown();
+  }
+
+  getBookingSportLabel(): string {
+    const sportId = this.parseId(this.bookingForm.value.sportId);
+    if (!sportId || !this.sports) {
+      return '-- Válassz sportot --';
+    }
+    const sport = (this.sports as any[]).find((item: any) => Number(item?.id) === sportId);
+    return sport?.name || '-- Válassz sportot --';
+  }
+
+  getBookingLocationLabel(): string {
+    const locationId = this.parseId(this.bookingForm.value.locationId);
+    if (!locationId || !this.locations) {
+      return '-- Válassz helyszínt --';
+    }
+    const location = (this.locations as any[]).find((item: any) => Number(item?.id) === locationId);
+    return location?.name || '-- Válassz helyszínt --';
+  }
+
+  getBookingFieldLabel(): string {
+    const fieldId = this.parseId(this.bookingForm.value.fieldId);
+    if (!fieldId) {
+      return '-- Válassz pályát --';
+    }
+    const field = this.getFilteredFields().find((item: any) => Number(item?.id) === fieldId);
+    return field?.name || '-- Válassz pályát --';
+  }
+
+  getBookingPriceLabel(): string {
+    const priceId = this.parseId(this.bookingForm.value.priceId);
+    if (!priceId) {
+      return '-- Válassz árat --';
+    }
+    const price = this.getFilteredPrices().find((item: any) => Number(item?.id) === priceId);
+    return price ? `${price.price} Ft` : '-- Válassz árat --';
+  }
+
   private parseId(value: unknown): number | null {
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }
 
+  protected toNumber(value: unknown): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
   onBookingSportChange() {
     this.bookingForm.patchValue({
       fieldId: '',
-      availableDateId: '',
       priceId: '',
       date: '',
-      startTime: ''
+      startTime: '',
+      endTime: ''
     });
   }
 
   onBookingLocationChange() {
     this.bookingForm.patchValue({
       fieldId: '',
-      availableDateId: '',
       priceId: '',
       date: '',
-      startTime: ''
+      startTime: '',
+      endTime: ''
     });
   }
 
   onBookingFieldChange() {
     this.bookingForm.patchValue({
-      availableDateId: '',
       priceId: '',
       date: '',
-      startTime: ''
-    });
-  }
-
-  onBookingAvailableDateChange() {
-    const availableDateId = this.parseId(this.bookingForm.value.availableDateId);
-    if (!availableDateId || !this.availableDates) {
-      this.bookingForm.patchValue({ date: '', startTime: '' });
-      return;
-    }
-
-    const availableDate = (this.availableDates as any[]).find((d: any) => d.id === availableDateId);
-    this.bookingForm.patchValue({
-      date: availableDate?.date || '',
-      startTime: availableDate?.startTime || ''
+      startTime: '',
+      endTime: ''
     });
   }
 
@@ -652,16 +921,6 @@ export class ProfilComponent implements OnInit {
     return (this.fields as any[]).filter((field: any) => field.sportId === sportId && field.locationId === locationId);
   }
 
-  getFilteredAvailableDates(): any[] {
-    const fieldId = this.parseId(this.bookingForm.value.fieldId);
-    if (!this.availableDates || !fieldId) return [];
-
-    return (this.availableDates as any[]).filter((date: any) => {
-      if (date.fieldId !== fieldId) return false;
-      return !this.isAvailableDateBooked(date.id) || this.isEditingThisAvailableDate(date.id);
-    });
-  }
-
   getFilteredPrices(): any[] {
     const fieldId = this.parseId(this.bookingForm.value.fieldId);
     if (!this.prices || !fieldId) return [];
@@ -669,30 +928,114 @@ export class ProfilComponent implements OnInit {
     return (this.prices as any[]).filter((price: any) => price.fieldId === fieldId);
   }
 
-  private isAvailableDateBooked(availableDateId: number): boolean {
-    if (!this.bookings) return false;
-    return (this.bookings as any[]).some((booking: any) => booking.availableDateId === availableDateId);
+  private normalizeTimeForInput(value: string | null | undefined): string {
+    const text = String(value ?? '').trim();
+    if (!text) {
+      return '';
+    }
+    const parts = text.split(':');
+    return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : text;
   }
 
-  private isEditingThisAvailableDate(availableDateId: number): boolean {
-    if (!this.editingBookingId || !this.bookings) return false;
-    const currentBooking = (this.bookings as any[]).find((b: any) => b.id === this.editingBookingId);
-    return currentBooking?.availableDateId === availableDateId;
+  private parseTimeToMinutes(timeValue: unknown): number | null {
+    const text = String(timeValue ?? '').trim();
+    const parts = text.split(':');
+    if (parts.length < 2) {
+      return null;
+    }
+
+    const hour = Number(parts[0]);
+    const minute = Number(parts[1]);
+    if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+      return null;
+    }
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return null;
+    }
+
+    return (hour * 60) + minute;
+  }
+
+  private getWeekdayFromDate(dateValue: unknown): number | null {
+    const value = String(dateValue ?? '').trim();
+    if (!value) {
+      return null;
+    }
+
+    const parsed = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return parsed.getDay();
+  }
+
+  private getFieldWindowsForDate(fieldId: number, dateValue: unknown): any[] {
+    const weekday = this.getWeekdayFromDate(dateValue);
+    if (!this.fieldBookingWindows || weekday === null) {
+      return [];
+    }
+
+    return (this.fieldBookingWindows as any[]).filter((windowData: any) => {
+      return Number(windowData.fieldId) === fieldId
+        && Number(windowData.weekday) === weekday
+        && Number(windowData.isActive) === 1;
+    });
+  }
+
+  isBookingInsideWindow(): boolean {
+    const fieldId = this.parseId(this.bookingForm.value.fieldId);
+    const date = this.bookingForm.value.date;
+    const startMinutes = this.parseTimeToMinutes(this.bookingForm.value.startTime);
+    const endMinutes = this.parseTimeToMinutes(this.bookingForm.value.endTime);
+
+    if (!fieldId || !date || startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+      return false;
+    }
+
+    const windows = this.getFieldWindowsForDate(fieldId, date);
+    return windows.some((windowData: any) => {
+      const openMinutes = this.parseTimeToMinutes(windowData.openTime);
+      const closeMinutes = this.parseTimeToMinutes(windowData.closeTime);
+      return openMinutes !== null && closeMinutes !== null && startMinutes >= openMinutes && endMinutes <= closeMinutes;
+    });
+  }
+
+  getBookingWindowHint(): string {
+    const fieldId = this.parseId(this.bookingForm.value.fieldId);
+    const date = this.bookingForm.value.date;
+
+    if (!fieldId || !date) {
+      return 'Válassz pályát és dátumot a nyitvatartás megjelenítéséhez.';
+    }
+
+    const windows = this.getFieldWindowsForDate(fieldId, date);
+    if (windows.length === 0) {
+      return 'Ehhez a pályához ezen a napon nincs aktív nyitvatartás.';
+    }
+
+    const ranges = windows
+      .map((w: any) => `${this.normalizeTimeForInput(w.openTime)} - ${this.normalizeTimeForInput(w.closeTime)}`)
+      .join(', ');
+    return `Elérhető nyitvatartás: ${ranges}`;
   }
 
   startUpdateBooking(booking: any) {
+    this.closeBookingDropdown();
     this.editingBookingId = booking.id;
     this.bookingForm.patchValue({
       sportId: booking.sportId,
       locationId: booking.locationId,
       fieldId: booking.fieldId,
       userId: booking.userId,
-      availableDateId: booking.availableDateId,
       priceId: booking.priceId,
       date: booking.date,
-      startTime: booking.startTime
+      startTime: this.normalizeTimeForInput(booking.startTime),
+      endTime: this.normalizeTimeForInput(booking.endTime)
     });
     this.showBookingModal = true;
+    this.initializeBookingModalPickersWhenReady();
   }
 
   private buildBookingNotificationData(booking: any) {
@@ -722,6 +1065,7 @@ export class ProfilComponent implements OnInit {
       `Pálya: ${data.fieldName}`,
       `Dátum: ${data.bookingDate}`,
       `Kezdés: ${data.bookingStartTime}`,
+      `Befejezés: ${this.normalizeTimeForInput(booking?.endTime) || 'N/A'}`,
       `Ár: ${data.bookingPrice}`
     ].join('\n');
 
@@ -738,6 +1082,7 @@ export class ProfilComponent implements OnInit {
       field_name: data.fieldName,
       booking_date: data.bookingDate,
       booking_start_time: data.bookingStartTime,
+      booking_end_time: this.normalizeTimeForInput(booking?.endTime) || 'N/A',
       booking_price: data.bookingPrice
     };
 
@@ -761,8 +1106,8 @@ export class ProfilComponent implements OnInit {
     const deletedAt = new Date().toLocaleString('hu-HU');
     const message = [
       `Kedves ${fullName}!`,
-      'A fiókod törlése sikeresen megtörtént.',
-      `Törlés ideje: ${deletedAt}`
+      'A fiókod inaktiválása sikeresen megtörtént.',
+      `Inaktiválás ideje: ${deletedAt}`
     ].join('\n');
 
     const templateParams = {
@@ -813,15 +1158,24 @@ export class ProfilComponent implements OnInit {
       return;
     }
 
+    if (!this.isBookingInsideWindow()) {
+      await Swal.fire({
+        title: 'Időpont nyitvatartáson kívül',
+        text: 'A kiválasztott időpont nincs benne a pálya nyitvatartásában.',
+        icon: 'warning'
+      });
+      return;
+    }
+
     const bookingData = {
       sportId: this.bookingForm.value.sportId,
       locationId: this.bookingForm.value.locationId,
       fieldId: this.bookingForm.value.fieldId,
       userId: this.user.id,
-      availableDateId: this.bookingForm.value.availableDateId,
       priceId: this.bookingForm.value.priceId,
       date: this.bookingForm.value.date,
       startTime: this.bookingForm.value.startTime,
+      endTime: this.bookingForm.value.endTime,
       email: this.user?.email || null
     };
 

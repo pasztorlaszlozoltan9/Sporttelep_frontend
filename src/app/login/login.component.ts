@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AdminGuard } from '../shared/admin.guard';
 import  Swal from  'sweetalert2';
+import emailjs from '@emailjs/browser';
 
 @Component({
   selector: 'app-login',
@@ -14,6 +15,10 @@ import  Swal from  'sweetalert2';
   styleUrl: './login.component.css',
 })
 export class LoginComponent {
+  private readonly emailJsServiceId: string = 'sporttelepek_0825';
+  private readonly emailJsRegisterTemplateId: string = 'template_8ghrwys';
+  private readonly emailJsPublicKey: string = '__s7hNRM8XTSCfrSd';
+
   private readonly googleClientId = '201182991102-dc6nvg3uf9dvf30dp4bs6igmcrjcq4vh.apps.googleusercontent.com';
   private googleResizeTimeout: any = null;
   private readonly onResizeHandler = () => {
@@ -372,6 +377,17 @@ export class LoginComponent {
           return;
         }
 
+        if (Number(user?.active) !== 1) {
+          localStorage.removeItem('token');
+          window.dispatchEvent(new Event('authStateChanged'));
+          Swal.fire({
+            title: 'Profil inaktív',
+            text: 'A profilod inaktív, kérjük lépj velünk kapcsolatba!',
+            icon: 'error'
+          });
+          return;
+        }
+
         this.user = user;
         window.dispatchEvent(new Event('authStateChanged'));
         this.loginForm.reset();
@@ -464,12 +480,43 @@ export class LoginComponent {
     this.isRegisterProcessing = true;
     this.showProcessingAlert('Regisztráció folyamatban...');
 
+    const registrationEmail = String(this.registerForm.value.email ?? '').trim();
+    const registrationFullname = String(this.registerForm.value.fullname ?? '').trim();
+    const registrationPhone = String(this.registerForm.value.phone ?? '').trim();
+
     this.auth.register(this.registerForm.value).subscribe({
       next: async (_response: any) => {
         Swal.close();
         localStorage.removeItem('token');
         window.dispatchEvent(new Event('authStateChanged'));
         this.registerForm.reset();
+
+        const registrationMessage = [
+          `Új felhasználó regisztrált.`,
+          `Email cím: ${registrationEmail}`,
+          `Telefonszám: ${registrationPhone}`,
+          `Teljes név: ${registrationFullname}`
+        ].join('\n');
+
+        try {
+          await emailjs.send(
+            this.emailJsServiceId,
+            this.emailJsRegisterTemplateId,
+            {
+              to_email: registrationEmail,
+              email: registrationEmail,
+              user_email: registrationEmail,
+              user_name: registrationFullname,
+              user_fullname: registrationFullname,
+              user_phone: registrationPhone,
+              message: registrationMessage
+            },
+            { publicKey: this.emailJsPublicKey }
+          );
+        } catch (emailError: any) {
+          console.error('EmailJS registration notification error:', emailError);
+        }
+
         await Swal.fire({
           title: "Sikeres regisztráció, megerősítő email kiküldve!",
           icon: "success",

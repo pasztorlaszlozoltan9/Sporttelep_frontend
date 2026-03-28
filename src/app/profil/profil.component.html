@@ -23,12 +23,12 @@
     <div class="actions profile-actions">
       <button (click)="startUpdateUser(user)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
       <button (click)="startShowPasswordModal()" class="btn btn-info btn-sm" type="button" id="function-btn">Jelszó módosítása</button>
-      <button (click)="startDeleteUser(user.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Törlés</button>
+      <button (click)="startDeleteUser(user.id)" class="btn btn-danger btn-sm" type="button" id="function-btn">Inaktiválás</button>
     </div>
   </div>
 
    @if (showModal === true) {
-    <div class="modal" tabindex="-1" style="display: block;">
+    <div class="modal" tabindex="-1" style="display: block;" (scroll)="closeBookingDropdown()">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -42,16 +42,6 @@
                             <label for="email" class="form-label">Email</label>
                             <input type="text" class="form-control" formControlName="email" id="email">
                         </div>
-                        <div>
-                            <label for="password" class="form-label">Jelszó</label>
-                            <input type="password" class="form-control" formControlName="password" id="password">
-                        </div>
-                        @if (editingUserId) {
-                        <div>
-                          <label for="currentPassword" class="form-label">Jelszó Megerősítés</label>
-                          <input type="password" class="form-control" formControlName="currentPassword" id="currentPassword">
-                        </div>
-                        }
                         <div>
                             <label for="phone" class="form-label">Telefon</label>
                             <input type="text" class="form-control" formControlName="phone" id="phone">
@@ -75,7 +65,7 @@
     }
 
   @if (showPasswordModal === true) {
-    <div class="modal" tabindex="-1" style="display: block;">
+    <div class="modal" tabindex="-1" style="display: block;" (scroll)="closeBookingDropdown()">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -111,11 +101,11 @@
     }
 
     @if (showDeleteModal === true) {
-    <div class="modal" tabindex="-1" style="display: block;">
+    <div class="modal" tabindex="-1" style="display: block;" (scroll)="closeBookingDropdown()">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Felhasználó törlése</h5>
+            <h5 class="modal-title">Fiók inaktiválása</h5>
             <button type="button" class="btn-close" (click)="startCloseDeleteModal()" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -133,7 +123,7 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" (click)="startCloseDeleteModal()" [disabled]="isUserDeleteInProgress">Bezárás</button>
             <button type="submit" class="btn btn-danger" form="deleteForm" [disabled]="deleteForm.invalid || isUserDeleteInProgress">
-              {{ isUserDeleteInProgress ? 'Feldolgozás...' : 'Törlés végrehajtása' }}
+              {{ isUserDeleteInProgress ? 'Feldolgozás...' : 'Inaktiválás végrehajtása' }}
             </button>
           </div>
         </div>
@@ -151,9 +141,8 @@
             <div class="info-item"><span class="info-label">Sport</span><span class="info-value">{{ getSportName(booking.sportId) }}</span></div>
             <div class="info-item"><span class="info-label">Helyszín</span><span class="info-value">{{ getLocationName(booking.locationId) }}</span></div>
             <div class="info-item"><span class="info-label">Pálya</span><span class="info-value">{{ getFieldName(booking.fieldId) }}</span></div>
-            <div class="info-item"><span class="info-label">Ár</span><span class="info-value">{{ getPriceValue(booking.priceId) }}</span></div>
-            <div class="info-item"><span class="info-label">Dátum</span><span class="info-value">{{ booking.date }}</span></div>
-            <div class="info-item"><span class="info-label">Kezdés</span><span class="info-value">{{ booking.startTime }}</span></div>
+            <div class="info-item"><span class="info-label">Ár</span><span class="info-value">{{ getTotalPriceValue(booking) }}</span></div>
+            <div class="info-item"><span class="info-label">Időpont</span><span class="info-value">{{ getBookingTimeInfo(booking) }}</span></div>
           </div>
           <div class="actions booking-actions">
             <button class="btn btn-warning btn-sm" type="button" (click)="startUpdateBooking(booking)" [disabled]="isBookingActionInProgress">Módosítás</button>
@@ -169,7 +158,7 @@
   </section>
 
   @if (showBookingModal === true) {
-  <div class="modal" tabindex="-1" style="display: block;">
+  <div class="modal" tabindex="-1" style="display: block;" (scroll)="closeBookingDropdown()">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -180,62 +169,89 @@
           <form [formGroup]="bookingForm" (ngSubmit)="startSaveBooking()" id="bookingForm">
             <div>
               <label for="bookingSportId" class="form-label">Sport</label>
-              <select class="form-control" formControlName="sportId" id="bookingSportId" (change)="onBookingSportChange()">
-                <option value="">-- Válassz sportot --</option>
-                @for(sport of sports; track sport.id) {
-                <option [value]="sport.id">{{sport.name}}</option>
+              <div class="fp-select-shell" [class.open]="openBookingDropdown === 'sport'">
+                <button type="button" class="form-control fp-select-trigger" id="bookingSportId" (click)="toggleBookingDropdown('sport', $event)">
+                  {{ getBookingSportLabel() }}
+                </button>
+                @if (openBookingDropdown === 'sport') {
+                <div class="fp-select-menu">
+                    <button type="button" class="fp-select-option" [class.selected]="!toNumber(bookingForm.value.sportId)" (click)="selectBookingSport('', $event)">-- Válassz sportot --</button>
+                  @for(sport of sports; track sport.id) {
+                      <button type="button" class="fp-select-option" [class.selected]="toNumber(bookingForm.value.sportId) === toNumber(sport.id)" (click)="selectBookingSport(sport.id, $event)">{{sport.name}}</button>
+                  }
+                </div>
                 }
-              </select>
+              </div>
             </div>
 
             <div>
               <label for="bookingLocationId" class="form-label">Helyszín</label>
-              <select class="form-control" formControlName="locationId" id="bookingLocationId" (change)="onBookingLocationChange()">
-                <option value="">-- Válassz helyszínt --</option>
-                @for(location of locations; track location.id) {
-                <option [value]="location.id">{{location.name}}</option>
+              <div class="fp-select-shell" [class.open]="openBookingDropdown === 'location'">
+                <button type="button" class="form-control fp-select-trigger" id="bookingLocationId" (click)="toggleBookingDropdown('location', $event)">
+                  {{ getBookingLocationLabel() }}
+                </button>
+                @if (openBookingDropdown === 'location') {
+                <div class="fp-select-menu">
+                    <button type="button" class="fp-select-option" [class.selected]="!toNumber(bookingForm.value.locationId)" (click)="selectBookingLocation('', $event)">-- Válassz helyszínt --</button>
+                  @for(location of locations; track location.id) {
+                      <button type="button" class="fp-select-option" [class.selected]="toNumber(bookingForm.value.locationId) === toNumber(location.id)" (click)="selectBookingLocation(location.id, $event)">{{location.name}}</button>
+                  }
+                </div>
                 }
-              </select>
+              </div>
             </div>
 
             <div>
               <label for="bookingFieldId" class="form-label">Pálya</label>
-              <select class="form-control" formControlName="fieldId" id="bookingFieldId" (change)="onBookingFieldChange()">
-                <option value="">-- Válassz pályát --</option>
-                @for(field of getFilteredFields(); track field.id) {
-                <option [value]="field.id">{{field.name}}</option>
+              <div class="fp-select-shell" [class.open]="openBookingDropdown === 'field'">
+                <button type="button" class="form-control fp-select-trigger" id="bookingFieldId" (click)="toggleBookingDropdown('field', $event)">
+                  {{ getBookingFieldLabel() }}
+                </button>
+                @if (openBookingDropdown === 'field') {
+                <div class="fp-select-menu">
+                    <button type="button" class="fp-select-option" [class.selected]="!toNumber(bookingForm.value.fieldId)" (click)="selectBookingField('', $event)">-- Válassz pályát --</button>
+                  @for(field of getFilteredFields(); track field.id) {
+                      <button type="button" class="fp-select-option" [class.selected]="toNumber(bookingForm.value.fieldId) === toNumber(field.id)" (click)="selectBookingField(field.id, $event)">{{field.name}}</button>
+                  }
+                </div>
                 }
-              </select>
-            </div>
-
-            <div>
-              <label for="bookingAvailableDateId" class="form-label">Szabad időpont</label>
-              <select class="form-control" formControlName="availableDateId" id="bookingAvailableDateId" (change)="onBookingAvailableDateChange()">
-                <option value="">-- Válassz időpontot --</option>
-                @for(availableDate of getFilteredAvailableDates(); track availableDate.id) {
-                <option [value]="availableDate.id">{{availableDate.date}} {{availableDate.startTime}}</option>
-                }
-              </select>
+              </div>
             </div>
 
             <div>
               <label for="bookingPriceId" class="form-label">Ár</label>
-              <select class="form-control" formControlName="priceId" id="bookingPriceId">
-                <option value="">-- Válassz árat --</option>
-                @for(price of getFilteredPrices(); track price.id) {
-                <option [value]="price.id">{{price.price}} Ft</option>
+              <div class="fp-select-shell" [class.open]="openBookingDropdown === 'price'">
+                <button type="button" class="form-control fp-select-trigger" id="bookingPriceId" (click)="toggleBookingDropdown('price', $event)">
+                  {{ getBookingPriceLabel() }}
+                </button>
+                @if (openBookingDropdown === 'price') {
+                <div class="fp-select-menu">
+                    <button type="button" class="fp-select-option" [class.selected]="!toNumber(bookingForm.value.priceId)" (click)="selectBookingPrice('', $event)">-- Válassz árat --</button>
+                  @for(price of getFilteredPrices(); track price.id) {
+                      <button type="button" class="fp-select-option" [class.selected]="toNumber(bookingForm.value.priceId) === toNumber(price.id)" (click)="selectBookingPrice(price.id, $event)">{{price.price}} Ft</button>
+                  }
+                </div>
                 }
-              </select>
+              </div>
             </div>
 
             <div>
               <label for="bookingDate" class="form-label">Dátum</label>
-              <input type="text" class="form-control" formControlName="date" id="bookingDate" readonly>
+              <input #bookingDatePicker type="text" class="form-control" formControlName="date" id="bookingDate" autocomplete="off">
             </div>
 
             <div>
               <label for="bookingStartTime" class="form-label">Kezdési idő</label>
-              <input type="text" class="form-control" formControlName="startTime" id="bookingStartTime" readonly>
+              <input #bookingStartTimePicker type="text" class="form-control" formControlName="startTime" id="bookingStartTime" autocomplete="off">
+            </div>
+
+            <div>
+              <label for="bookingEndTime" class="form-label">Befejezési idő</label>
+              <input #bookingEndTimePicker type="text" class="form-control" formControlName="endTime" id="bookingEndTime" autocomplete="off">
+            </div>
+
+            <div class="text-muted mt-1">
+              {{ getBookingWindowHint() }}
             </div>
           </form>
         </div>
@@ -251,7 +267,7 @@
   }
 
   @if (showBookingDeleteModal === true) {
-  <div class="modal" tabindex="-1" style="display: block;">
+  <div class="modal" tabindex="-1" style="display: block;" (scroll)="closeBookingDropdown()">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
