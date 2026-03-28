@@ -470,7 +470,7 @@ export class AdminComponent implements OnDestroy {
     if (this.userActiveFilter === 'inactive') {
       return `Inaktív (${this.usersCountInactive})`;
     }
-    return `Mind (${this.usersCountAll})`;
+    return `Minden felhasználó (${this.usersCountAll})`;
   }
 
   getFieldLocationFilterLabel(): string {
@@ -2124,6 +2124,20 @@ export class AdminComponent implements OnDestroy {
     if (!this.fields) return 'N/A';
     const field = (this.fields as any[]).find(f => f.id === fieldId);
     return field?.name || 'N/A';
+  }
+
+  getFieldLocationName(fieldId: number): string {
+    if (!this.fields || !this.locations) return 'N/A';
+    const field = (this.fields as any[]).find((f: any) => Number(f?.id) === Number(fieldId));
+    if (!field) return 'N/A';
+    return this.getLocationName(Number(field.locationId));
+  }
+
+  getFieldSportName(fieldId: number): string {
+    if (!this.fields || !this.sports) return 'N/A';
+    const field = (this.fields as any[]).find((f: any) => Number(f?.id) === Number(fieldId));
+    if (!field) return 'N/A';
+    return this.getSportName(Number(field.sportId));
   }
 
   getUserName(userId: number): string {

@@ -1,4 +1,5 @@
 <main class="admin-shell">
+    <title>Admin központ</title>
     <header class="admin-header">
         <h1>Admin központ</h1>
         <p>Felhasználók, sportok, helyszínek és foglalások kezelése egy nézetben.</p>
@@ -26,7 +27,7 @@
                     <button type="button" class="admin-filter-select fp-select-trigger" (click)="toggleListFilterDropdown('userStatus', $event)">{{ getUserActiveFilterLabel() }}</button>
                     @if (openListFilterDropdown === 'userStatus') {
                     <div class="fp-select-menu">
-                        <button type="button" class="fp-select-option" [class.selected]="userActiveFilter === 'all'" (click)="selectUserActiveFilter('all', $event)">Mind ({{ usersCountAll }})</button>
+                        <button type="button" class="fp-select-option" [class.selected]="userActiveFilter === 'all'" (click)="selectUserActiveFilter('all', $event)">Minden felhasználó({{ usersCountAll }})</button>
                         <button type="button" class="fp-select-option" [class.selected]="userActiveFilter === 'active'" (click)="selectUserActiveFilter('active', $event)">Aktív ({{ usersCountActive }})</button>
                         <button type="button" class="fp-select-option" [class.selected]="userActiveFilter === 'inactive'" (click)="selectUserActiveFilter('inactive', $event)">Inaktív ({{ usersCountInactive }})</button>
                     </div>
@@ -229,6 +230,8 @@
                     <div class="record-item"><span class="record-label">Nyitás</span><span class="record-value">{{ windowData.openTime }}</span></div>
                     <div class="record-item"><span class="record-label">Zárás</span><span class="record-value">{{ windowData.closeTime }}</span></div>
                     <div class="record-item"><span class="record-label">Pálya</span><span class="record-value">{{ getFieldName(windowData.fieldId) }}</span></div>
+                    <div class="record-item"><span class="record-label">Helyszín</span><span class="record-value">{{ getFieldLocationName(windowData.fieldId) }}</span></div>
+                    <div class="record-item"><span class="record-label">Sport</span><span class="record-value">{{ getFieldSportName(windowData.fieldId) }}</span></div>
                     <div class="record-item"><span class="record-label">Aktív</span><span class="record-value">{{ getWindowActiveLabel(windowData.isActive) }}</span></div>
                 </div>
                 <div class="actions record-actions">
@@ -285,6 +288,8 @@
                     <div class="record-item"><span class="record-label">Id</span><span class="record-value">{{ price.id }}</span></div>
                     <div class="record-item"><span class="record-label">Ár (Ft)</span><span class="record-value">{{ price.price }}</span></div>
                     <div class="record-item"><span class="record-label">Pálya</span><span class="record-value">{{ getFieldName(price.fieldId) }}</span></div>
+                    <div class="record-item"><span class="record-label">Helyszín</span><span class="record-value">{{ getFieldLocationName(price.fieldId) }}</span></div>
+                    <div class="record-item"><span class="record-label">Sport</span><span class="record-value">{{ getFieldSportName(price.fieldId) }}</span></div>
                 </div>
                 <div class="actions record-actions">
                     <button (click)="startUpdatePrice(price)" class="btn btn-warning btn-sm" type="button" id="function-btn">Módosítás</button>
