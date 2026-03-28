@@ -16,10 +16,12 @@
     </thead>
     <tbody>
       <tr>
-        <td id="bpsport1"><img src="../pics/slideshow_1.jpg" class="img-bpsport1" name="bpsport1"
-            title="1111 Budapest, Sport utca 1">
+        <td id="bpsport1">
+          @if (getLocationImageByIndex(0); as imageUrl) {
+          <img [src]="imageUrl" class="img-bpsport1" name="bpsport1" [title]="getLocationAddressByIndex(0, '1111 Budapest, Sport utca 1')">
+          }
         </td>
-        <td class="address-td">1111 Budapest, Sport utca 1</td>
+        <td class="address-td">{{ getLocationAddressByIndex(0, '1111 Budapest, Sport utca 1') }}</td>
         <td>
           <div class="filter-group">
             <label for="sport">Sportág:</label>
@@ -50,10 +52,12 @@
         </td>
       </tr>
       <tr>
-        <td id="bpsport2"><img src="../pics/slideshow_4.jpg" class="img-bpsport2" name="bpsport2"
-            title="2222 Budapest, Sport tér 2">
+        <td id="bpsport2">
+          @if (getLocationImageByIndex(1); as imageUrl) {
+          <img [src]="imageUrl" class="img-bpsport2" name="bpsport2" [title]="getLocationAddressByIndex(1, '2222 Budapest, Sport tér 2')">
+          }
         </td>
-        <td class="address-td">2222 Budapest, Sport tér 2.</td>
+        <td class="address-td">{{ getLocationAddressByIndex(1, '2222 Budapest, Sport tér 2.') }}</td>
         <td>
           <div class="filter-group">
             <label for="sport">Sportág:</label>
@@ -83,40 +87,6 @@
           </div>
         </td>
       </tr>
-      <!-- <tr>
-        <td id="bpsport3"><img src="../pics/slideshow_3.jpg" class="img-bpsport3" name="bpsport3"
-            title="3333 Budapest, Sport körút 3">
-        </td>
-        <td class="address-td">3333 Budapest, Sport körút 3.</td>
-        <td>
-          <div class="filter-group">
-            <label for="sport">Sportág:</label>
-            <select class="sport-select" name="sport" onchange="updatePrice(this)">
-              <option value="">-- Válassz sportágat --</option>
-              <option value="tenisz">Tenisz</option>
-              <option value="kosarlabda">Kosárlabda</option>
-              <option value="roplabda">Röplabda</option>
-              <option value="padel">Padel</option>
-              <option value="foci">Nagypályás foci</option>
-            </select>
-          </div>
-        </td>
-        <td>
-          <div class="filter-group" id="price-container">
-            <label for="price">Ár:</label><span class="price"></span>
-          </div>
-        </td>
-        <td>
-          <div class="filter-group">
-            <label for="date">Dátum:</label>
-            <input type="date" id="date" name="date">
-            <label for="time-from">Időpont:</label>
-            <input type="time" id="time-from" name="time-from">
-            <input type="time" id="time-to" name="time-to">
-            <button type="button" class="reserve-btn btn btn-primary">Foglalás</button>
-          </div>
-        </td>
-      </tr> -->
     </tbody>
   </table>
 </main>

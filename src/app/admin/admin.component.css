@@ -203,6 +203,34 @@
   margin-top: 0.62rem;
 }
 
+.admin-upload-preview {
+  margin-top: 0.7rem;
+  border: 1px solid #dbe5f0;
+  border-radius: 0.8rem;
+  background: #f7fbff;
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.admin-upload-preview-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #4d6784;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-upload-preview-image {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 0.7rem;
+  border: 1px solid #d3deea;
+  background: #edf3f9;
+}
+
 .empty-records {
   grid-column: 1 / -1;
   border: 1px dashed #cfd9e5;

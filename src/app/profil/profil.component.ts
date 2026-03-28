@@ -19,15 +19,6 @@ import { Hungarian } from 'flatpickr/dist/l10n/hu.js';
   styleUrls: ['./profil.component.css']
 })
 export class ProfilComponent implements OnInit, OnDestroy {
-  private readonly defaultCardImage: string = 'pics/index_background.jpg';
-  private readonly locationImageByKey: Record<string, string> = {
-    'bme sporttelep': 'bme sporttelep.jpg',
-    'pokorny jozsef sport es szabadidokozpont': 'Pokorny József Sport- és Szabadidőközpont.jpg',
-    'varosligeti sportcentrum': 'városligeti sportcentrum.jpg',
-    'ujbudai sportcentrum': 'Újbudai Sportcentrum.jpg',
-    'ujpalotai uti sporttelep': 'Újpalotai úti Sporttelep.jpg'
-  };
-
   private readonly emailJsServiceId: string = 'sporttelepek_0825';
   private readonly emailJsBookingUpdateTemplateId: string = 'template_pz3d5z8';
   private readonly emailJsBookingDeleteTemplateId: string = 'template_9cdc5ki';
@@ -720,36 +711,24 @@ export class ProfilComponent implements OnInit, OnDestroy {
     return location?.name || 'N/A';
   }
 
-  private normalizeNameKey(value: string): string {
-    return String(value ?? '')
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim();
+  private normalizeImageUrl(value: unknown): string | null {
+    const imageUrl = String(value ?? '').trim();
+    return imageUrl ? imageUrl : null;
   }
 
-  private encodePathSegments(path: string): string {
-    return path
-      .split('/')
-      .map((segment: string) => encodeURIComponent(segment))
-      .join('/');
-  }
-
-  getLocationCardImage(locationId: number): string {
+  getLocationCardImage(locationId: number): string | null {
     if (!this.locations) {
-      return this.defaultCardImage;
+      return null;
     }
 
     const location = (this.locations as any[]).find((l: any) => l.id === locationId);
-    const locationName = String(location?.name ?? '').trim();
-    if (!locationName) {
-      return this.defaultCardImage;
-    }
+    return this.normalizeImageUrl(location?.imageUrl);
+  }
 
-    const mapped = this.locationImageByKey[this.normalizeNameKey(locationName)] ?? `${locationName}.jpg`;
-    return this.encodePathSegments(`pics/locations/${mapped}`);
+  getBookingCardBackgroundImage(booking: any): string {
+    const gradient = 'linear-gradient(180deg, rgba(8, 16, 30, 0.18) 15%, rgba(8, 16, 30, 0.82) 100%)';
+    const imageUrl = this.getLocationCardImage(Number(booking?.locationId));
+    return imageUrl ? `${gradient}, url('${imageUrl}')` : gradient;
   }
 
   getFieldName(fieldId: number): string {

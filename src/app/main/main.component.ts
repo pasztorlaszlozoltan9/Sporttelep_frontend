@@ -19,24 +19,7 @@ import { Hungarian } from 'flatpickr/dist/l10n/hu.js';
   styleUrls: ['./main.component.css']
 })
 export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly defaultCardImage = 'pics/index_background.jpg';
   private readonly welcomeSessionKey = 'main_welcome_popup_shown';
-
-  private readonly sportImageByKey: Record<string, string> = {
-    labdarugas: 'labdarúgás.jpg',
-    tenisz: 'tenisz.jpg',
-    kosarlabda: 'kosárlabda.jpg',
-    padel: 'padel.jpg',
-    roplabda: 'röplabda.jpg'
-  };
-
-  private readonly locationImageByKey: Record<string, string> = {
-    'bme sporttelep': 'bme sporttelep.jpg',
-    'pokorny jozsef sport es szabadidokozpont': 'Pokorny József Sport- és Szabadidőközpont.jpg',
-    'varosligeti sportcentrum': 'városligeti sportcentrum.jpg',
-    'ujbudai sportcentrum': 'Újbudai Sportcentrum.jpg',
-    'ujpalotai uti sporttelep': 'Újpalotai úti Sporttelep.jpg'
-  };
 
   sportList: any[] = [];
   locList: any[] = [];
@@ -549,50 +532,9 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     return (d ?? '').includes('T') ? d.split('T')[0] : d;
   }
 
-  private normalizeNameKey(value: string): string {
-    return String(value ?? '')
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim();
-  }
-
-  private encodePathSegments(path: string): string {
-    return path
-      .split('/')
-      .map(segment => encodeURIComponent(segment))
-      .join('/');
-  }
-
-  private normalizeFieldImageKey(value: string): string {
-    return String(value ?? '')
-      .trim()
-      .replace(/[\s_]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .toUpperCase();
-  }
-
-  private mapImagePath(
-    folder: 'sports' | 'locations' | 'fields',
-    rawName: string,
-    mapping?: Record<string, string>
-  ): string {
-    const trimmedName = String(rawName ?? '').trim();
-    if (!trimmedName) {
-      return this.defaultCardImage;
-    }
-
-    if (mapping) {
-      const mapped = mapping[this.normalizeNameKey(trimmedName)];
-      if (mapped) {
-        return this.encodePathSegments(`pics/${folder}/${mapped}`);
-      }
-    }
-
-    return this.encodePathSegments(`pics/${folder}/${trimmedName}.jpg`);
+  private normalizeImageUrl(value: unknown): string | null {
+    const imageUrl = String(value ?? '').trim();
+    return imageUrl ? imageUrl : null;
   }
 
   get filteredLocations(): any[] {
@@ -639,49 +581,27 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     return candidates;
   }
 
-  getLocationCardImage(loc: any): string {
-    return this.mapImagePath('locations', String(loc?.name ?? ''), this.locationImageByKey);
+  getLocationCardImage(loc: any): string | null {
+    return this.normalizeImageUrl(loc?.imageUrl);
   }
 
-  getSportCardImage(sport: any): string {
-    return this.mapImagePath('sports', String(sport?.name ?? ''), this.sportImageByKey);
+  getSportCardImage(sport: any): string | null {
+    return this.normalizeImageUrl(sport?.imageUrl);
   }
 
-  getFieldCardImage(field: any): string {
-    const rawFieldName = String(field?.name ?? '').trim();
-    if (!rawFieldName) {
-      return this.defaultCardImage;
-    }
-
-    const normalizedFieldKey = this.normalizeFieldImageKey(rawFieldName);
-    if (!normalizedFieldKey) {
-      return this.defaultCardImage;
-    }
-
-    return this.encodePathSegments(`pics/fields/${normalizedFieldKey}.jpg`);
+  getFieldCardImage(field: any): string | null {
+    return this.normalizeImageUrl(field?.imageUrl);
   }
 
-  private getLocationCardImageById(locationId: unknown): string {
-    const numericLocationId = Number(locationId);
-    if (!Number.isFinite(numericLocationId)) {
-      return this.defaultCardImage;
-    }
-
-    const location = this.locList.find((loc: any) => Number(loc?.id) === numericLocationId);
-    if (!location) {
-      return this.defaultCardImage;
-    }
-
-    return this.getLocationCardImage(location);
+  getCardBackgroundImage(imageUrl: unknown): string {
+    const gradient = 'linear-gradient(180deg, rgba(8, 16, 30, 0.18) 15%, rgba(8, 16, 30, 0.82) 100%)';
+    const normalizedImageUrl = this.normalizeImageUrl(imageUrl);
+    return normalizedImageUrl ? `${gradient}, url('${normalizedImageUrl}')` : gradient;
   }
 
   getFieldCardBackgroundImage(field: any): string {
-    const gradient = 'linear-gradient(180deg, rgba(8, 16, 30, 0.18) 15%, rgba(8, 16, 30, 0.82) 100%)';
     const fieldImage = this.getFieldCardImage(field);
-    const locationImage = this.getLocationCardImageById(field?.locationId);
-    const fallbackImage = this.defaultCardImage;
-
-    return `${gradient}, url('${fieldImage}'), url('${locationImage}'), url('${fallbackImage}')`;
+    return this.getCardBackgroundImage(fieldImage);
   }
 
   get availableDates(): string[] {

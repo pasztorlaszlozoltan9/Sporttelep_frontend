@@ -1,18 +1,36 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { LocService } from '../shared/loc.service';
 import flatpickr from 'flatpickr';
 import { Hungarian } from 'flatpickr/dist/l10n/hu.js';
 
 @Component({
   selector: 'app-sports',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './sports.component.html',
   styleUrl: './sports.component.css'
 })
-export class SportsComponent {
+export class SportsComponent implements OnInit {
+  locations: any[] = [];
   private pickerInstances: any[] = [];
 
-  constructor(private hostRef: ElementRef<HTMLElement>) {}
+  constructor(
+    private hostRef: ElementRef<HTMLElement>,
+    private locService: LocService
+  ) {}
+
+  ngOnInit(): void {
+    this.locService.getLocation().subscribe({
+      next: (res: any) => {
+        this.locations = res.data ?? res ?? [];
+      },
+      error: (err: any) => {
+        console.error('Error fetching locations for sports page:', err);
+        this.locations = [];
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     this.initializeLegacyPickers();
@@ -134,5 +152,16 @@ export class SportsComponent {
 
   private normalizeTime(value: string | null | undefined): string {
     return String(value ?? '').trim();
+  }
+
+  getLocationImageByIndex(index: number): string | null {
+    const location = this.locations[index];
+    const imageUrl = String(location?.imageUrl ?? '').trim();
+    return imageUrl ? imageUrl : null;
+  }
+
+  getLocationAddressByIndex(index: number, fallback: string): string {
+    const address = String(this.locations[index]?.address ?? '').trim();
+    return address || fallback;
   }
 }

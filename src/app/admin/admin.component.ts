@@ -255,6 +255,14 @@ export class AdminComponent implements OnDestroy {
     | null = null;
   protected activeView: 'users' | 'sports' | 'locations' | 'fields' | 'fieldBookingWindows' | 'prices' | 'bookings' = 'users';
 
+  // Image upload state
+  protected uploadingSport = false;
+  protected uploadingLocation = false;
+  protected uploadingField = false;
+  protected sportImageUrl: string | null = null;
+  protected locationImageUrl: string | null = null;
+  protected fieldImageUrl: string | null = null;
+
   protected userForm = this.builder.group({
     email: '',
     password: '',
@@ -267,18 +275,21 @@ export class AdminComponent implements OnDestroy {
   protected sportForm = this.builder.group({
     name: '',
     duration: '',
+    imageUrl: ''
   })
 
   protected locationForm = this.builder.group({
     name: '',
     address: '',
-    email: ''
+    email: '',
+    imageUrl: ''
   })
 
   protected fieldForm = this.builder.group({
     name: '',
     locationId: '',
     sportId: '',
+    imageUrl: ''
   })
 
   protected fieldBookingWindowForm = this.builder.group({
@@ -395,24 +406,30 @@ export class AdminComponent implements OnDestroy {
   selectFieldLocationFilter(value: string, event?: Event): void {
     event?.stopPropagation();
     this.fieldLocationFilterId = value;
+    this.resetFieldSportFilterIfInvalid();
     this.closeListFilterDropdown();
   }
 
   selectFieldSportFilter(value: string, event?: Event): void {
     event?.stopPropagation();
     this.fieldSportFilterId = value;
+    this.resetFieldLocationFilterIfInvalid();
     this.closeListFilterDropdown();
   }
 
   selectFieldBookingWindowLocationFilter(value: string, event?: Event): void {
     event?.stopPropagation();
     this.fieldBookingWindowLocationFilterId = value;
+    this.resetFieldBookingWindowSportFilterIfInvalid();
+    this.resetFieldBookingWindowFieldFilterIfInvalid();
     this.closeListFilterDropdown();
   }
 
   selectFieldBookingWindowSportFilter(value: string, event?: Event): void {
     event?.stopPropagation();
     this.fieldBookingWindowSportFilterId = value;
+    this.resetFieldBookingWindowLocationFilterIfInvalid();
+    this.resetFieldBookingWindowFieldFilterIfInvalid();
     this.closeListFilterDropdown();
   }
 
@@ -425,18 +442,21 @@ export class AdminComponent implements OnDestroy {
   selectPriceLocationFilter(value: string, event?: Event): void {
     event?.stopPropagation();
     this.priceLocationFilterId = value;
+    this.resetPriceSportFilterIfInvalid();
     this.closeListFilterDropdown();
   }
 
   selectPriceSportFilter(value: string, event?: Event): void {
     event?.stopPropagation();
     this.priceSportFilterId = value;
+    this.resetPriceLocationFilterIfInvalid();
     this.closeListFilterDropdown();
   }
 
   selectBookingListLocationFilter(value: string, event?: Event): void {
     event?.stopPropagation();
     this.bookingListLocationFilterId = value;
+    this.resetBookingListSportFilterIfInvalid();
     this.resetBookingListFieldFilterIfInvalid();
     this.closeListFilterDropdown();
   }
@@ -444,8 +464,179 @@ export class AdminComponent implements OnDestroy {
   selectBookingListSportFilter(value: string, event?: Event): void {
     event?.stopPropagation();
     this.bookingListSportFilterId = value;
+    this.resetBookingListLocationFilterIfInvalid();
     this.resetBookingListFieldFilterIfInvalid();
     this.closeListFilterDropdown();
+  }
+
+  private getLocationsForSportFilter(sportFilterId: string): any[] {
+    if (!this.locations) return [];
+
+    const sportId = this.parseId(sportFilterId);
+    if (!sportId || !this.fields) {
+      return this.locations;
+    }
+
+    const locationIds = new Set(
+      (this.fields as any[])
+        .filter((field: any) => Number(field?.sportId) === sportId)
+        .map((field: any) => Number(field?.locationId))
+        .filter((locationId: number) => Number.isFinite(locationId))
+    );
+
+    return (this.locations as any[]).filter((location: any) => locationIds.has(Number(location?.id)));
+  }
+
+  getFieldLocationFilterOptions(): any[] {
+    return this.getLocationsForSportFilter(this.fieldSportFilterId);
+  }
+
+  private getSportsForLocationFilter(locationFilterId: string): any[] {
+    if (!this.sports) return [];
+
+    const locationId = this.parseId(locationFilterId);
+    if (!locationId || !this.fields) {
+      return this.sports;
+    }
+
+    const sportIds = new Set(
+      (this.fields as any[])
+        .filter((field: any) => Number(field?.locationId) === locationId)
+        .map((field: any) => Number(field?.sportId))
+        .filter((sportId: number) => Number.isFinite(sportId))
+    );
+
+    return (this.sports as any[]).filter((sport: any) => sportIds.has(Number(sport?.id)));
+  }
+
+  getFieldSportFilterOptions(): any[] {
+    return this.getSportsForLocationFilter(this.fieldLocationFilterId);
+  }
+
+  getFieldBookingWindowSportFilterOptions(): any[] {
+    return this.getSportsForLocationFilter(this.fieldBookingWindowLocationFilterId);
+  }
+
+  getFieldBookingWindowLocationFilterOptions(): any[] {
+    return this.getLocationsForSportFilter(this.fieldBookingWindowSportFilterId);
+  }
+
+  getPriceLocationFilterOptions(): any[] {
+    return this.getLocationsForSportFilter(this.priceSportFilterId);
+  }
+
+  getPriceSportFilterOptions(): any[] {
+    return this.getSportsForLocationFilter(this.priceLocationFilterId);
+  }
+
+  getBookingListLocationFilterOptions(): any[] {
+    return this.getLocationsForSportFilter(this.bookingListSportFilterId);
+  }
+
+  getBookingListSportFilterOptions(): any[] {
+    return this.getSportsForLocationFilter(this.bookingListLocationFilterId);
+  }
+
+  getFieldBookingWindowFieldOptions(): any[] {
+    if (!this.fields) return [];
+    const locationId = this.parseId(this.fieldBookingWindowLocationFilterId);
+    const sportId = this.parseId(this.fieldBookingWindowSportFilterId);
+
+    return (this.fields as any[]).filter((field: any) => {
+      const locationOk = !locationId || Number(field?.locationId) === locationId;
+      const sportOk = !sportId || Number(field?.sportId) === sportId;
+      return locationOk && sportOk;
+    });
+  }
+
+  private resetFieldSportFilterIfInvalid(): void {
+    const selectedSportId = this.parseId(this.fieldSportFilterId);
+    if (!selectedSportId) return;
+
+    const stillVisible = this.getFieldSportFilterOptions().some((sport: any) => Number(sport?.id) === selectedSportId);
+    if (!stillVisible) {
+      this.fieldSportFilterId = 'all';
+    }
+  }
+
+  private resetFieldLocationFilterIfInvalid(): void {
+    const selectedLocationId = this.parseId(this.fieldLocationFilterId);
+    if (!selectedLocationId) return;
+
+    const stillVisible = this.getFieldLocationFilterOptions().some((location: any) => Number(location?.id) === selectedLocationId);
+    if (!stillVisible) {
+      this.fieldLocationFilterId = 'all';
+    }
+  }
+
+  private resetFieldBookingWindowSportFilterIfInvalid(): void {
+    const selectedSportId = this.parseId(this.fieldBookingWindowSportFilterId);
+    if (!selectedSportId) return;
+
+    const stillVisible = this.getFieldBookingWindowSportFilterOptions().some((sport: any) => Number(sport?.id) === selectedSportId);
+    if (!stillVisible) {
+      this.fieldBookingWindowSportFilterId = 'all';
+    }
+  }
+
+  private resetFieldBookingWindowLocationFilterIfInvalid(): void {
+    const selectedLocationId = this.parseId(this.fieldBookingWindowLocationFilterId);
+    if (!selectedLocationId) return;
+
+    const stillVisible = this.getFieldBookingWindowLocationFilterOptions().some((location: any) => Number(location?.id) === selectedLocationId);
+    if (!stillVisible) {
+      this.fieldBookingWindowLocationFilterId = 'all';
+    }
+  }
+
+  private resetFieldBookingWindowFieldFilterIfInvalid(): void {
+    const selectedFieldId = this.parseId(this.fieldBookingWindowFieldFilterId);
+    if (!selectedFieldId) return;
+
+    const stillVisible = this.getFieldBookingWindowFieldOptions().some((field: any) => Number(field?.id) === selectedFieldId);
+    if (!stillVisible) {
+      this.fieldBookingWindowFieldFilterId = 'all';
+    }
+  }
+
+  private resetPriceSportFilterIfInvalid(): void {
+    const selectedSportId = this.parseId(this.priceSportFilterId);
+    if (!selectedSportId) return;
+
+    const stillVisible = this.getPriceSportFilterOptions().some((sport: any) => Number(sport?.id) === selectedSportId);
+    if (!stillVisible) {
+      this.priceSportFilterId = 'all';
+    }
+  }
+
+  private resetPriceLocationFilterIfInvalid(): void {
+    const selectedLocationId = this.parseId(this.priceLocationFilterId);
+    if (!selectedLocationId) return;
+
+    const stillVisible = this.getPriceLocationFilterOptions().some((location: any) => Number(location?.id) === selectedLocationId);
+    if (!stillVisible) {
+      this.priceLocationFilterId = 'all';
+    }
+  }
+
+  private resetBookingListSportFilterIfInvalid(): void {
+    const selectedSportId = this.parseId(this.bookingListSportFilterId);
+    if (!selectedSportId) return;
+
+    const stillVisible = this.getBookingListSportFilterOptions().some((sport: any) => Number(sport?.id) === selectedSportId);
+    if (!stillVisible) {
+      this.bookingListSportFilterId = 'all';
+    }
+  }
+
+  private resetBookingListLocationFilterIfInvalid(): void {
+    const selectedLocationId = this.parseId(this.bookingListLocationFilterId);
+    if (!selectedLocationId) return;
+
+    const stillVisible = this.getBookingListLocationFilterOptions().some((location: any) => Number(location?.id) === selectedLocationId);
+    if (!stillVisible) {
+      this.bookingListLocationFilterId = 'all';
+    }
   }
 
   selectBookingListFieldFilter(value: string, event?: Event): void {
@@ -907,6 +1098,89 @@ export class AdminComponent implements OnDestroy {
     this.windowCloseTimePickerInstance = null;
   }
 
+  // Image upload method
+  uploadImage(file: File, type: 'sport' | 'location' | 'field'): void {
+    if (!file) {
+      Swal.fire({
+        title: 'Hiba!',
+        text: 'Válassz ki egy fájlt!',
+        icon: 'error',
+        draggable: true
+      });
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      Swal.fire({
+        title: 'Hiba!',
+        text: 'Nincs aktív bejelentkezés. Kérjük, jelentkezz be újra!',
+        icon: 'error',
+        draggable: true
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    if (type === 'sport') {
+      this.uploadingSport = true;
+    } else if (type === 'location') {
+      this.uploadingLocation = true;
+    } else if (type === 'field') {
+      this.uploadingField = true;
+    }
+
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    };
+
+    this.http.post(`${this.host}uploads/image`, formData, { headers }).subscribe({
+      next: (result: any) => {
+        const imageUrl = result.data?.imageUrl || result.imageUrl;
+        
+        if (type === 'sport') {
+          this.sportImageUrl = imageUrl;
+          this.sportForm.patchValue({ imageUrl: imageUrl });
+          this.uploadingSport = false;
+        } else if (type === 'location') {
+          this.locationImageUrl = imageUrl;
+          this.locationForm.patchValue({ imageUrl: imageUrl });
+          this.uploadingLocation = false;
+        } else if (type === 'field') {
+          this.fieldImageUrl = imageUrl;
+          this.fieldForm.patchValue({ imageUrl: imageUrl });
+          this.uploadingField = false;
+        }
+
+        Swal.fire({
+          title: 'Sikeres feltöltés!',
+          text: 'A kép sikeresen feltöltve.',
+          icon: 'success',
+          draggable: true
+        });
+      },
+      error: (err: any) => {
+        if (type === 'sport') {
+          this.uploadingSport = false;
+        } else if (type === 'location') {
+          this.uploadingLocation = false;
+        } else if (type === 'field') {
+          this.uploadingField = false;
+        }
+
+        Swal.fire({
+          title: 'Hiba a feltöltéskor!',
+          text: err.error?.message || 'Valamilyen hiba történt a feltöltés során.',
+          icon: 'error',
+          draggable: true
+        });
+        console.error('Error uploading image:', err);
+      }
+    });
+  }
+
   getUsers() {
     const token = localStorage.getItem('token');
     if (token) {
@@ -1357,6 +1631,7 @@ export class AdminComponent implements OnDestroy {
     const sportData = {
       name: this.sportForm.value.name,
       duration: this.sportForm.value.duration,
+      imageUrl: this.sportForm.value.imageUrl || ''
     };
 
     if (this.editingSportId) {
@@ -1367,6 +1642,7 @@ export class AdminComponent implements OnDestroy {
           this.showModal = false;
           this.editingSportId = null;
           this.sportForm.reset();
+          this.sportImageUrl = null;
           this.getSports();
           Swal.fire({
             title: 'Sikeres módosítás!',
@@ -1392,6 +1668,7 @@ export class AdminComponent implements OnDestroy {
         next: (result: any) => {
           this.showModal = false;
           this.sportForm.reset();
+          this.sportImageUrl = null;
           this.getSports();
           Swal.fire({
             title: 'Sikeres létrehozás!',
@@ -1415,9 +1692,11 @@ export class AdminComponent implements OnDestroy {
 
   startUpdateSport(sport: any) {
     this.editingSportId = sport.id;
+    this.sportImageUrl = sport.imageUrl || null;
     this.sportForm.patchValue({
       name: sport.name,
-      duration: sport.duration
+      duration: sport.duration,
+      imageUrl: sport.imageUrl || ''
     });
     this.showModal = true;
   }
@@ -1462,7 +1741,8 @@ export class AdminComponent implements OnDestroy {
     const locationData = {
       name: this.locationForm.value.name,
       address: this.locationForm.value.address,
-      email: this.locationForm.value.email
+      email: this.locationForm.value.email,
+      imageUrl: this.locationForm.value.imageUrl || ''
     };
 
     if (this.editingLocationId) {
@@ -1473,6 +1753,7 @@ export class AdminComponent implements OnDestroy {
           this.showModal = false;
           this.editingLocationId = null;
           this.locationForm.reset();
+          this.locationImageUrl = null;
           this.getLocations();
           Swal.fire({
             title: 'Sikeres módosítás!',
@@ -1498,6 +1779,7 @@ export class AdminComponent implements OnDestroy {
         next: (result: any) => {
           this.showModal = false;
           this.locationForm.reset();
+          this.locationImageUrl = null;
           this.getLocations();
           Swal.fire({
             title: 'Sikeres létrehozás!',
@@ -1521,10 +1803,12 @@ export class AdminComponent implements OnDestroy {
 
   startUpdateLocation(location: any) {
     this.editingLocationId = location.id;
+    this.locationImageUrl = location.imageUrl || null;
     this.locationForm.patchValue({
       name: location.name,
       address: location.address,
-      email: location.email
+      email: location.email,
+      imageUrl: location.imageUrl || ''
     });
     this.showModal = true;
   }
@@ -1571,7 +1855,8 @@ export class AdminComponent implements OnDestroy {
     const fieldData = {
       name: this.fieldForm.value.name,
       locationId: this.fieldForm.value.locationId,
-      sportId: this.fieldForm.value.sportId
+      sportId: this.fieldForm.value.sportId,
+      imageUrl: this.fieldForm.value.imageUrl || ''
     };
 
     if (this.editingFieldId) {
@@ -1582,6 +1867,7 @@ export class AdminComponent implements OnDestroy {
           this.showModal = false;
           this.editingFieldId = null;
           this.fieldForm.reset();
+          this.fieldImageUrl = null;
           this.getFields();
           Swal.fire({
             title: 'Sikeres módosítás!',
@@ -1607,6 +1893,7 @@ export class AdminComponent implements OnDestroy {
         next: (result: any) => {
           this.showModal = false;
           this.fieldForm.reset();
+          this.fieldImageUrl = null;
           this.getFields();
           Swal.fire({
             title: 'Sikeres létrehozás!',
@@ -1631,11 +1918,13 @@ export class AdminComponent implements OnDestroy {
   startUpdateField(field: any) {
     // Set the editing state
     this.editingFieldId = field.id;
+    this.fieldImageUrl = field.imageUrl || null;
     // Populate the form with the selected field's data
     this.fieldForm.patchValue({
       name: field.name,
       locationId: field.locationId,
-      sportId: field.sportId
+      sportId: field.sportId,
+      imageUrl: field.imageUrl || ''
     });
     // Open the modal
     this.showModal = true;

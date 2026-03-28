@@ -136,7 +136,7 @@
     <h2>Foglalások</h2>
     <div class="bookings-grid">
       @for(booking of getUserBookings(); track booking.id) {
-      <article class="booking-card" [style.background-image]="'url(' + getLocationCardImage(booking.locationId) + ')'">
+      <article class="booking-card" [style.background-image]="getBookingCardBackgroundImage(booking)">
         <div class="booking-card-content">
           <div class="booking-grid">
             <div class="info-item"><span class="info-label">Sport</span><span class="info-value">{{ getSportName(booking.sportId) }}</span></div>
