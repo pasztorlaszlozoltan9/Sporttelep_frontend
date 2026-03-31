@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 @Injectable({
@@ -19,28 +19,35 @@ export class BookingService {
 
   constructor(private http: HttpClient) { }
 
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  }
+
   getBookings() {
     const url = 'http://localhost:8000/api/bookings';
-    return this.http.get(url);
+    return this.http.get(url, { headers: this.getHeaders() });
   }
 
   addBooking(booking: any) {
     const url = 'http://localhost:8000/api/bookings';
-    return this.http.post(url, booking);
+    return this.http.post(url, booking, { headers: this.getHeaders() });
   }
 
   sendBookingSuccessEmailToUser(bookingId: number) {
     const url = `http://localhost:8000/api/bookings/${bookingId}/send-confirmation-email`;
-    return this.http.post(url, {});
+    return this.http.post(url, {}, { headers: this.getHeaders() });
   }
 
   updateBooking(id: number, booking: any) {
     const url = `http://localhost:8000/api/bookings/${id}`;
-    return this.http.put(url, booking);
+    return this.http.put(url, booking, { headers: this.getHeaders() });
   }
   deleteBooking(id: number) {
     const url = `http://localhost:8000/api/bookings/${id}`;
-    return this.http.delete(url);
+    return this.http.delete(url, { headers: this.getHeaders() });
   }
 
   setBookingData(data: any): void {
