@@ -380,6 +380,88 @@
   color: var(--muted);
 }
 
+.availability-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.availability-card {
+  border: 1px solid rgba(136, 149, 171, 0.24);
+  border-radius: 0.8rem;
+  padding: 0.8rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 248, 246, 0.95) 100%);
+}
+
+.availability-label {
+  margin: 0 0 0.55rem;
+  color: #1d2a44;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.availability-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.window-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.7rem;
+}
+
+.window-text {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.window-day {
+  color: #23324c;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.window-hours {
+  color: #0f8c41;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.window-pill-row,
+.slot-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.window-pill {
+  border-radius: 999px;
+  padding: 0.46rem 0.74rem;
+  background: #eef9f2;
+  border: 1px solid #caead4;
+  color: #1f6840;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.reserved-label {
+  margin-top: 0.72rem;
+}
+
+.reserved-pill {
+  background: #fff2f2;
+  border-color: #f1c7c7;
+  color: #8f2c2c;
+}
+
 .time-selection-actions {
   margin-top: 0.55rem;
   display: flex;
@@ -526,6 +608,19 @@
 
   .actions {
     justify-content: center;
+  }
+
+  .availability-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .window-text {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .slot-chip {
+    min-width: 0;
   }
 
   .time-selection-actions {

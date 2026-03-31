@@ -20,6 +20,7 @@ import { Hungarian } from 'flatpickr/dist/l10n/hu.js';
 })
 export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly welcomeSessionKey = 'main_welcome_popup_shown';
+  private readonly weekdayLabels = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
 
   sportList: any[] = [];
   locList: any[] = [];
@@ -528,6 +529,41 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedSlotKey = clickedKey || null;
   }
 
+  selectAvailableSlot(slot: any): void {
+    const clickedKey = String(slot?.slotKey ?? '');
+    const selectedKey = String(this.selectedSlot?.slotKey ?? '');
+
+    if (clickedKey && selectedKey && clickedKey === selectedKey) {
+      this.selectedStartTime = '';
+      this.selectedEndTime = '';
+      this.selectedSlot = null;
+      this.selectedSlotKey = null;
+      this.selectedTimeValidationMessage = '';
+      this.bookingStartTimePickerInstance?.clear();
+      this.bookingEndTimePickerInstance?.clear();
+      return;
+    }
+
+    this.selectedDate = this.normalizeDateStr(String(slot?.date ?? this.selectedDate ?? '')) || this.selectedDate;
+    this.selectedStartTime = String(slot?.startTime ?? '').trim();
+    this.selectedEndTime = String(slot?.endTime ?? '').trim();
+    this.selectedSlot = slot;
+    this.selectedSlotKey = clickedKey || null;
+    this.selectedTimeValidationMessage = '';
+
+    if (this.selectedDate) {
+      this.bookingDatePickerInstance?.setDate(this.selectedDate, false, 'Y-m-d');
+    }
+
+    if (this.selectedStartTime) {
+      this.bookingStartTimePickerInstance?.setDate(this.selectedStartTime, false, 'H:i');
+    }
+
+    if (this.selectedEndTime) {
+      this.bookingEndTimePickerInstance?.setDate(this.selectedEndTime, false, 'H:i');
+    }
+  }
+
   private normalizeDateStr(d: string): string {
     return (d ?? '').includes('T') ? d.split('T')[0] : d;
   }
@@ -615,6 +651,62 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.getSlotsForFieldAndDate(this.selectedFieldId, this.selectedDate);
   }
 
+  get weeklyBookingWindowsForSelectedField(): any[] {
+    if (!this.selectedFieldId || !this.fieldBookingWindowsList) {
+      return [];
+    }
+
+    return this.fieldBookingWindowsList
+      .filter((windowData: any) => Number(windowData?.fieldId) === Number(this.selectedFieldId) && Number(windowData?.isActive) === 1)
+      .sort((left: any, right: any) => {
+        const weekdayDiff = this.getWeekdaySortOrder(Number(left?.weekday)) - this.getWeekdaySortOrder(Number(right?.weekday));
+        if (weekdayDiff !== 0) {
+          return weekdayDiff;
+        }
+
+        return String(left?.openTime ?? '').localeCompare(String(right?.openTime ?? ''));
+      })
+      .map((windowData: any) => ({
+        ...windowData,
+        weekdayLabel: this.getWeekdayLabel(Number(windowData?.weekday))
+      }));
+  }
+
+  get selectedDateBookingWindows(): any[] {
+    if (!this.selectedFieldId || !this.selectedDate) {
+      return [];
+    }
+
+    return this.getActiveWindowsForFieldAndDate(this.selectedFieldId, this.selectedDate)
+      .sort((left: any, right: any) => String(left?.openTime ?? '').localeCompare(String(right?.openTime ?? '')));
+  }
+
+  get selectedDateReservedBookings(): any[] {
+    if (!this.selectedFieldId || !this.selectedDate || !this.bookingsList) {
+      return [];
+    }
+
+    const day = this.normalizeDateStr(this.selectedDate);
+
+    return this.bookingsList
+      .filter((booking: any) =>
+        Number(booking?.fieldId) === Number(this.selectedFieldId)
+        && this.normalizeDateStr(String(booking?.date ?? '')) === day
+      )
+      .map((booking: any) => {
+        const startMinutes = this.parseTimeToMinutes(booking?.startTime);
+        const computedEndMinutes = startMinutes === null ? null : (startMinutes + this.bookingDurationMinutes);
+        const endTime = String(booking?.endTime ?? '').trim() || (computedEndMinutes === null ? '' : this.minutesToTime(computedEndMinutes));
+
+        return {
+          startTime: String(booking?.startTime ?? '').trim(),
+          endTime
+        };
+      })
+      .filter((booking: any) => booking.startTime && booking.endTime)
+      .sort((left: any, right: any) => String(left.startTime).localeCompare(String(right.startTime)));
+  }
+
   get pricesForSelectedField(): any[] {
     if (!this.selectedFieldId) return [];
     return this.pricesList.filter(p => p.fieldId === this.selectedFieldId);
@@ -652,6 +744,14 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       return null;
     }
     return parsed.getDay();
+  }
+
+  private getWeekdayLabel(weekday: number): string {
+    return this.weekdayLabels[weekday] ?? 'Ismeretlen nap';
+  }
+
+  private getWeekdaySortOrder(weekday: number): number {
+    return weekday === 0 ? 7 : weekday;
   }
 
   private getActiveWindowsForFieldAndDate(fieldId: number, date: string): any[] {

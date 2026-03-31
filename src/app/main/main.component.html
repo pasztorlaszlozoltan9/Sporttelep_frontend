@@ -80,6 +80,44 @@
 
     <section *ngIf="selectedFieldId" class="step-panel dates-section">
       <h4>4. Dátum és idő kiválasztása</h4>
+
+      <div class="availability-overview">
+        <div class="availability-card">
+          <p class="availability-label">Pálya heti nyitvatartása</p>
+          <div *ngIf="weeklyBookingWindowsForSelectedField.length > 0; else noWeeklyWindows" class="window-list">
+            <p class="window-text" *ngFor="let window of weeklyBookingWindowsForSelectedField">
+              <span class="window-day">{{ window.weekdayLabel }}:</span>
+              <span class="window-hours">{{ window.openTime }} - {{ window.closeTime }}</span>
+            </p>
+          </div>
+          <ng-template #noWeeklyWindows>
+            <p class="availability-empty">Ehhez a pályához nincs aktív nyitvatartási sáv beállítva.</p>
+          </ng-template>
+        </div>
+
+        <div class="availability-card" *ngIf="selectedDate">
+          <p class="availability-label">Nyitvatartás a kiválasztott napra</p>
+          <div *ngIf="selectedDateBookingWindows.length > 0; else noDailyWindows" class="window-pill-row">
+            <span class="window-pill" *ngFor="let window of selectedDateBookingWindows">
+              {{ window.openTime }} - {{ window.closeTime }}
+            </span>
+          </div>
+          <ng-template #noDailyWindows>
+            <p class="availability-empty">A kiválasztott napon nincs aktív nyitvatartás.</p>
+          </ng-template>
+
+          <p class="availability-label reserved-label">Már lefoglalt idősávok</p>
+          <div *ngIf="selectedDateReservedBookings.length > 0; else noReservedSlots" class="window-pill-row">
+            <span class="window-pill reserved-pill" *ngFor="let booking of selectedDateReservedBookings">
+              {{ booking.startTime }} - {{ booking.endTime }}
+            </span>
+          </div>
+          <ng-template #noReservedSlots>
+            <p class="availability-empty">Erre a napra jelenleg nincs lefoglalt idősáv.</p>
+          </ng-template>
+        </div>
+      </div>
+
       <div class="time-selection-grid">
         <div>
           <label for="bookingDateInput" class="date-filter-label">Dátum</label>
