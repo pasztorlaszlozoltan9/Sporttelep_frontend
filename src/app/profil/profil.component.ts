@@ -1239,7 +1239,7 @@ export class ProfilComponent implements OnInit, OnDestroy {
     this.isBookingActionInProgress = true;
     this.showProcessingAlert('Foglalás módosítása folyamatban...');
 
-    this.http.put(`${this.host}bookings/${this.editingBookingId}`, bookingData).subscribe({
+    this.bookingService.updateBooking(this.editingBookingId, bookingData).subscribe({
       next: async (response: any) => {
         try {
           this.updateProcessingAlert('Foglalás módosítva, email küldése...');
@@ -1312,7 +1312,7 @@ export class ProfilComponent implements OnInit, OnDestroy {
 
     const bookingToDelete = (this.bookings as any[])?.find((b: any) => b.id === this.deletingBookingId);
 
-    this.http.delete(`${this.host}bookings/${this.deletingBookingId}`).subscribe({
+    this.bookingService.deleteBooking(this.deletingBookingId).subscribe({
       next: async (response: any) => {
         try {
           this.updateProcessingAlert('Foglalás törölve, email küldése...');
