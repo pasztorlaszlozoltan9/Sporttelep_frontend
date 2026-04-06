@@ -231,6 +231,41 @@
   background: #edf3f9;
 }
 
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #dbe5f0;
+  border-radius: 0.7rem;
+  background: #f7fbff;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.gallery-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, opacity 0.15s;
+  opacity: 0.85;
+}
+
+.gallery-thumb:hover {
+  opacity: 1;
+  border-color: #4d88c4;
+}
+
+.gallery-thumb-selected {
+  opacity: 1;
+  border-color: #1a6fc4;
+  box-shadow: 0 0 0 2px #1a6fc433;
+}
+
 .empty-records {
   grid-column: 1 / -1;
   border: 1px dashed #cfd9e5;

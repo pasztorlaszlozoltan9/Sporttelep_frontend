@@ -262,6 +262,20 @@ export class AdminComponent implements OnDestroy {
   protected sportImageUrl: string | null = null;
   protected locationImageUrl: string | null = null;
   protected fieldImageUrl: string | null = null;
+  protected cloudinaryImageUrls: string[] = [];
+  protected cloudinaryImagesLoaded = false;
+  // Tracks a freshly uploaded URL that needs Cloudinary cleanup on cancel
+  protected pendingSportImageUrl: string | null = null;
+  protected pendingLocationImageUrl: string | null = null;
+  protected pendingFieldImageUrl: string | null = null;
+  // Stores the image URL that was active before the current upload (for restore on discard)
+  protected prevSportImageUrl: string | null = null;
+  protected prevLocationImageUrl: string | null = null;
+  protected prevFieldImageUrl: string | null = null;
+  // Gallery visibility toggles
+  protected showSportImageGallery = false;
+  protected showLocationImageGallery = false;
+  protected showFieldImageGallery = false;
 
   protected userForm = this.builder.group({
     email: '',
@@ -329,6 +343,7 @@ export class AdminComponent implements OnDestroy {
     this.getFieldBookingWindows();
     this.getPrices();
     this.getBookings();
+    this.getCloudinaryImages();
   }
 
   ngOnDestroy(): void {
@@ -1140,14 +1155,23 @@ export class AdminComponent implements OnDestroy {
         const imageUrl = result.data?.imageUrl || result.imageUrl;
         
         if (type === 'sport') {
+          if (this.pendingSportImageUrl) { this.deleteImageFromCloud(this.pendingSportImageUrl); }
+          this.prevSportImageUrl = this.sportImageUrl;
+          this.pendingSportImageUrl = imageUrl;
           this.sportImageUrl = imageUrl;
           this.sportForm.patchValue({ imageUrl: imageUrl });
           this.uploadingSport = false;
         } else if (type === 'location') {
+          if (this.pendingLocationImageUrl) { this.deleteImageFromCloud(this.pendingLocationImageUrl); }
+          this.prevLocationImageUrl = this.locationImageUrl;
+          this.pendingLocationImageUrl = imageUrl;
           this.locationImageUrl = imageUrl;
           this.locationForm.patchValue({ imageUrl: imageUrl });
           this.uploadingLocation = false;
         } else if (type === 'field') {
+          if (this.pendingFieldImageUrl) { this.deleteImageFromCloud(this.pendingFieldImageUrl); }
+          this.prevFieldImageUrl = this.fieldImageUrl;
+          this.pendingFieldImageUrl = imageUrl;
           this.fieldImageUrl = imageUrl;
           this.fieldForm.patchValue({ imageUrl: imageUrl });
           this.uploadingField = false;
@@ -1176,6 +1200,154 @@ export class AdminComponent implements OnDestroy {
           draggable: true
         });
         console.error('Error uploading image:', err);
+      }
+    });
+  }
+
+  private deleteImageFromCloud(imageUrl: string): void {
+    const token = localStorage.getItem('token');
+    if (!token || !imageUrl) { return; }
+    this.http.delete(`${this.host}uploads/image`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: { imageUrl }
+    }).subscribe({ error: (err: any) => console.error('Could not delete image from cloud:', err) });
+  }
+
+  discardUploadedImage(type: 'sport' | 'location' | 'field'): void {
+    if (type === 'sport') {
+      if (this.pendingSportImageUrl) { this.deleteImageFromCloud(this.pendingSportImageUrl); }
+      this.sportImageUrl = this.prevSportImageUrl;
+      this.sportForm.patchValue({ imageUrl: this.prevSportImageUrl || '' });
+      this.pendingSportImageUrl = null;
+      this.prevSportImageUrl = null;
+    } else if (type === 'location') {
+      if (this.pendingLocationImageUrl) { this.deleteImageFromCloud(this.pendingLocationImageUrl); }
+      this.locationImageUrl = this.prevLocationImageUrl;
+      this.locationForm.patchValue({ imageUrl: this.prevLocationImageUrl || '' });
+      this.pendingLocationImageUrl = null;
+      this.prevLocationImageUrl = null;
+    } else if (type === 'field') {
+      if (this.pendingFieldImageUrl) { this.deleteImageFromCloud(this.pendingFieldImageUrl); }
+      this.fieldImageUrl = this.prevFieldImageUrl;
+      this.fieldForm.patchValue({ imageUrl: this.prevFieldImageUrl || '' });
+      this.pendingFieldImageUrl = null;
+      this.prevFieldImageUrl = null;
+    }
+  }
+
+  selectExistingImage(url: string, type: 'sport' | 'location' | 'field'): void {
+    if (type === 'sport') {
+      if (this.pendingSportImageUrl) { this.deleteImageFromCloud(this.pendingSportImageUrl); this.pendingSportImageUrl = null; this.prevSportImageUrl = null; }
+      const next = this.sportImageUrl === url ? null : url;
+      this.sportImageUrl = next;
+      this.sportForm.patchValue({ imageUrl: next || '' });
+      if (next) { this.showSportImageGallery = false; }
+    } else if (type === 'location') {
+      if (this.pendingLocationImageUrl) { this.deleteImageFromCloud(this.pendingLocationImageUrl); this.pendingLocationImageUrl = null; this.prevLocationImageUrl = null; }
+      const next = this.locationImageUrl === url ? null : url;
+      this.locationImageUrl = next;
+      this.locationForm.patchValue({ imageUrl: next || '' });
+      if (next) { this.showLocationImageGallery = false; }
+    } else if (type === 'field') {
+      if (this.pendingFieldImageUrl) { this.deleteImageFromCloud(this.pendingFieldImageUrl); this.pendingFieldImageUrl = null; this.prevFieldImageUrl = null; }
+      const next = this.fieldImageUrl === url ? null : url;
+      this.fieldImageUrl = next;
+      this.fieldForm.patchValue({ imageUrl: next || '' });
+      if (next) { this.showFieldImageGallery = false; }
+    }
+  }
+
+  toggleImageGallery(type: 'sport' | 'location' | 'field'): void {
+    if (type === 'sport') { this.showSportImageGallery = !this.showSportImageGallery; }
+    else if (type === 'location') { this.showLocationImageGallery = !this.showLocationImageGallery; }
+    else if (type === 'field') { this.showFieldImageGallery = !this.showFieldImageGallery; }
+  }
+
+  get existingSportImages(): string[] {
+    if (this.cloudinaryImagesLoaded) {
+      return this.cloudinaryImageUrls;
+    }
+    return [...new Set((this.sports as any[] ?? []).map((s: any) => s?.imageUrl).filter((u: any): u is string => !!u))];
+  }
+
+  get existingLocationImages(): string[] {
+    if (this.cloudinaryImagesLoaded) {
+      return this.cloudinaryImageUrls;
+    }
+    return [...new Set((this.locations as any[] ?? []).map((l: any) => l?.imageUrl).filter((u: any): u is string => !!u))];
+  }
+
+  get existingFieldImages(): string[] {
+    if (this.cloudinaryImagesLoaded) {
+      return this.cloudinaryImageUrls;
+    }
+    return [...new Set((this.fields as any[] ?? []).map((f: any) => f?.imageUrl).filter((u: any): u is string => !!u))];
+  }
+
+  private extractImageUrlsFromPayload(payload: any): string[] {
+    const urls = new Set<string>();
+    const queue: any[] = [payload];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (!current) {
+        continue;
+      }
+
+      if (Array.isArray(current)) {
+        for (const item of current) {
+          queue.push(item);
+        }
+        continue;
+      }
+
+      if (typeof current === 'string') {
+        const value = current.trim();
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+          urls.add(value);
+        }
+        continue;
+      }
+
+      if (typeof current !== 'object') {
+        continue;
+      }
+
+      const directUrl = String(current.url ?? current.secure_url ?? current.imageUrl ?? '').trim();
+      if (directUrl) {
+        urls.add(directUrl);
+      }
+
+      for (const nested of Object.values(current)) {
+        if (nested) {
+          queue.push(nested);
+        }
+      }
+    }
+
+    return [...urls];
+  }
+
+  getCloudinaryImages() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.cloudinaryImagesLoaded = true;
+      this.cloudinaryImageUrls = [];
+      return;
+    }
+
+    this.http.get(`${this.host}uploads/images`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).subscribe({
+      next: (result: any) => {
+        const urls = this.extractImageUrlsFromPayload(result);
+        this.cloudinaryImagesLoaded = true;
+        this.cloudinaryImageUrls = [...new Set(urls)];
+      },
+      error: (err: any) => {
+        console.error('Error fetching Cloudinary images:', err);
+        this.cloudinaryImagesLoaded = true;
+        this.cloudinaryImageUrls = [];
       }
     });
   }
@@ -1280,14 +1452,26 @@ export class AdminComponent implements OnDestroy {
     if (this.activeView === 'sports') {
       this.editingSportId = null;
       this.sportForm.reset();
+      this.sportImageUrl = null;
+      this.pendingSportImageUrl = null;
+      this.prevSportImageUrl = null;
+      this.showSportImageGallery = false;
     }
     if (this.activeView === 'locations') {
       this.editingLocationId = null;
       this.locationForm.reset();
+      this.locationImageUrl = null;
+      this.pendingLocationImageUrl = null;
+      this.prevLocationImageUrl = null;
+      this.showLocationImageGallery = false;
     }
     if (this.activeView === 'fields') {
       this.editingFieldId = null;
       this.fieldForm.reset();
+      this.fieldImageUrl = null;
+      this.pendingFieldImageUrl = null;
+      this.prevFieldImageUrl = null;
+      this.showFieldImageGallery = false;
     }
     if (this.activeView === 'fieldBookingWindows') {
       this.editingFieldBookingWindowId = null;
@@ -1324,16 +1508,31 @@ export class AdminComponent implements OnDestroy {
       this.userForm.reset();
     }
     if (this.activeView === 'sports') {
+      if (this.pendingSportImageUrl) { this.deleteImageFromCloud(this.pendingSportImageUrl); }
+      this.pendingSportImageUrl = null;
+      this.prevSportImageUrl = null;
+      this.showSportImageGallery = false;
       this.editingSportId = null;
       this.sportForm.reset();
+      this.sportImageUrl = null;
     }
     if (this.activeView === 'locations') {
+      if (this.pendingLocationImageUrl) { this.deleteImageFromCloud(this.pendingLocationImageUrl); }
+      this.pendingLocationImageUrl = null;
+      this.prevLocationImageUrl = null;
+      this.showLocationImageGallery = false;
       this.editingLocationId = null;
       this.locationForm.reset();
+      this.locationImageUrl = null;
     }
     if (this.activeView === 'fields') {
+      if (this.pendingFieldImageUrl) { this.deleteImageFromCloud(this.pendingFieldImageUrl); }
+      this.pendingFieldImageUrl = null;
+      this.prevFieldImageUrl = null;
+      this.showFieldImageGallery = false;
       this.editingFieldId = null;
       this.fieldForm.reset();
+      this.fieldImageUrl = null;
     }
     if (this.activeView === 'fieldBookingWindows') {
       this.editingFieldBookingWindowId = null;
@@ -1641,6 +1840,9 @@ export class AdminComponent implements OnDestroy {
           this.editingSportId = null;
           this.sportForm.reset();
           this.sportImageUrl = null;
+          this.pendingSportImageUrl = null;
+          this.prevSportImageUrl = null;
+          this.showSportImageGallery = false;
           this.getSports();
           Swal.fire({
             title: 'Sikeres módosítás!',
@@ -1667,6 +1869,9 @@ export class AdminComponent implements OnDestroy {
           this.showModal = false;
           this.sportForm.reset();
           this.sportImageUrl = null;
+          this.pendingSportImageUrl = null;
+          this.prevSportImageUrl = null;
+          this.showSportImageGallery = false;
           this.getSports();
           Swal.fire({
             title: 'Sikeres létrehozás!',
@@ -1691,6 +1896,9 @@ export class AdminComponent implements OnDestroy {
   startUpdateSport(sport: any) {
     this.editingSportId = sport.id;
     this.sportImageUrl = sport.imageUrl || null;
+    this.pendingSportImageUrl = null;
+    this.prevSportImageUrl = null;
+    this.showSportImageGallery = false;
     this.sportForm.patchValue({
       name: sport.name,
       imageUrl: sport.imageUrl || ''
@@ -1751,6 +1959,9 @@ export class AdminComponent implements OnDestroy {
           this.editingLocationId = null;
           this.locationForm.reset();
           this.locationImageUrl = null;
+          this.pendingLocationImageUrl = null;
+          this.prevLocationImageUrl = null;
+          this.showLocationImageGallery = false;
           this.getLocations();
           Swal.fire({
             title: 'Sikeres módosítás!',
@@ -1777,6 +1988,9 @@ export class AdminComponent implements OnDestroy {
           this.showModal = false;
           this.locationForm.reset();
           this.locationImageUrl = null;
+          this.pendingLocationImageUrl = null;
+          this.prevLocationImageUrl = null;
+          this.showLocationImageGallery = false;
           this.getLocations();
           Swal.fire({
             title: 'Sikeres létrehozás!',
@@ -1801,6 +2015,9 @@ export class AdminComponent implements OnDestroy {
   startUpdateLocation(location: any) {
     this.editingLocationId = location.id;
     this.locationImageUrl = location.imageUrl || null;
+    this.pendingLocationImageUrl = null;
+    this.prevLocationImageUrl = null;
+    this.showLocationImageGallery = false;
     this.locationForm.patchValue({
       name: location.name,
       address: location.address,
@@ -1865,6 +2082,9 @@ export class AdminComponent implements OnDestroy {
           this.editingFieldId = null;
           this.fieldForm.reset();
           this.fieldImageUrl = null;
+          this.pendingFieldImageUrl = null;
+          this.prevFieldImageUrl = null;
+          this.showFieldImageGallery = false;
           this.getFields();
           Swal.fire({
             title: 'Sikeres módosítás!',
@@ -1891,6 +2111,9 @@ export class AdminComponent implements OnDestroy {
           this.showModal = false;
           this.fieldForm.reset();
           this.fieldImageUrl = null;
+          this.pendingFieldImageUrl = null;
+          this.prevFieldImageUrl = null;
+          this.showFieldImageGallery = false;
           this.getFields();
           Swal.fire({
             title: 'Sikeres létrehozás!',
@@ -1913,17 +2136,17 @@ export class AdminComponent implements OnDestroy {
   }
 
   startUpdateField(field: any) {
-    // Set the editing state
     this.editingFieldId = field.id;
     this.fieldImageUrl = field.imageUrl || null;
-    // Populate the form with the selected field's data
+    this.pendingFieldImageUrl = null;
+    this.prevFieldImageUrl = null;
+    this.showFieldImageGallery = false;
     this.fieldForm.patchValue({
       name: field.name,
       locationId: field.locationId,
       sportId: field.sportId,
       imageUrl: field.imageUrl || ''
     });
-    // Open the modal
     this.showModal = true;
   }
 

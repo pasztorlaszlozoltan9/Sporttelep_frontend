@@ -487,7 +487,22 @@
                             <div class="admin-upload-preview">
                                 <span class="admin-upload-preview-label">Előnézet</span>
                                 <img [src]="sportImageUrl" alt="Sport kép előnézet" class="admin-upload-preview-image">
+                                @if (pendingSportImageUrl && pendingSportImageUrl === sportImageUrl) {
+                                <button type="button" class="btn btn-sm btn-danger mt-1" (click)="discardUploadedImage('sport')">Feltöltött kép törlése</button>
+                                }
                             </div>
+                            }
+                            @if (existingSportImages.length > 0) {
+                            <button type="button" class="btn btn-link btn-sm mt-2 p-0" (click)="toggleImageGallery('sport')">
+                                {{ showSportImageGallery ? 'Galéria elrejtése' : 'Meglévő képek (' + existingSportImages.length + ')' }}
+                            </button>
+                            @if (showSportImageGallery) {
+                            <div class="image-gallery">
+                                @for (url of existingSportImages; track url) {
+                                <img [src]="url" class="gallery-thumb" [class.gallery-thumb-selected]="sportImageUrl === url" (click)="selectExistingImage(url, 'sport')" alt="Meglévő kép" title="Kép kiválasztása">
+                                }
+                            </div>
+                            }
                             }
                         </div>
                     </form>
@@ -542,7 +557,22 @@
                             <div class="admin-upload-preview">
                                 <span class="admin-upload-preview-label">Előnézet</span>
                                 <img [src]="locationImageUrl" alt="Helyszín kép előnézet" class="admin-upload-preview-image">
+                                @if (pendingLocationImageUrl && pendingLocationImageUrl === locationImageUrl) {
+                                <button type="button" class="btn btn-sm btn-danger mt-1" (click)="discardUploadedImage('location')">Feltöltött kép törlése</button>
+                                }
                             </div>
+                            }
+                            @if (existingLocationImages.length > 0) {
+                            <button type="button" class="btn btn-link btn-sm mt-2 p-0" (click)="toggleImageGallery('location')">
+                                {{ showLocationImageGallery ? 'Galéria elrejtése' : 'Meglévő képek (' + existingLocationImages.length + ')' }}
+                            </button>
+                            @if (showLocationImageGallery) {
+                            <div class="image-gallery">
+                                @for (url of existingLocationImages; track url) {
+                                <img [src]="url" class="gallery-thumb" [class.gallery-thumb-selected]="locationImageUrl === url" (click)="selectExistingImage(url, 'location')" alt="Meglévő kép" title="Kép kiválasztása">
+                                }
+                            </div>
+                            }
                             }
                         </div>
                     </form>
@@ -620,7 +650,22 @@
                             <div class="admin-upload-preview">
                                 <span class="admin-upload-preview-label">Előnézet</span>
                                 <img [src]="fieldImageUrl" alt="Pálya kép előnézet" class="admin-upload-preview-image">
+                                @if (pendingFieldImageUrl && pendingFieldImageUrl === fieldImageUrl) {
+                                <button type="button" class="btn btn-sm btn-danger mt-1" (click)="discardUploadedImage('field')">Feltöltött kép törlése</button>
+                                }
                             </div>
+                            }
+                            @if (existingFieldImages.length > 0) {
+                            <button type="button" class="btn btn-link btn-sm mt-2 p-0" (click)="toggleImageGallery('field')">
+                                {{ showFieldImageGallery ? 'Galéria elrejtése' : 'Meglévő képek (' + existingFieldImages.length + ')' }}
+                            </button>
+                            @if (showFieldImageGallery) {
+                            <div class="image-gallery">
+                                @for (url of existingFieldImages; track url) {
+                                <img [src]="url" class="gallery-thumb" [class.gallery-thumb-selected]="fieldImageUrl === url" (click)="selectExistingImage(url, 'field')" alt="Meglévő kép" title="Kép kiválasztása">
+                                }
+                            </div>
+                            }
                             }
                         </div>
                     </form>
