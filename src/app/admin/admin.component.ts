@@ -274,7 +274,6 @@ export class AdminComponent implements OnDestroy {
 
   protected sportForm = this.builder.group({
     name: '',
-    duration: '',
     imageUrl: ''
   })
 
@@ -1630,7 +1629,6 @@ export class AdminComponent implements OnDestroy {
 
     const sportData = {
       name: this.sportForm.value.name,
-      duration: this.sportForm.value.duration,
       imageUrl: this.sportForm.value.imageUrl || ''
     };
 
@@ -1695,7 +1693,6 @@ export class AdminComponent implements OnDestroy {
     this.sportImageUrl = sport.imageUrl || null;
     this.sportForm.patchValue({
       name: sport.name,
-      duration: sport.duration,
       imageUrl: sport.imageUrl || ''
     });
     this.showModal = true;
