@@ -327,6 +327,7 @@ export class AdminComponent implements OnDestroy {
     startTime: '',
     endTime: '',
     priceId: '',
+    note: '',
   })
 
   protected deleteForm = this.builder.group({
@@ -2402,15 +2403,34 @@ export class AdminComponent implements OnDestroy {
     //   return;
     // }
 
+    const sportId = this.parseId(this.bookingForm.value.sportId);
+    const locationId = this.parseId(this.bookingForm.value.locationId);
+    const fieldId = this.parseId(this.bookingForm.value.fieldId);
+    const userId = this.parseId(this.bookingForm.value.userId);
+    const priceId = this.parseId(this.bookingForm.value.priceId);
+    const date = String(this.bookingForm.value.date ?? '').trim();
+    const startTime = this.normalizeTimeForInput(this.bookingForm.value.startTime);
+    const endTime = this.normalizeTimeForInput(this.bookingForm.value.endTime);
+
+    if (!sportId || !locationId || !fieldId || !userId || !priceId || !date || !startTime || !endTime) {
+      Swal.fire({
+        title: 'Hiányzó foglalási adatok',
+        text: 'A mentéshez tölts ki minden kötelező mezőt (sport, helyszín, pálya, felhasználó, dátum, időpont, ár).',
+        icon: 'warning'
+      });
+      return;
+    }
+
     const bookingData = {
-      sportId: this.bookingForm.value.sportId,
-      locationId: this.bookingForm.value.locationId,
-      fieldId: this.bookingForm.value.fieldId,
-      userId: this.bookingForm.value.userId,
-      priceId: this.bookingForm.value.priceId,
-      date: this.bookingForm.value.date,
-      startTime: this.bookingForm.value.startTime,
-      endTime: this.bookingForm.value.endTime
+      sportId,
+      locationId,
+      fieldId,
+      userId,
+      priceId,
+      date,
+      startTime,
+      endTime,
+      note: String(this.bookingForm.value.note ?? '').trim() || null
     };
 
     if (this.editingBookingId) {
@@ -2478,7 +2498,8 @@ export class AdminComponent implements OnDestroy {
       priceId: booking.priceId,
       date: booking.date,
       startTime: this.normalizeTimeForInput(booking.startTime),
-      endTime: this.normalizeTimeForInput(booking.endTime)
+      endTime: this.normalizeTimeForInput(booking.endTime),
+      note: booking.note ?? ''
     });
     this.showModal = true;
     this.initializeBookingPickersWhenReady();
@@ -2575,11 +2596,15 @@ export class AdminComponent implements OnDestroy {
   }
 
   onBookingFieldChange() {
+    const currentPriceId = this.parseId(this.bookingForm.value.priceId);
+    const firstPriceForField = this.getFilteredPrices()[0];
+    const nextPriceId = currentPriceId || Number(firstPriceForField?.id || 0);
+
     this.bookingForm.patchValue({
       date: '',
       startTime: '',
       endTime: '',
-      priceId: ''
+      priceId: nextPriceId > 0 ? String(nextPriceId) : ''
     });
   }
 
@@ -2682,6 +2707,27 @@ export class AdminComponent implements OnDestroy {
 
     const startMinutes = this.parseTimeToMinutes(booking?.startTime);
     const endMinutes = this.parseTimeToMinutes(booking?.endTime);
+    const durationMinutes = (startMinutes !== null && endMinutes !== null && endMinutes > startMinutes)
+      ? (endMinutes - startMinutes)
+      : 60;
+
+    const amount = (pricePerHour * durationMinutes) / 60;
+    return `${Number(amount.toFixed(2))} Ft`;
+  }
+
+  getBookingFormTotalPriceValue(): string {
+    const priceId = this.parseId(this.bookingForm.value.priceId);
+    if (!priceId) {
+      return 'N/A';
+    }
+
+    const pricePerHour = Number((this.prices as any[] | undefined)?.find((p: any) => Number(p?.id) === priceId)?.price ?? NaN);
+    if (!Number.isFinite(pricePerHour)) {
+      return 'N/A';
+    }
+
+    const startMinutes = this.parseTimeToMinutes(this.bookingForm.value.startTime);
+    const endMinutes = this.parseTimeToMinutes(this.bookingForm.value.endTime);
     const durationMinutes = (startMinutes !== null && endMinutes !== null && endMinutes > startMinutes)
       ? (endMinutes - startMinutes)
       : 60;

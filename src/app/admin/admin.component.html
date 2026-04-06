@@ -916,6 +916,14 @@
                                 }
                             </div>
                         </div>
+                        <div>
+                            <label class="form-label">Számolt végösszeg</label>
+                            <div class="form-control" style="background: #f8fbff; font-weight: 700;">{{ getBookingFormTotalPriceValue() }}</div>
+                        </div>
+                        <div>
+                            <label for="bookingNote" class="form-label">Megjegyzés (opcionális)</label>
+                            <textarea class="form-control" formControlName="note" id="bookingNote" rows="3" placeholder="Adj meg egy megjegyzést (opcionális)"></textarea>
+                        </div>
                     </form>
 
 
