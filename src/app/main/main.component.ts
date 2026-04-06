@@ -342,9 +342,11 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedSlot = null;
     this.selectedSlotKey = null;
     this.selectedTimeValidationMessage = '';
+    this.selectedFilterDate = '';
     this.bookingDatePickerInstance?.clear();
     this.bookingStartTimePickerInstance?.clear();
     this.bookingEndTimePickerInstance?.clear();
+    this.datePickerInstance?.clear();
   }
 
   private resetSelectionChain(): void {
@@ -410,7 +412,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     const price = this.pricesList.find(p => p.fieldId === this.selectedFieldId);
     this.selectedPrice = price?.price ?? null;
     this.selectedPriceId = price?.id ?? null;
-    this.selectedDate = null;
+    this.selectedDate = this.selectedFilterDate ? this.normalizeDateStr(this.selectedFilterDate) : null;
     this.selectedStartTime = '';
     this.selectedEndTime = '';
     this.selectedSlot = null;
