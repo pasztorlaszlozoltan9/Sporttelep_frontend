@@ -134,6 +134,29 @@
 
   <section class="bookings-section" *ngIf="user">
     <h2>Foglalások</h2>
+    <div class="booking-filter" role="tablist" aria-label="Foglalás szűrő">
+      <button
+        class="btn btn-secondary btn-sm"
+        type="button"
+        [class.active]="bookingFilter === 'future'"
+        (click)="setBookingFilter('future')">
+        Jövőbeli foglalások
+      </button>
+      <button
+        class="btn btn-secondary btn-sm"
+        type="button"
+        [class.active]="bookingFilter === 'past'"
+        (click)="setBookingFilter('past')">
+        Múltbeli foglalások
+      </button>
+      <button
+        class="btn btn-secondary btn-sm"
+        type="button"
+        [class.active]="bookingFilter === 'all'"
+        (click)="setBookingFilter('all')">
+        Összes foglalás
+      </button>
+    </div>
     <div class="bookings-grid">
       @for(booking of getUserBookings(); track booking.id) {
       <article class="booking-card" [style.background-image]="getBookingCardBackgroundImage(booking)">
@@ -146,9 +169,12 @@
             <div class="info-item"><span class="info-label">Időpont</span><span class="info-value">{{ getBookingTimeInfo(booking) }}</span></div>
           </div>
           <div class="actions booking-actions">
-            <button class="btn btn-warning btn-sm" type="button" (click)="startUpdateBooking(booking)" [disabled]="isBookingActionInProgress">Módosítás</button>
-            <button class="btn btn-danger btn-sm" type="button" (click)="startDeleteBooking(booking.id)" [disabled]="isBookingActionInProgress">Foglalás törlése</button>
+            <button class="btn btn-warning btn-sm" type="button" (click)="startUpdateBooking(booking)" [disabled]="isBookingActionInProgress || isBookingActionDisabled(booking)">Módosítás</button>
+            <button class="btn btn-danger btn-sm" type="button" (click)="startDeleteBooking(booking.id)" [disabled]="isBookingActionInProgress || isBookingActionDisabled(booking)">Foglalás törlése</button>
           </div>
+          @if (isBookingActionDisabled(booking)) {
+          <div class="booking-action-note">A múltbeli foglalások nem módosíthatók és nem törölhetők.</div>
+          }
         </div>
       </article>
       }

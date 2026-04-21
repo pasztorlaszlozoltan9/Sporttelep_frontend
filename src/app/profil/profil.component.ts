@@ -1,12 +1,11 @@
 import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminService } from '../shared/admin.service';
 import { AuthService } from '../shared/auth.service';
 import { BookingService } from '../shared/booking.service';
-import emailjs from '@emailjs/browser';
 import Swal from 'sweetalert2';
 import flatpickr from 'flatpickr';
 import { Hungarian } from 'flatpickr/dist/l10n/hu.js';
@@ -19,13 +18,6 @@ import { Hungarian } from 'flatpickr/dist/l10n/hu.js';
   styleUrls: ['./profil.component.css']
 })
 export class ProfilComponent implements OnInit, OnDestroy {
-  private readonly emailJsServiceId: string = 'sporttelepek_0825';
-  private readonly emailJsBookingUpdateTemplateId: string = 'template_pz3d5z8';
-  private readonly emailJsBookingDeleteTemplateId: string = 'template_9cdc5ki';
-  private readonly emailJsUserDeleteTemplateId: string = 'template_os8a0gg';
-  private readonly emailJsPublicKey: string = '__s7hNRM8XTSCfrSd';
-  private readonly mainAdminEmail: string = 'admin@admin.com';
-
   user: any = null;
   host = 'http://localhost:8000/api/'
 
@@ -35,9 +27,11 @@ export class ProfilComponent implements OnInit, OnDestroy {
   protected bookings: any = []
   protected sports: any = []
   protected locations: any = []
+  protected users: any = []
   protected fields: any = []
   protected prices: any = []
   protected fieldBookingWindows: any = []
+  protected bookingFilter: 'future' | 'past' | 'all' = 'future';
   
 
   protected editingUserId: number | null = null;
@@ -179,6 +173,7 @@ export class ProfilComponent implements OnInit, OnDestroy {
         this.bookingDatePickerInstance = flatpickr(dateInput, {
           locale: Hungarian,
           dateFormat: 'Y-m-d',
+          minDate: 'today',
           disableMobile: true,
           static: true,
           defaultDate: String(this.bookingForm.value.date ?? '') || undefined,
@@ -349,6 +344,11 @@ export class ProfilComponent implements OnInit, OnDestroy {
   }
 
   loadAllData(): void {
+    const token = localStorage.getItem('token');
+    const userRequestOptions = token
+      ? { headers: new HttpHeaders({ 'Authorization': `Bearer ${token}` }) }
+      : {};
+
     this.http.get(`${this.host}bookings`).subscribe({
       next: (res: any) => this.bookings = res.data ?? res ?? []
     });
@@ -357,6 +357,13 @@ export class ProfilComponent implements OnInit, OnDestroy {
     });
     this.http.get(`${this.host}locations`).subscribe({
       next: (res: any) => this.locations = res.data ?? res ?? []
+    });
+    this.http.get(`${this.host}users`, userRequestOptions).subscribe({
+      next: (res: any) => this.users = res.data ?? res ?? [],
+      error: (error: any) => {
+        this.users = [];
+        console.error('Error fetching users for notifications:', error);
+      }
     });
     this.http.get(`${this.host}fields`).subscribe({
       next: (res: any) => this.fields = res.data ?? res ?? []
@@ -560,13 +567,6 @@ export class ProfilComponent implements OnInit, OnDestroy {
         this.api.deleteUser(this.deletingUserId!).subscribe({
           next: async (response: any) => {
             try {
-              this.updateProcessingAlert('Inaktiválás sikeres, email küldése...');
-              const userDeleteEmailError = await this.sendUserDeletionEmailNotification(
-                loginEmail,
-                String(this.user?.fullname ?? '').trim() || 'Felhasználó',
-                String(this.user?.phone ?? '').trim() || 'N/A'
-              );
-
               this.updateProcessingAlert('Inaktiválás sikeres, kijelentkeztetés...');
               const emailWarning = response?.emailWarning ?? response?.data?.emailWarning ?? null;
 
@@ -579,15 +579,9 @@ export class ProfilComponent implements OnInit, OnDestroy {
                   text: String(emailWarning),
                   icon: 'warning'
                 });
-              } else if (userDeleteEmailError) {
-                await Swal.fire({
-                  title: 'Sikeres inaktiválás, de a felhasználói email nem ment ki',
-                  text: `EmailJS hiba: ${userDeleteEmailError}`,
-                  icon: 'warning'
-                });
               } else {
                 await Swal.fire({
-                  title: 'Sikeres inaktiválás! Email elküldve.',
+                  title: 'Sikeres inaktiválás!',
                   icon: 'success',
                   draggable: true
                 });
@@ -683,8 +677,18 @@ export class ProfilComponent implements OnInit, OnDestroy {
 
   getUserBookings(): any[] {
     if (!this.user?.id || !this.bookings) return [];
-    return (this.bookings as any[])
+    const userBookings = (this.bookings as any[])
       .filter((b: any) => b.userId === this.user.id)
+      .filter((booking: any) => {
+        const bookingIsPast = this.isBookingPast(booking);
+        if (this.bookingFilter === 'past') {
+          return bookingIsPast;
+        }
+        if (this.bookingFilter === 'future') {
+          return !bookingIsPast;
+        }
+        return true;
+      })
       .sort((a: any, b: any) => {
         const firstDate = String(a?.date ?? '');
         const secondDate = String(b?.date ?? '');
@@ -697,6 +701,59 @@ export class ProfilComponent implements OnInit, OnDestroy {
         const secondStart = String(b?.startTime ?? '');
         return firstStart.localeCompare(secondStart);
       });
+
+    return userBookings;
+  }
+
+  protected setBookingFilter(filter: 'future' | 'past' | 'all'): void {
+    this.bookingFilter = filter;
+  }
+
+  protected isBookingActionDisabled(booking: any): boolean {
+    return this.isBookingPast(booking);
+  }
+
+  private parseBookingDateTime(dateValue: unknown, timeValue: unknown): Date | null {
+    const dateText = String(dateValue ?? '').trim();
+    const timeText = this.normalizeTimeForInput(String(timeValue ?? '').trim());
+    const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateText);
+    const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(timeText);
+
+    if (!dateMatch || !timeMatch) {
+      return null;
+    }
+
+    const year = Number(dateMatch[1]);
+    const month = Number(dateMatch[2]);
+    const day = Number(dateMatch[3]);
+    const hours = Number(timeMatch[1]);
+    const minutes = Number(timeMatch[2]);
+
+    if (
+      !Number.isInteger(year)
+      || !Number.isInteger(month)
+      || !Number.isInteger(day)
+      || !Number.isInteger(hours)
+      || !Number.isInteger(minutes)
+      || month < 1 || month > 12
+      || day < 1 || day > 31
+      || hours < 0 || hours > 23
+      || minutes < 0 || minutes > 59
+    ) {
+      return null;
+    }
+
+    const parsed = new Date(year, month - 1, day, hours, minutes, 0, 0);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private isBookingPast(booking: any): boolean {
+    const bookingEnd = this.parseBookingDateTime(booking?.date, booking?.endTime);
+    if (!bookingEnd) {
+      return false;
+    }
+
+    return bookingEnd.getTime() < Date.now();
   }
 
   getSportName(sportId: number): string {
@@ -1027,6 +1084,15 @@ export class ProfilComponent implements OnInit, OnDestroy {
   }
 
   startUpdateBooking(booking: any) {
+    if (this.isBookingActionDisabled(booking)) {
+      void Swal.fire({
+        title: 'Lejárt foglalás',
+        text: 'Korábbi foglalás nem módosítható.',
+        icon: 'info'
+      });
+      return;
+    }
+
     this.closeBookingDropdown();
     this.editingBookingId = booking.id;
     this.bookingForm.patchValue({
@@ -1050,96 +1116,20 @@ export class ProfilComponent implements OnInit, OnDestroy {
       fieldName: this.getFieldName(Number(booking?.fieldId)),
       bookingDate: booking?.date || 'N/A',
       bookingStartTime: booking?.startTime || 'N/A',
+      bookingEndTime: this.normalizeTimeForInput(booking?.endTime) || 'N/A',
       bookingPrice: this.getTotalPriceValue(booking),
-      userEmail: this.user?.email || 'N/A'
+      userEmail: this.user?.email || 'N/A',
+      locationEmail: this.getLocationEmail(Number(booking?.locationId))
     };
   }
 
-  private async sendAdminBookingActionEmail(action: 'update' | 'delete', booking: any): Promise<string | null> {
-    const templateId = action === 'update'
-      ? this.emailJsBookingUpdateTemplateId
-      : this.emailJsBookingDeleteTemplateId;
-    const actionLabel = action === 'update' ? 'módosítás' : 'törlés';
-
-    const data = this.buildBookingNotificationData(booking);
-    const bookingSummary = [
-      `Művelet: Foglalás ${actionLabel}`,
-      `Foglaló email: ${data.userEmail}`,
-      `Sport: ${data.sportName}`,
-      `Helyszín: ${data.locationName}`,
-      `Pálya: ${data.fieldName}`,
-      `Dátum: ${data.bookingDate}`,
-      `Kezdés: ${data.bookingStartTime}`,
-      `Befejezés: ${this.normalizeTimeForInput(booking?.endTime) || 'N/A'}`,
-      `Ár: ${data.bookingPrice}`
-    ].join('\n');
-
-    const templateParams = {
-      to_email: this.mainAdminEmail,
-      email: this.mainAdminEmail,
-      from_email: data.userEmail || 'noreply@budapestsporttelepek.local',
-      reply_to: data.userEmail || '',
-      message: bookingSummary,
-      action_type: actionLabel,
-      user_email: data.userEmail,
-      sport_name: data.sportName,
-      location_name: data.locationName,
-      field_name: data.fieldName,
-      booking_date: data.bookingDate,
-      booking_start_time: data.bookingStartTime,
-      booking_end_time: this.normalizeTimeForInput(booking?.endTime) || 'N/A',
-      booking_price: data.bookingPrice
-    };
-
-    try {
-      await emailjs.send(
-        this.emailJsServiceId,
-        templateId,
-        templateParams,
-        { publicKey: this.emailJsPublicKey }
-      );
-      return null;
-    } catch (error: any) {
-      console.error(`EmailJS admin booking ${actionLabel} notification error:`, error);
-      const status = error?.status ? `status: ${error.status}` : 'status: unknown';
-      const details = error?.text || error?.message || 'unknown error';
-      return `${status}, details: ${details}`;
+  private getLocationEmail(locationId: number): string {
+    if (!this.locations) {
+      return '';
     }
-  }
 
-  private async sendUserDeletionEmailNotification(userEmail: string, fullName: string, phone: string): Promise<string | null> {
-    const deletedAt = new Date().toLocaleString('hu-HU');
-    const message = [
-      `Kedves ${fullName}!`,
-      'A fiókod inaktiválása sikeresen megtörtént.',
-      `Inaktiválás ideje: ${deletedAt}`
-    ].join('\n');
-
-    const templateParams = {
-      to_email: userEmail,
-      email: userEmail,
-      user_email: userEmail,
-      user_name: fullName,
-      user_fullname: fullName,
-      user_phone: phone,
-      deleted_at: deletedAt,
-      message
-    };
-
-    try {
-      await emailjs.send(
-        this.emailJsServiceId,
-        this.emailJsUserDeleteTemplateId,
-        templateParams,
-        { publicKey: this.emailJsPublicKey }
-      );
-      return null;
-    } catch (error: any) {
-      console.error('EmailJS user deletion notification error:', error);
-      const status = error?.status ? `status: ${error.status}` : 'status: unknown';
-      const details = error?.text || error?.message || 'unknown error';
-      return `${status}, details: ${details}`;
-    }
+    const location = (this.locations as any[]).find((l: any) => Number(l?.id) === Number(locationId));
+    return String(location?.email ?? '').trim();
   }
 
   async startSaveBooking() {
@@ -1151,10 +1141,35 @@ export class ProfilComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const currentBooking = (this.bookings as any[]).find((booking: any) => Number(booking?.id) === Number(this.editingBookingId));
+    if (currentBooking && this.isBookingActionDisabled(currentBooking)) {
+      await Swal.fire({
+        title: 'Lejárt foglalás',
+        text: 'Korábbi foglalás nem módosítható.',
+        icon: 'info'
+      });
+      this.startCloseBookingModal();
+      return;
+    }
+
     if (!this.isBookingInsideWindow()) {
       await Swal.fire({
         title: 'Időpont nyitvatartáson kívül',
         text: 'A kiválasztott időpont nincs benne a pálya nyitvatartásában.',
+        icon: 'warning'
+      });
+      return;
+    }
+
+    const selectedBookingEnd = this.parseBookingDateTime(
+      this.bookingForm.value.date,
+      this.bookingForm.value.endTime
+    );
+
+    if (!selectedBookingEnd || selectedBookingEnd.getTime() < Date.now()) {
+      await Swal.fire({
+        title: 'Érvénytelen módosítás',
+        text: 'A foglalás nem módosítható múltbeli dátumra/időpontra.',
         icon: 'warning'
       });
       return;
@@ -1243,8 +1258,6 @@ export class ProfilComponent implements OnInit, OnDestroy {
       next: async (response: any) => {
         try {
           this.updateProcessingAlert('Foglalás módosítva, email küldése...');
-          const adminEmailError = await this.sendAdminBookingActionEmail('update', bookingData);
-
           this.startCloseBookingModal();
           this.loadAllData();
           Swal.close();
@@ -1254,15 +1267,6 @@ export class ProfilComponent implements OnInit, OnDestroy {
             await Swal.fire({
               title: 'Foglalás módosítva, de email figyelmeztetés',
               text: String(emailWarning),
-              icon: 'warning'
-            });
-            return;
-          }
-
-          if (adminEmailError) {
-            await Swal.fire({
-              title: 'Foglalás módosítva, de admin email nem ment ki',
-              text: `EmailJS hiba: ${adminEmailError}`,
               icon: 'warning'
             });
             return;
@@ -1293,6 +1297,16 @@ export class ProfilComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const bookingToDelete = (this.bookings as any[])?.find((b: any) => Number(b?.id) === Number(bookingId));
+    if (bookingToDelete && this.isBookingActionDisabled(bookingToDelete)) {
+      await Swal.fire({
+        title: 'Lejárt foglalás',
+        text: 'Korábbi foglalás nem törölhető.',
+        icon: 'info'
+      });
+      return;
+    }
+
     const confirmed = await Swal.fire({
       title: 'Biztosan törölni szeretnéd ezt a foglalást?',
       icon: 'warning',
@@ -1310,14 +1324,12 @@ export class ProfilComponent implements OnInit, OnDestroy {
     this.isBookingActionInProgress = true;
     this.showProcessingAlert('Foglalás törlése folyamatban...');
 
-    const bookingToDelete = (this.bookings as any[])?.find((b: any) => b.id === this.deletingBookingId);
+    const deletingBookingData = (this.bookings as any[])?.find((b: any) => Number(b?.id) === Number(this.deletingBookingId));
 
     this.bookingService.deleteBooking(this.deletingBookingId).subscribe({
       next: async (response: any) => {
         try {
           this.updateProcessingAlert('Foglalás törölve, email küldése...');
-          const adminEmailError = await this.sendAdminBookingActionEmail('delete', bookingToDelete);
-
           this.startCloseBookingDeleteModal();
           this.loadAllData();
           Swal.close();
@@ -1327,15 +1339,6 @@ export class ProfilComponent implements OnInit, OnDestroy {
             await Swal.fire({
               title: 'Foglalás törölve, de email figyelmeztetés',
               text: String(emailWarning),
-              icon: 'warning'
-            });
-            return;
-          }
-
-          if (adminEmailError) {
-            await Swal.fire({
-              title: 'Foglalás törölve, de admin email nem ment ki',
-              text: `EmailJS hiba: ${adminEmailError}`,
               icon: 'warning'
             });
             return;

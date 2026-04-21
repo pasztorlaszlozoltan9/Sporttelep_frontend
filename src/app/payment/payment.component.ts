@@ -9,7 +9,6 @@ import { SportService } from '../shared/sport.service';
 import { LocService } from '../shared/loc.service';
 import { FieldService } from '../shared/field.service';
 import { UserService } from '../shared/user.service';
-import emailjs from '@emailjs/browser';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -20,13 +19,6 @@ import Swal from 'sweetalert2';
   styleUrls: ['./payment.component.css']
 })
 export class PaymentComponent implements OnInit {
-  private readonly missingBookingTemplatePlaceholder: string = 'YOUR_BOOKING_TEMPLATE_ID';
-  private readonly emailJsServiceId: string = 'sporttelepek_0825';
-  private readonly emailJsTemplateId: string = 'template_tmtoa2g';
-  private readonly emailJsBookingUpdateTemplateId: string = 'template_pz3d5z8';
-  private readonly emailJsPublicKey: string = '__s7hNRM8XTSCfrSd';
-  private readonly mainAdminEmail: string = 'admin@admin.com';
-
   cardName: string = '';
   cardNumber: string = '';
   expiryMonth: string = '';
@@ -222,15 +214,6 @@ export class PaymentComponent implements OnInit {
     request$.subscribe({
       next: async (result: any) => {
         try {
-          let adminEmailError: string | null = null;
-          if (!isUpdateMode) {
-            this.updateProcessingAlert('Foglalás mentve, email küldése...');
-            adminEmailError = await this.sendBookingEmailNotification();
-          } else {
-            this.updateProcessingAlert('Foglalás módosítva, email küldése...');
-            adminEmailError = await this.sendBookingUpdateEmailNotification();
-          }
-
           Swal.close();
 
           const emailWarning = result?.emailWarning ?? result?.data?.emailWarning ?? null;
@@ -238,13 +221,6 @@ export class PaymentComponent implements OnInit {
             await Swal.fire({
               title: 'Foglalás sikeres, de email figyelmeztetés',
               text: String(emailWarning),
-              icon: 'warning',
-              confirmButtonText: 'Tovább'
-            });
-          } else if (adminEmailError) {
-            await Swal.fire({
-              title: 'Foglalás mentve, de admin email nem ment ki',
-              text: adminEmailError,
               icon: 'warning',
               confirmButtonText: 'Tovább'
             });
@@ -309,108 +285,6 @@ export class PaymentComponent implements OnInit {
     Swal.showLoading();
   }
 
-  private async sendBookingEmailNotification(): Promise<string | null> {
-    if (this.emailJsTemplateId === this.missingBookingTemplatePlaceholder) {
-      console.warn('EmailJS booking template id is not configured.');
-      return 'A booking EmailJS template nincs beállítva.';
-    }
-
-    const details = await this.resolveBookingDetailsForEmail();
-
-    const bookingSummary = [
-      `Sport: ${details.sportName}`,
-      `Helyszin: ${details.locationName}`,
-      `Palya: ${details.fieldName}`,
-      `Foglalo email: ${details.userEmail}`,
-      `Datum: ${details.bookingDate}`,
-      `Kezdesi ido: ${details.bookingStartTime}`,
-      `Befejezesi ido: ${details.bookingEndTime}`,
-      `Ar: ${details.bookingPrice}`,
-      `Megjegyzes: ${details.bookingNote}`
-    ].join('\n');
-
-    const templateParams = {
-      to_email: this.mainAdminEmail,
-      email: this.mainAdminEmail,
-      from_email: details.userEmail || 'noreply@budapestsporttelepek.local',
-      reply_to: details.userEmail || '',
-      message: bookingSummary,
-      user_email: details.userEmail,
-      sport_name: details.sportName,
-      location_name: details.locationName,
-      field_name: details.fieldName,
-      booking_date: details.bookingDate,
-      booking_start_time: details.bookingStartTime,
-      booking_end_time: details.bookingEndTime,
-      booking_price: details.bookingPrice,
-      booking_note: details.bookingNote
-    };
-
-    try {
-      await emailjs.send(
-        this.emailJsServiceId,
-        this.emailJsTemplateId,
-        templateParams,
-        { publicKey: this.emailJsPublicKey }
-      );
-      return null;
-    } catch (error: any) {
-      console.error('EmailJS admin booking notification error:', error);
-      const status = error?.status ? `status: ${error.status}` : 'status: unknown';
-      const details = error?.text || error?.message || 'unknown error';
-      return `EmailJS hiba (${status}): ${details}`;
-    }
-  }
-
-  private async sendBookingUpdateEmailNotification(): Promise<string | null> {
-    const details = await this.resolveBookingDetailsForEmail();
-
-    const bookingSummary = [
-      'Művelet: Foglalás módosítás',
-      `Foglaló email: ${details.userEmail}`,
-      `Sport: ${details.sportName}`,
-      `Helyszín: ${details.locationName}`,
-      `Pálya: ${details.fieldName}`,
-      `Dátum: ${details.bookingDate}`,
-      `Kezdés: ${details.bookingStartTime}`,
-      `Befejezés: ${details.bookingEndTime}`,
-      `Ár: ${details.bookingPrice}`
-    ].join('\n');
-
-    const templateParams = {
-      to_email: this.mainAdminEmail,
-      email: this.mainAdminEmail,
-      from_email: details.userEmail || 'noreply@budapestsporttelepek.local',
-      reply_to: details.userEmail || '',
-      message: bookingSummary,
-      action_type: 'módosítás',
-      user_email: details.userEmail,
-      sport_name: details.sportName,
-      location_name: details.locationName,
-      field_name: details.fieldName,
-      booking_date: details.bookingDate,
-      booking_start_time: details.bookingStartTime,
-      booking_end_time: details.bookingEndTime,
-      booking_price: details.bookingPrice,
-      booking_note: details.bookingNote
-    };
-
-    try {
-      await emailjs.send(
-        this.emailJsServiceId,
-        this.emailJsBookingUpdateTemplateId,
-        templateParams,
-        { publicKey: this.emailJsPublicKey }
-      );
-      return null;
-    } catch (error: any) {
-      console.error('EmailJS booking update notification error:', error);
-      const status = error?.status ? `status: ${error.status}` : 'status: unknown';
-      const details = error?.text || error?.message || 'unknown error';
-      return `EmailJS hiba (${status}): ${details}`;
-    }
-  }
-
   private async resolveBookingEmailForBackend(): Promise<string | null> {
     const fallbackEmail = this.billingEmail?.trim() || null;
 
@@ -467,12 +341,7 @@ export class PaymentComponent implements OnInit {
       const field = (fields as any[]).find((f: any) => Number(f.id) === Number(this.bookingData?.fieldId));
       const user = (users as any[]).find((u: any) => Number(u.id) === Number(this.bookingData?.userId));
       const price = (prices as any[]).find((p: any) => Number(p.id) === Number(this.bookingData?.priceId));
-      const totalAmount = this.calculateTotalAmountFromPricePerHour(
-        price?.price,
-        this.bookingData?.startTime,
-        this.bookingData?.endTime
-      );
-
+      const totalAmount = this.calculateTotalAmountFromPricePerHour(price?.price, this.bookingData?.startTime, this.bookingData?.endTime);
       return {
         sportName: sport?.name || fallback.sportName,
         locationName: location?.name || fallback.locationName,
@@ -489,4 +358,6 @@ export class PaymentComponent implements OnInit {
       return fallback;
     }
   }
+
 }
+

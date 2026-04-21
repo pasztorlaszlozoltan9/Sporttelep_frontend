@@ -6,7 +6,6 @@ import { BookingComponent } from './booking/booking.component';
 import { ProfilComponent } from './profil/profil.component';
 import { AdminComponent } from './admin/admin.component';
 import { AdminGuard } from './shared/admin.guard';
-import { RegisterComponent } from './register/register.component';
 import { VerifyEmailComponent } from './verify-email/verify-email.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
 import { PaymentComponent } from './payment/payment.component';
@@ -20,8 +19,6 @@ export const routes: Routes = [
     { path: 'contact', component: ContactComponent},
     { path: 'profil', component: ProfilComponent},
     { path: 'admin', component: AdminComponent, canActivate: [AdminGuard]},
-    { path: '', component: RegisterComponent },
-    { path: 'register', component: RegisterComponent },
     { path: 'verify-email/:token', component: VerifyEmailComponent},
     { path: 'reset-password/:token', component: ResetPasswordComponent}
 ];
