@@ -187,6 +187,8 @@ export class PaymentComponent implements OnInit {
       return;
     }
 
+    const userContact = await this.resolveUserContactForBackend();
+
     const bookingPayload: any = {
       sportId: this.bookingData?.sportId,
       locationId: this.bookingData?.locationId,
@@ -197,7 +199,12 @@ export class PaymentComponent implements OnInit {
       startTime: this.bookingData?.startTime,
       endTime: this.bookingData?.endTime,
       note: this.bookingData?.note,
-      email: await this.resolveBookingEmailForBackend()
+      email: userContact.email,
+      fullname: userContact.fullname,
+      phone: userContact.phone,
+      userEmail: userContact.email,
+      userFullname: userContact.fullname,
+      userPhone: userContact.phone
     };
 
     const updateBookingId = Number(this.bookingData?.updateBookingId ?? NaN);
@@ -285,16 +292,28 @@ export class PaymentComponent implements OnInit {
     Swal.showLoading();
   }
 
-  private async resolveBookingEmailForBackend(): Promise<string | null> {
-    const fallbackEmail = this.billingEmail?.trim() || null;
+  private async resolveUserContactForBackend(): Promise<{
+    email: string | null;
+    fullname: string | null;
+    phone: string | null;
+  }> {
+    const fallback = {
+      email: this.billingEmail?.trim() || null,
+      fullname: this.cardName?.trim() || null,
+      phone: null
+    };
 
     try {
       const usersRes = await firstValueFrom(this.userService.getUser());
       const users = (usersRes as any)?.data ?? usersRes ?? [];
       const user = (users as any[]).find((u: any) => Number(u.id) === Number(this.bookingData?.userId));
-      return user?.email || fallbackEmail;
+      return {
+        email: String(user?.email ?? '').trim() || fallback.email,
+        fullname: String(user?.fullname ?? '').trim() || fallback.fullname,
+        phone: String(user?.phone ?? '').trim() || fallback.phone
+      };
     } catch {
-      return fallbackEmail;
+      return fallback;
     }
   }
 

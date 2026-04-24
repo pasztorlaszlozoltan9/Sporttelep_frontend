@@ -91,6 +91,7 @@ export class ProfilComponent implements OnInit, OnDestroy {
     startTime: '',
     endTime: '',
     priceId: '',
+    note: '',
   })
 
   protected bookingDeleteForm = this.builder.group({
@@ -1184,7 +1185,15 @@ export class ProfilComponent implements OnInit, OnDestroy {
       date: this.bookingForm.value.date,
       startTime: this.bookingForm.value.startTime,
       endTime: this.bookingForm.value.endTime,
-      email: this.user?.email || null
+      note: this.bookingForm.value.note,
+      message: this.bookingForm.value.note,
+      bookingMessage: this.bookingForm.value.note,
+      email: this.user?.email || null,
+      fullname: this.user?.fullname || null,
+      phone: this.user?.phone || null,
+      userEmail: this.user?.email || null,
+      userFullname: this.user?.fullname || null,
+      userPhone: this.user?.phone || null
     };
 
     const originalBooking = (this.bookings as any[]).find((booking: any) => Number(booking?.id) === Number(this.editingBookingId));
